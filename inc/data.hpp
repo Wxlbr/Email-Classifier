@@ -3,6 +3,45 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <map>
+#include <cmath>
+
+// Function to tokenize a string into words
+std::vector<std::string> tokenise(const std::string& text) {
+    std::vector<std::string> tokens;
+    std::string token;
+    for (char c : text) {
+        if (std::isalpha(c)) {
+            token += std::tolower(c);
+        } else {
+            if (!token.empty()) {
+                tokens.push_back(token);
+                token.clear();
+            }
+        }
+    }
+    if (!token.empty()) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+// Function to calculate the TF-IDF of a word in a document
+double tfidf(const std::string& word, const std::vector<std::string>& document, const std::map<std::string, std::vector<std::vector<std::string>>>& documents) {
+    int termFrequency = 0;
+    for (const std::string& w : document) {
+        if (w == word) {
+            termFrequency++;
+        }
+    }
+
+    double inverseDocumentFrequency = 0.0;
+    if (documents.find(word) != documents.end()) {
+        inverseDocumentFrequency = log(documents.size() / (double)documents.at(word).size());
+    }
+
+    return termFrequency * inverseDocumentFrequency;
+}
 
 struct CSVRecord {
     std::string text;
@@ -45,6 +84,15 @@ std::string cleanText(const std::string& text) {
         if (isdigit(cleanedText[i])) {
             cleanedText.erase(i--, 1);
         }
+    }
+
+    // Remove first occourance of "subject" and "re"
+    if (cleanedText.find("subject") != std::string::npos) {
+        cleanedText.erase(cleanedText.find("subject"), 7);
+    }
+
+    if (cleanedText.find("re") != std::string::npos) {
+        cleanedText.erase(cleanedText.find("re"), 2);
     }
 
     return cleanedText;

@@ -11,15 +11,14 @@ int main() {
     std::string textHeader = "text";
     std::string flagHeader = "label_num";
 
-    loadCSV("../inc/kaggleDataset.csv", data, textHeader, flagHeader);
+    loadCSV("./inc/kaggleDataset.csv", data, textHeader, flagHeader);
 
     std::cout << "Data size: " << data.size() << std::endl;
 
-    for (int i = 0; i < 5; i++) {
-        std::cout << data[i].text << std::endl;
-        std::cout << data[i].label << std::endl;
-    }
-
+    // for (int i = 0; i < 5; i++) {
+    //     std::cout << data[i].text << std::endl;
+    //     std::cout << data[i].label << std::endl;
+    // }
 
     return 0;
 }
