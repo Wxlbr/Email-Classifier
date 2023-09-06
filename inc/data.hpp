@@ -6,6 +6,11 @@
 #include <map>
 #include <cmath>
 
+struct CSVRecord {
+    std::string text;
+    int label;
+};
+
 // Function to tokenize a string into words
 std::vector<std::string> tokenise(const std::string& text) {
     std::vector<std::string> tokens;
@@ -43,10 +48,20 @@ double tfidf(const std::string& word, const std::vector<std::string>& document, 
     return termFrequency * inverseDocumentFrequency;
 }
 
-struct CSVRecord {
-    std::string text;
-    int label;
-};
+// Function to create a map of words to documents
+std::map<std::string, std::vector<std::vector<std::string>>> createDocuments(const std::vector<CSVRecord>& data) {
+    std::map<std::string, std::vector<std::vector<std::string>>> documents;
+    for (const CSVRecord& record : data) {
+        std::vector<std::string> tokens = tokenise(record.text);
+        for (const std::string& token : tokens) {
+            if (documents.find(token) == documents.end()) {
+                documents[token] = std::vector<std::vector<std::string>>();
+            }
+            documents[token].push_back(tokens);
+        }
+    }
+    return documents;
+}
 
 std::string cleanText(const std::string& text) {
     std::string cleanedText = text;
