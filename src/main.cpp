@@ -4,165 +4,166 @@
 #include <cstdlib>
 #include <ctime>
 
-class RecurrentNeuralNetwork {
-private:
-    int inputSize;
-    int hiddenLayerSize;
-    int outputLayerSize;
-    int numEpochs;
-    float learningRate;
-
-    std::vector<std::vector<float>> weightsInputHidden;
-    std::vector<std::vector<float>> weightsHiddenOutput;
-    std::vector<std::vector<float>> hiddenLayer;
-    std::vector<float> outputLayer;
-
-public:
-    RecurrentNeuralNetwork(int inputSize, int hiddenLayerSize, int numEpochs, float learningRate)
-        : inputSize(inputSize), hiddenLayerSize(hiddenLayerSize), numEpochs(numEpochs), learningRate(learningRate) {
-        // outputLayerSize = 1;  // Set outputLayerSize to 1
-        // Initialize weights and layers
-        weightsInputHidden.resize(inputSize, std::vector<float>(hiddenLayerSize, 0.0));
-        weightsHiddenOutput.resize(hiddenLayerSize, std::vector<float>(outputLayerSize, 0.0));
-        hiddenLayer.resize(hiddenLayerSize, std::vector<float>(1, 0.0));
-        outputLayer.resize(outputLayerSize, 0.0);
-    }
-
-    void fit(const std::vector<std::vector<float>>& inputData, const std::vector<std::vector<float>>& targetData) {
-        // Training loop
-        for (int epoch = 0; epoch < numEpochs; ++epoch) {
-            for (size_t example = 0; example < inputData.size(); ++example) {
-                // Forward pass
-                std::vector<float> input = inputData[example];
-                std::vector<float> target = targetData[example];
-
-                // Forward pass
-                std::vector<float> predicted = forward(input);
-
-                // Backpropagation
-                backward(input, target, predicted);
-            }
-        }
-    }
-
-    std::vector<float> predict(const std::vector<float>& input) {
-        // Implement the forward pass for prediction here
-        std::vector<float> predictions = forward(input);
-        return predictions;
-    }
-
-private:
-    // Sigmoid activation function
-    float sigmoid(float x) {
-        return 1.0 / (1.0 + std::exp(-x));
-    }
-
-    // relu activation function
-    float relu(float x) {
-        return std::max(0.0f, x);
-    }
-
-    // Forward pass
-    std::vector<float> forward(const std::vector<float>& input) {
-        // Compute hidden layer activations
-        for (int i = 0; i < hiddenLayerSize; ++i) {
-            float activation = 0.0;
-            for (int j = 0; j < inputSize; ++j) {
-                activation += input[j] * weightsInputHidden[j][i];
-            }
-            hiddenLayer[i][0] = sigmoid(activation);
-        }
-
-        // Compute output layer activations
-        for (int i = 0; i < outputLayerSize; ++i) {
-            float activation = 0.0;
-            for (int j = 0; j < hiddenLayerSize; ++j) {
-                activation += hiddenLayer[j][0] * weightsHiddenOutput[j][i];
-            }
-            outputLayer[i] = sigmoid(activation);
-        }
-
-        return outputLayer;
-    }
-
-    // Backpropagation
-    void backward(const std::vector<float>& input, const std::vector<float>& target, const std::vector<float>& predicted) {
-        // Compute output layer errors and deltas
-        std::vector<float> outputErrors(outputLayerSize);
-        std::vector<float> outputDeltas(outputLayerSize);
-
-        for (int i = 0; i < outputLayerSize; ++i) {
-            outputErrors[i] = target[i] - predicted[i];
-            outputDeltas[i] = outputErrors[i] * predicted[i] * (1 - predicted[i]);
-        }
-
-        // Update hidden-to-output weights
-        for (int i = 0; i < hiddenLayerSize; ++i) {
-            for (int j = 0; j < outputLayerSize; ++j) {
-                weightsHiddenOutput[i][j] += learningRate * hiddenLayer[i][0] * outputDeltas[j];
-            }
-        }
-
-        // Compute hidden layer errors and deltas
-        std::vector<float> hiddenErrors(hiddenLayerSize);
-        std::vector<float> hiddenDeltas(hiddenLayerSize);
-
-        for (int i = 0; i < hiddenLayerSize; ++i) {
-            hiddenErrors[i] = 0.0;
-            for (int j = 0; j < outputLayerSize; ++j) {
-                hiddenErrors[i] += outputDeltas[j] * weightsHiddenOutput[i][j];
-            }
-            hiddenDeltas[i] = hiddenErrors[i] * hiddenLayer[i][0] * (1 - hiddenLayer[i][0]);
-        }
-
-        // Update input-to-hidden weights
-        for (int i = 0; i < inputSize; ++i) {
-            for (int j = 0; j < hiddenLayerSize; ++j) {
-                weightsInputHidden[i][j] += learningRate * input[i] * hiddenDeltas[j];
-            }
-        }
-    }
-};
+#include "data.hpp"
+#include "model.hpp"
+#include "model2.hpp"
+#include "tcn.hpp"
 
 int main() {
-    std::cout << "Simple RNN Model Implementation" << std::endl;
+    std::cout << "Starting program..." << std::endl;
+
+    // Load data from emails.csv
+    std::vector<std::vector<int>> data;
+
+    std::string flagHeader = "Prediction";
+    std::vector<std::string> header;
+    std::vector<int> labels;
+
+    std::ifstream file("./inc/emails.csv");
+
+    // Skip the first line (header)
+    std::string line;
+    std::getline(file, line);
+    std::stringstream ss(line);
+    std::string cell;
+
+    int flagIndex = -1;
+    int i = 0;
+
+    while (std::getline(ss, cell, ',')) {
+        if (cell == flagHeader) {
+            flagIndex = i;
+        } else {
+            header.push_back(cell);
+        }
+
+        i++;
+    }
+
+    if (flagIndex == -1) {
+        std::cerr << "Flag header not found: " << flagHeader << std::endl;
+        return 1;
+    }
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string cell;
+
+        std::vector<int> row;
+        int index = 0;
+
+        while (std::getline(ss, cell, ',')) {
+            if (index == flagIndex) {
+                labels.push_back(std::stoi(cell));
+            } else {
+                row.push_back(std::stod(cell));
+            }
+            index++;
+        }
+
+        data.push_back(row);
+    }
+
+    std::vector<std::vector<int>> input_data = data;
+    std::vector<int> target_data = labels;
+
+    // Train test split, 80% train, 20% test
+    int train_size = (int)(input_data.size() * 0.8);
+    int test_size = input_data.size() - train_size;
+
+    std::vector<std::vector<int>> train_input_data;
+    std::vector<int> train_target_data;
+    std::vector<std::vector<int>> test_input_data;
+    std::vector<int> test_target_data;
+
+    for (int i = 0; i < train_size; ++i) {
+        train_input_data.push_back(input_data[i]);
+        train_target_data.push_back(target_data[i]);
+    }
+
+    for (int i = train_size; i < input_data.size(); ++i) {
+        test_input_data.push_back(input_data[i]);
+        test_target_data.push_back(target_data[i]);
+    }
+
+    std::cout << "Data size: " << train_input_data.size() << std::endl;
+
+    std::cout << "Input size: " << train_input_data[0].size() << std::endl;
 
     // Define RNN parameters
-    int input_size = 2;
-    int hidden_size = 100;
-    int num_epochs = 1000; // Increased the number of epochs for better training
-    float learning_rate = 0.01; // Increased the learning rate
+    int inputSize = 1; // Number of input features
+    int hiddenLayerSize = 10;
+    int outputLayerSize = 1;
+    int numEpochs = 10;
+    float learningRate = 0.01;
+    int sequenceLength = 5; // Number of time steps
 
-    // Create a simple RNN model
-    RecurrentNeuralNetwork model(input_size, hidden_size, num_epochs, learning_rate);
 
-    // Create example input and target data
-    std::vector<std::vector<float>> input_data = {
-        {0.1, 0.2, 0.3, 0.4},
-        {0.5, 0.6},
-        {0.7, 0.8, 0.9, 1.0, 1.1, 1.2}
-    };
-    std::vector<std::vector<float>> target_data = {
-        {0.0},
-        {0.0},
-        {1.0}
-    };
+    // Create RNN model
+    // RecurrentNeuralNetwork model(inputSize, hiddenLayerSize, outputLayerSize, numEpochs, learningRate, sequenceLength);
+    RandomForest model(100, 200, 200);
+    // TCNModel model(50, std::vector<int>{5, 5, 5, 5, 5});
+
+    std::cout << "Training model" << std::endl;
 
     // Train the model
-    model.fit(input_data, target_data);
+    model.train(train_input_data, train_target_data);
 
-    std::cout << "Training complete!" << std::endl;
+    std::cout << "Model trained" << std::endl;
 
-    // Make predictions
-    std::vector<float> input_example = {0.7, 0.8, 1.2};
-    std::vector<float> predictions = model.predict(input_example);
+    model.saveModel("./inc/forest100_200_200.bin");
 
-    // Print predictions
-    std::cout << "Predictions: ";
-    for (float pred : predictions) {
-        std::cout << pred << " ";
+    std::cout << "Data size: " << test_input_data.size() << std::endl;
+
+    // Test the model
+
+    int true_positives = 0;
+    int false_positives = 0;
+    int true_negatives = 0;
+    int false_negatives = 0;
+
+    int correct = 0;
+    float accuracy = 0.0;
+
+    for (size_t i = 0; i < test_input_data.size(); ++i) {
+        std::vector<int> input = test_input_data[i];
+        int target = test_target_data[i];
+
+        // std::vector<int> predictions = model.predict(input);
+        // for (int i = 0; i < predictions.size(); ++i) {
+        //     std::cout << predictions[i] << " ";
+        // }
+        // int prediction = (predictions[0] >= 0.5) ? 1 : 0;
+        // double prediction = model.predict(input);
+        int prediction = model.predict(input);
+        // std::cout << prediction << " ";
+        // prediction = (prediction >= 0.5) ? 1 : 0;
+
+        if (prediction == target) {
+            correct++;
+            if (prediction == 1) {
+                true_positives++;
+            } else {
+                true_negatives++;
+            }
+        } else {
+            if (prediction == 1) {
+                false_positives++;
+            } else {
+                false_negatives++;
+            }
+        }
     }
     std::cout << std::endl;
+
+    accuracy = (float)correct / (float)test_input_data.size();
+
+    std::cout << "Accuracy: " << accuracy * 100 << "%" << std::endl;
+
+    std::cout << "True positives: " << true_positives << std::endl;
+    std::cout << "False positives: " << false_positives << std::endl;
+    std::cout << "True negatives: " << true_negatives << std::endl;
+    std::cout << "False negatives: " << false_negatives << std::endl;
 
     return 0;
 }
