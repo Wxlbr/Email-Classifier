@@ -1,43 +1,28 @@
 #include <vector>
 #include <cassert>
 
-// TODO: Rename
-struct RecurrentConnection {
+struct Weight {
     double weight;
     double deltaWeight;
 };
 
-struct Connection {
-    double weight;
-    double deltaWeight;
-};
-
-class Neuron;
-
-// TODO: Consider using a parent node class for RecurrentNeuron and Neuron
-class RecurrentNeuron {
+class baseNeuron {
 public:
-    // TODO: Make private and add getters and setters for RecurrentNeuron class
     double learningRate = 0.1;
     double momentum = 0.5;
-    std::vector<Connection> outputWeights;
-    std::vector<RecurrentConnection> recurrentConnections;
+    std::vector<Weight> outputWeights;
+
+    double outputValue;
+    double gradient;
 
     // TODO: Consider use of std::random_device to seed a RNG
     double randomWeight() { return rand() / double(RAND_MAX); }
-
-    double outputValue;
-    double state; // Internal state for a recurrent neuron
-    size_t neuronIndex;
-    double gradient;
 
     void setOutputValue(double val) { outputValue = val; }
     double getOutputValue() { return outputValue; }
 
     double getLearningRate() { return learningRate; }
     double getMomentum() { return momentum; }
-
-    void calculateRecurrentGradients(const std::vector<double>& previousHiddenLayerOutputs);
 
     double activationFunction(double x) {
         return tanh(x);
@@ -46,6 +31,20 @@ public:
     double activationFunctionDerivative(double x) {
         return 1.0 - x * x;
     }
+};
+
+class Neuron;
+
+// TODO: Consider using a parent node class for RecurrentNeuron and Neuron
+class RecurrentNeuron : public baseNeuron {
+public:
+    // TODO: Make private and add getters and setters for RecurrentNeuron class
+    std::vector<Weight> recurrentConnections;
+
+    size_t neuronIndex;
+    double state; // Internal state for a recurrent neuron
+
+    void calculateRecurrentGradients(const std::vector<double>& previousHiddenLayerOutputs);
 
     void feedForward(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<Neuron> prevLayer);
     void feedForwardRecurrent(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<RecurrentNeuron> prevLayer);
@@ -81,7 +80,7 @@ public:
 
     RecurrentNeuron(size_t numOutputs, size_t index) : neuronIndex(index) {
         for (size_t c = 0; c < numOutputs; ++c) {
-            outputWeights.push_back(Connection());
+            outputWeights.push_back(Weight());
             outputWeights.back().weight = randomWeight();
         }
 
@@ -89,22 +88,10 @@ public:
     }
 };
 
-class Neuron {
+class Neuron : public baseNeuron {
 public:
     // TODO: Make private and add getters and setters for Neuron class
-    double learningRate = 0.1;
-    double momentum = 0.5;
-    std::vector<Connection> outputWeights;
-
-    // TODO: Consider use of std::random_device to seed a RNG
-    double randomWeight() { return rand() / double(RAND_MAX); }
-
-    double outputValue;
     size_t neuronIndex;
-    double gradient;
-
-    void setOutputValue(double val) { outputValue = val; }
-    double getOutputValue() const { return outputValue; }
 
     void updateInputWeights(std::vector<RecurrentNeuron>& prevLayer) {
         for (size_t n = 0; n < prevLayer.size(); ++n) {
@@ -142,10 +129,6 @@ public:
         gradient = delta * (1.0 - outputValue * outputValue);
     }
 
-    double activationFunction(double x) {
-        return tanh(x);
-    }
-
     void feedForward(std::vector<RecurrentNeuron> prevLayer) {
         double sum = 0.0;
 
@@ -163,7 +146,7 @@ public:
 
     Neuron(size_t numOutputs, size_t index) : neuronIndex(index) {
         for (size_t c = 0; c < numOutputs; ++c) {
-            outputWeights.push_back(Connection());
+            outputWeights.push_back(Weight());
             outputWeights.back().weight = randomWeight();
         }
     }
@@ -267,7 +250,7 @@ public:
         }
     }
 
-    void getResults(std::vector<double>& resultValues) const {
+    void getResults(std::vector<double>& resultValues) {
         resultValues.clear();
         for (size_t n = 0; n < outputLayer.size(); ++n) {
             resultValues.push_back(outputLayer[n].getOutputValue());
