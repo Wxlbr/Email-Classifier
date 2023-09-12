@@ -16,13 +16,25 @@ public:
     double gradient;
 
     // TODO: Consider use of std::random_device to seed a RNG
-    double randomWeight() { return rand() / double(RAND_MAX); }
+    double randomWeight() {
+        return rand() / double(RAND_MAX);
+    }
 
-    void setOutputValue(double val) { outputValue = val; }
-    double getOutputValue() { return outputValue; }
+    void setOutputValue(double val) {
+        outputValue = val;
+    }
 
-    double getLearningRate() { return learningRate; }
-    double getMomentum() { return momentum; }
+    double getOutputValue() {
+        return outputValue;
+    }
+
+    double getLearningRate() {
+        return learningRate;
+    }
+
+    double getMomentum() {
+        return momentum;
+    }
 
     double activationFunction(double x) {
         return tanh(x);
@@ -44,40 +56,6 @@ public:
     size_t neuronIndex;
     double state; // Internal state for a recurrent neuron
 
-    void calculateRecurrentGradients(const std::vector<double>& previousHiddenLayerOutputs);
-
-    void feedForward(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<Neuron> prevLayer);
-    void feedForwardRecurrent(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<RecurrentNeuron> prevLayer);
-
-    void updateWeights(const std::vector<Neuron>& prevLayer);
-
-    void updateRecurrentWeights(const std::vector<RecurrentNeuron>& prevRecurrentLayer) {
-        for (size_t n = 0; n < prevRecurrentLayer.size(); ++n) {
-            RecurrentNeuron& prevRecurrentNeuron = const_cast<RecurrentNeuron&>(prevRecurrentLayer[n]);
-            double oldDeltaWeight = prevRecurrentNeuron.outputWeights[neuronIndex].deltaWeight;
-
-            double newDeltaWeight =
-                learningRate
-                * prevRecurrentNeuron.getOutputValue()
-                * gradient
-                + momentum
-                * oldDeltaWeight;
-            recurrentConnections[n].deltaWeight = newDeltaWeight;
-            recurrentConnections[n].weight += newDeltaWeight;
-        }
-    }
-
-    double calculateRecurrentGradient(const std::vector<RecurrentNeuron>& nextRecurrentLayer) {
-        double sum = 0.0;
-
-        for (size_t n = 0; n < nextRecurrentLayer.size(); ++n) {
-            sum += nextRecurrentLayer[n].outputWeights[neuronIndex].weight * nextRecurrentLayer[n].gradient;
-        }
-
-        gradient = sum * (1.0 - state * state);
-        return gradient;
-    }
-
     RecurrentNeuron(size_t numOutputs, size_t index) : neuronIndex(index) {
         for (size_t c = 0; c < numOutputs; ++c) {
             outputWeights.push_back(Weight());
@@ -86,6 +64,35 @@ public:
 
         recurrentConnections.resize(numOutputs);
     }
+
+    void calculateRecurrentGradients(std::vector<double>& previousHiddenLayerOutputs);
+
+    void feedForward(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<Neuron> prevLayer);
+    void feedForwardRecurrent(std::vector<RecurrentNeuron> prevRecurrentLayer, std::vector<RecurrentNeuron> prevLayer);
+
+    void updateWeights(std::vector<Neuron>& prevLayer);
+
+    void updateRecurrentWeights(std::vector<RecurrentNeuron>& prevRecurrentLayer) {
+        for (size_t n = 0; n < prevRecurrentLayer.size(); ++n) {
+            RecurrentNeuron& prevRecurrentNeuron = prevRecurrentLayer[n];
+
+            double oldDeltaWeight = prevRecurrentNeuron.outputWeights[neuronIndex].deltaWeight;
+            double newDeltaWeight = learningRate * prevRecurrentNeuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+
+            recurrentConnections[n].deltaWeight = newDeltaWeight;
+            recurrentConnections[n].weight += newDeltaWeight;
+        }
+    }
+
+    void calculateRecurrentGradient(std::vector<RecurrentNeuron>& nextRecurrentLayer) {
+        double sum = 0.0;
+
+        for (size_t n = 0; n < nextRecurrentLayer.size(); ++n) {
+            sum += nextRecurrentLayer[n].outputWeights[neuronIndex].weight * nextRecurrentLayer[n].gradient;
+        }
+
+        gradient = sum * (1.0 - state * state);
+    }
 };
 
 class Neuron : public baseNeuron {
@@ -93,35 +100,32 @@ public:
     // TODO: Make private and add getters and setters for Neuron class
     size_t neuronIndex;
 
+    Neuron(size_t numOutputs, size_t index) : neuronIndex(index) {
+        for (size_t c = 0; c < numOutputs; ++c) {
+            outputWeights.push_back(Weight());
+            outputWeights.back().weight = randomWeight();
+        }
+    }
+
     void updateInputWeights(std::vector<RecurrentNeuron>& prevLayer) {
         for (size_t n = 0; n < prevLayer.size(); ++n) {
             RecurrentNeuron& neuron = prevLayer[n];
-            double oldDeltaWeight = neuron.outputWeights[neuronIndex].deltaWeight;
 
-            double newDeltaWeight =
-                learningRate
-                * neuron.getOutputValue()
-                * gradient
-                + momentum
-                * oldDeltaWeight;
+            double oldDeltaWeight = neuron.outputWeights[neuronIndex].deltaWeight;
+            double newDeltaWeight = learningRate * neuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+
             neuron.outputWeights[neuronIndex].deltaWeight = newDeltaWeight;
             neuron.outputWeights[neuronIndex].weight += newDeltaWeight;
         }
     }
 
-    double sumDOW(const std::vector<RecurrentNeuron>& nextLayer) const {
-        double sum = 0.0;
-
+    void calculateHiddenGradients(std::vector<RecurrentNeuron>& nextLayer) {
+        double delta = 0.0;
         for (size_t n = 0; n < nextLayer.size() - 1; ++n) {
-            sum += outputWeights[n].weight * nextLayer[n].gradient;
+            delta += outputWeights[n].weight * nextLayer[n].gradient;
         }
 
-        return sum;
-    }
-
-    void calculateHiddenGradients(const std::vector<RecurrentNeuron>& nextLayer) {
-        double dow = sumDOW(nextLayer);
-        gradient = dow * (1.0 - outputValue * outputValue);
+        gradient = delta * (1.0 - outputValue * outputValue);
     }
 
     void calculateOutputGradients(double targetValue) {
@@ -142,13 +146,6 @@ public:
 
     void feedForward(double sum) {
         outputValue = activationFunction(sum);
-    }
-
-    Neuron(size_t numOutputs, size_t index) : neuronIndex(index) {
-        for (size_t c = 0; c < numOutputs; ++c) {
-            outputWeights.push_back(Weight());
-            outputWeights.back().weight = randomWeight();
-        }
     }
 };
 
@@ -182,23 +179,19 @@ void RecurrentNeuron::feedForwardRecurrent(std::vector<RecurrentNeuron> prevRecu
     outputValue = state;
 }
 
-void RecurrentNeuron::updateWeights(const std::vector<Neuron>& prevLayer) {
+void RecurrentNeuron::updateWeights(std::vector<Neuron>& prevLayer) {
     for (size_t n = 0; n < prevLayer.size(); ++n) {
-        Neuron& prevNeuron = const_cast<Neuron&>(prevLayer[n]);
-        double oldDeltaWeight = prevNeuron.outputWeights[neuronIndex].deltaWeight;
+        Neuron& prevNeuron = prevLayer[n];
 
-        double newDeltaWeight =
-            learningRate
-            * prevNeuron.getOutputValue()
-            * gradient
-            + momentum
-            * oldDeltaWeight;
+        double oldDeltaWeight = prevNeuron.outputWeights[neuronIndex].deltaWeight;
+        double newDeltaWeight = learningRate * prevNeuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+
         outputWeights[n].deltaWeight = newDeltaWeight;
         outputWeights[n].weight += newDeltaWeight;
     }
 }
 
-void RecurrentNeuron::calculateRecurrentGradients(const std::vector<double>& previousHiddenLayerOutputs) {
+void RecurrentNeuron::calculateRecurrentGradients(std::vector<double>& previousHiddenLayerOutputs) {
     // Calculate the gradient for this neuron with respect to its output value
     double delta = 0.0;
     for (size_t i = 0; i < outputWeights.size(); ++i) {
