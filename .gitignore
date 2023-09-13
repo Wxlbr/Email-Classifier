@@ -3,3 +3,6 @@ obj/
 build/
 
 # .vscode/
+
+# Ignore test files
+main.py
