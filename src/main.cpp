@@ -129,9 +129,12 @@ int main() {
 
         myNetwork.getResults(resultValues);
 
-        float bias = 0.0;
+        // std::cout << "ResultValues: ";
+        // for (int i = 0; i < resultValues.size(); ++i) {
+        //     std::cout << resultValues[i] << " ";
+        // }
 
-        if (resultValues[0] - bias >= 0) {
+        if (resultValues[0] >= 0) {
             if (targetValues[0] == 1) {
                 numCorrect++;
                 truePositives++;
