@@ -58,7 +58,7 @@ int main() {
         data.push_back(row);
     }
 
-    data.resize(500); // Shrink data to first x rows
+    data.resize(250); // Shrink data to first x rows
 
     vector<vector<double>> input_data = data;
     vector<int> target_data = labels;
