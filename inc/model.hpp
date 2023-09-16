@@ -176,7 +176,7 @@ public:
         }
     }
 
-    void backPropagation(std::vector<std::vector<double>> inputSequence, std::vector<double> targetSequence) {
+    void backPropagation(std::vector<std::vector<double>> inputSequence, std::vector<int> targetSequence) {
         size_t inputSize = inputSequence.size();
         size_t targetSize = targetSequence.size();
 
