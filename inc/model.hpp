@@ -65,6 +65,12 @@ public:
         return 1.0 - x * x;
     }
 
+    double calculateDelta(Neuron& neuron) {
+        double oldDeltaWeight = neuron.outputWeights[neuronIndex].deltaWeight;
+        double newDeltaWeight = learningRate * neuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+        return newDeltaWeight;
+    }
+
     void feedForward(std::vector<Neuron> prevRecurrentLayer, std::vector<Neuron> prevLayer) {
         double delta = 0.0;
 
@@ -79,39 +85,26 @@ public:
         outputValue = activationFunction(delta);
     }
 
-    void updateInputWeights(std::vector<Neuron>& prevLayer) {
+    // TODO: Combine weight updates for input and recurrent weights using isRecurrent
+    void updateWeights(std::vector<Neuron>& prevLayer) {
         for (size_t i = 0; i < prevLayer.size(); ++i) {
             Neuron& neuron = prevLayer[i];
 
-            double oldDeltaWeight = neuron.outputWeights[neuronIndex].deltaWeight;
-            double newDeltaWeight = learningRate * neuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+            double delta = calculateDelta(neuron);
 
-            neuron.outputWeights[neuronIndex].deltaWeight = newDeltaWeight;
-            neuron.outputWeights[neuronIndex].weight += newDeltaWeight;
-        }
-    }
-
-    void updateWeights(std::vector<Neuron>& prevLayer) {
-        for (size_t i = 0; i < prevLayer.size(); ++i) {
-            Neuron& prevNeuron = prevLayer[i];
-
-            double oldDeltaWeight = prevNeuron.outputWeights[neuronIndex].deltaWeight;
-            double newDeltaWeight = learningRate * prevNeuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
-
-            prevNeuron.outputWeights[i].deltaWeight = newDeltaWeight;
-            prevNeuron.outputWeights[i].weight += newDeltaWeight;
+            neuron.outputWeights[neuronIndex].deltaWeight = delta; // i
+            neuron.outputWeights[neuronIndex].weight += delta; // i
         }
     }
 
     void updateRecurrentWeights(std::vector<Neuron>& prevRecurrentLayer) {
         for (size_t i = 0; i < prevRecurrentLayer.size(); ++i) {
-            Neuron& prevRecurrentNeuron = prevRecurrentLayer[i];
+            Neuron& neuron = prevRecurrentLayer[i];
 
-            double oldDeltaWeight = prevRecurrentNeuron.outputWeights[neuronIndex].deltaWeight;
-            double newDeltaWeight = learningRate * prevRecurrentNeuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
+            double delta = calculateDelta(neuron);
 
-            recurrentConnections[i].deltaWeight = newDeltaWeight;
-            recurrentConnections[i].weight += newDeltaWeight;
+            recurrentConnections[neuronIndex].deltaWeight = delta; // i
+            recurrentConnections[neuronIndex].weight += delta; // i
         }
     }
 
@@ -169,11 +162,12 @@ public:
         }
     }
 
-    void getResults(std::vector<double>& resultValues) {
-        resultValues.clear();
+    std::vector<double> getResults() {
+        std::vector<double> resultValues;
         for (size_t n = 0; n < outputLayer.size(); ++n) {
             resultValues.push_back(outputLayer[n].getOutputValue());
         }
+        return resultValues;
     }
 
     void backPropagation(std::vector<std::vector<double>> inputSequence, std::vector<int> targetSequence) {
@@ -187,7 +181,6 @@ public:
 
         // Initialize containers to hold intermediate values for each time step
         std::vector<std::vector<std::vector<double>>> hiddenLayerOutputs(inputSize);
-        std::vector<std::vector<double>> outputLayerOutputs(inputSize);
 
         // Loop through each time step
         for (size_t t = 0; t < inputSize; ++t) {
@@ -201,11 +194,6 @@ public:
                 for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
                     hiddenLayerOutputs[t][layer][i] = recurrentLayers[layer][i].getOutputValue();
                 }
-            }
-
-            outputLayerOutputs[t].resize(numOutputs);
-            for (size_t i = 0; i < numOutputs; ++i) {
-                outputLayerOutputs[t][i] = outputLayer[i].getOutputValue();
             }
 
             // Calculate output layer gradients and deltas
@@ -225,7 +213,7 @@ public:
         // Update output layer weights
         for (size_t t = 0; t < inputSize; ++t) {
             for (size_t i = 0; i < numOutputs; ++i) {
-                outputLayer[i].updateInputWeights(recurrentLayers[numHiddenLayers - 1]);
+                outputLayer[i].updateWeights(recurrentLayers[numHiddenLayers - 1]); // updateInputWeights
             }
         }
 
@@ -233,7 +221,6 @@ public:
         for (size_t t = 0; t < inputSize; ++t) {
             for (int layer = numHiddenLayers - 1; layer >= 0; --layer) {
                 for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
-                    // recurrentLayers[layer][i].updateRecurrentWeights(layer == 0 ? inputLayer : hiddenLayerOutputs[t][layer - 1]);
                     if (layer == 0) {
                         recurrentLayers[layer][i].updateWeights(inputLayer);
                     }

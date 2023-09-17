@@ -10,6 +10,7 @@ int main() {
     std::vector<std::vector<double>> input_data;
     std::vector<int> target_data;
     std::vector<std::string> header;
+    // ./inc/emailsHotEncoding.csv ./inc/emails.csv
     loadData("./inc/emailsHotEncoding.csv", input_data, target_data, header, "Prediction", 250, 10);
 
     // Train test split, 80% train, 20% test
@@ -48,7 +49,6 @@ int main() {
 
     // Test the model
     int numCorrect = 0;
-    float accuracy = 0.0;
     int truePositives = 0;
     int trueNegatives = 0;
     int falsePositives = 0;
@@ -59,34 +59,34 @@ int main() {
         for (int j = 0; j < test_input_data[i].size(); ++j) {
             inputValues.push_back(test_input_data[i][j]);
         }
-        targetValues.clear();
-        targetValues.push_back(test_target_data[i]);
+
+        int targetValue = test_target_data[i];
 
         myNetwork.feedForward(inputValues, test_input_data);
+        resultValues.push_back(myNetwork.getResults()[0]);
+    }
 
-        myNetwork.getResults(resultValues);
+    int threshold = 0;
 
-        if (resultValues[0] >= 0) {
-            if (targetValues[0] == 1) {
-                numCorrect++;
-                truePositives++;
-            }
-            else {
-                trueNegatives++;
-            }
+    // Calculate accuracy
+    for (int i = 0; i < resultValues.size(); ++i) {
+        if (resultValues[i] >= threshold && test_target_data[i] == 1) {
+            numCorrect++;
+            truePositives++;
         }
-        else {
-            if (targetValues[0] == 0) {
-                numCorrect++;
-                falsePositives++;
-            }
-            else {
-                falseNegatives++;
-            }
+        else if (resultValues[i] < threshold && test_target_data[i] == 0) {
+            numCorrect++;
+            trueNegatives++;
+        }
+        else if (resultValues[i] >= threshold && test_target_data[i] == 0) {
+            falsePositives++;
+        }
+        else if (resultValues[i] < threshold && test_target_data[i] == 1) {
+            falseNegatives++;
         }
     }
 
-    accuracy = (float)numCorrect / test_input_data.size();
+    float accuracy = (float)numCorrect / test_input_data.size();
 
     std::cout << "Accuracy: " << accuracy * 100 << "%" << std::endl;
     std::cout << "True positives: " << truePositives << std::endl;
