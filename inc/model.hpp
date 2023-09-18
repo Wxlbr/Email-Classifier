@@ -49,14 +49,6 @@ public:
         return outputWeights;
     }
 
-    double getLearningRate() {
-        return learningRate;
-    }
-
-    double getMomentum() {
-        return momentum;
-    }
-
     double activationFunction(double x) {
         return tanh(x);
     }
@@ -85,26 +77,20 @@ public:
         outputValue = activationFunction(delta);
     }
 
-    // TODO: Combine weight updates for input and recurrent weights using isRecurrent
     void updateWeights(std::vector<Neuron>& prevLayer) {
         for (size_t i = 0; i < prevLayer.size(); ++i) {
             Neuron& neuron = prevLayer[i];
 
             double delta = calculateDelta(neuron);
 
-            neuron.outputWeights[neuronIndex].deltaWeight = delta; // i
-            neuron.outputWeights[neuronIndex].weight += delta; // i
-        }
-    }
-
-    void updateRecurrentWeights(std::vector<Neuron>& prevRecurrentLayer) {
-        for (size_t i = 0; i < prevRecurrentLayer.size(); ++i) {
-            Neuron& neuron = prevRecurrentLayer[i];
-
-            double delta = calculateDelta(neuron);
-
-            recurrentConnections[neuronIndex].deltaWeight = delta; // i
-            recurrentConnections[neuronIndex].weight += delta; // i
+            if (isRecurrent) {
+                recurrentConnections[neuronIndex].deltaWeight = delta;
+                recurrentConnections[neuronIndex].weight += delta;
+            }
+            else {
+                neuron.outputWeights[neuronIndex].deltaWeight = delta;
+                neuron.outputWeights[neuronIndex].weight += delta;
+            }
         }
     }
 
@@ -130,11 +116,11 @@ public:
     }
 };
 
+typedef std::vector<Neuron> Layer;
+
 class NeuralNetwork {
 private:
-    std::vector<Neuron> inputLayer;
-    std::vector<std::vector<Neuron>> recurrentLayers;
-    std::vector<Neuron> outputLayer;
+    std::vector<Layer> layers;
 
     int numInputs;
     int numOutputs;
@@ -145,24 +131,29 @@ public:
     NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs = 1) :
         numInputs(numInputs), numHiddenLayers(numHiddenLayers), numNeuronsPerHiddenLayer(numNeuronsPerHiddenLayer), numOutputs(numOutputs) {
 
+        Layer inputLayer;
         for (size_t i = 0; i < numInputs; ++i) {
             inputLayer.push_back(Neuron(numNeuronsPerHiddenLayer, i));
         }
+        layers.push_back(inputLayer);
 
         for (size_t i = 0; i < numHiddenLayers; ++i) {
-            std::vector<Neuron> recurrentLayer;
+            Layer recurrentLayer;
             for (size_t j = 0; j < numNeuronsPerHiddenLayer; ++j) {
                 recurrentLayer.push_back(Neuron(numNeuronsPerHiddenLayer, j, true));
             }
-            recurrentLayers.push_back(recurrentLayer);
+            layers.push_back(recurrentLayer);
         }
 
+        Layer outputLayer;
         for (size_t i = 0; i < numOutputs; ++i) {
             outputLayer.push_back(Neuron(numNeuronsPerHiddenLayer, i));
         }
+        layers.push_back(outputLayer);
     }
 
     std::vector<double> getResults() {
+        Layer& outputLayer = layers.back();
         std::vector<double> resultValues;
         for (size_t n = 0; n < outputLayer.size(); ++n) {
             resultValues.push_back(outputLayer[n].getOutputValue());
@@ -189,50 +180,50 @@ public:
 
             // Store hidden and output layer outputs for later use in backpropagation
             hiddenLayerOutputs[t].resize(numHiddenLayers);
-            for (size_t layer = 0; layer < numHiddenLayers; ++layer) {
-                hiddenLayerOutputs[t][layer].resize(recurrentLayers[layer].size());
-                for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
-                    hiddenLayerOutputs[t][layer][i] = recurrentLayers[layer][i].getOutputValue();
+            for (size_t layer = 1; layer <= numHiddenLayers; ++layer) {
+                hiddenLayerOutputs[t][layer-1].resize(layers[layer].size());
+                for (size_t i = 0; i < layers[layer].size(); ++i) {
+                    hiddenLayerOutputs[t][layer-1][i] = layers[layer][i].getOutputValue();
                 }
             }
 
             // Calculate output layer gradients and deltas
+            Layer& outputLayer = layers.back();
             for (size_t i = 0; i < numOutputs; ++i) {
                 double targetValue = targetSequence[t];
                 outputLayer[i].calculateOutputGradients(targetValue);
             }
 
             // Backpropagate through the recurrent layers
-            for (int layer = numHiddenLayers - 1; layer >= 0; --layer) {
-                for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
-                    recurrentLayers[layer][i].calculateRecurrentGradients(hiddenLayerOutputs[t][layer]);
+            for (int layer = numHiddenLayers; layer >= 1; --layer) {
+                for (size_t i = 0; i < layers[layer].size(); ++i) {
+                    layers[layer][i].calculateRecurrentGradients(hiddenLayerOutputs[t][layer-1]);
                 }
             }
         }
 
         // Update output layer weights
+        Layer& outputLayer = layers.back();
         for (size_t t = 0; t < inputSize; ++t) {
             for (size_t i = 0; i < numOutputs; ++i) {
-                outputLayer[i].updateWeights(recurrentLayers[numHiddenLayers - 1]); // updateInputWeights
+                outputLayer[i].updateWeights(layers[numHiddenLayers]); // updateInputWeights
             }
         }
 
         // Update recurrent layer weights
         for (size_t t = 0; t < inputSize; ++t) {
-            for (int layer = numHiddenLayers - 1; layer >= 0; --layer) {
-                for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
-                    if (layer == 0) {
-                        recurrentLayers[layer][i].updateWeights(inputLayer);
-                    }
-                    else {
-                        recurrentLayers[layer][i].updateRecurrentWeights(recurrentLayers[layer - 1]);
-                    }
+            for (int layer = numHiddenLayers; layer >= 1; --layer) {
+                for (size_t i = 0; i < layers[layer].size(); ++i) {
+                    layers[layer][i].updateWeights(layers[layer - 1]);
                 }
             }
         }
     }
 
     void feedForward(const std::vector<double>& inputValues, const std::vector<std::vector<double>>& inputSequence) {
+        Layer& inputLayer = layers[0];
+        Layer& outputLayer = layers.back();
+
         if (inputValues.size() != inputLayer.size()) {
             std::cerr << "inputValues.size() != inputLayer.size()" << std::endl;
             return;
@@ -243,24 +234,28 @@ public:
             inputLayer[i].setOutputValue(inputValues[i]);
         }
 
+        // std::cout << "inputLayer[0].getOutputValue(): " << inputLayer[0].getOutputValue() << std::endl;
+
         // Perform feedforward for each time step
         for (size_t t = 0; t < inputSequence.size(); ++t) {
             // Perform feedforward for each hidden layer
-            for (size_t layer = 0; layer < numHiddenLayers; ++layer) {
+            for (size_t layer = 1; layer <= numHiddenLayers; ++layer) {
                 // Perform feedforward for each neuron in the hidden layer
-                for (size_t i = 0; i < recurrentLayers[layer].size(); ++i) {
-                    recurrentLayers[layer][i].feedForward(recurrentLayers[layer], (layer == 0) ? inputLayer : recurrentLayers[layer - 1]);
+                for (size_t i = 0; i < layers[layer].size(); ++i) {
+                    layers[layer][i].feedForward(layers[layer], (layer == 1) ? inputLayer : layers[layer - 1]);
                 }
             }
 
             // Perform feedforward for the output layer
             for (size_t i = 0; i < outputLayer.size(); ++i) {
                 double delta = 0.0;
-                for (size_t j = 0; j < recurrentLayers[numHiddenLayers - 1].size(); ++j) {
-                    delta += recurrentLayers[numHiddenLayers - 1][j].getOutputValue() * outputLayer[i].getOutputWeights()[j].weight;
+                for (size_t j = 0; j < layers[numHiddenLayers].size(); ++j) {
+                    delta += layers[numHiddenLayers][j].getOutputValue() * outputLayer[i].getOutputWeights()[j].weight;
                 }
                 outputLayer[i].setOutputValue(outputLayer[i].activationFunction(delta));
             }
         }
+
+        // std::cout << "outputLayer[0].getOutputValue(): " << outputLayer[0].getOutputValue() << std::endl;
     }
 };
