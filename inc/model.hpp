@@ -116,7 +116,29 @@ public:
     }
 };
 
-typedef std::vector<Neuron> Layer;
+class Layer {
+private:
+    std::vector<Neuron> neurons;
+
+public:
+    Layer(size_t numNeurons, size_t numOutputsPerNeuron, bool recurrent = false) {
+        for (size_t i = 0; i < numNeurons; ++i) {
+            neurons.emplace_back(numOutputsPerNeuron, i, recurrent);
+        }
+    }
+
+    Neuron& operator[](size_t index) {
+        return neurons[index];
+    }
+
+    size_t size() {
+        return neurons.size();
+    }
+
+    std::vector<Neuron>& getVector() {
+        return neurons;
+    }
+};
 
 class NeuralNetwork {
 private:
@@ -131,25 +153,16 @@ public:
     NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs = 1) :
         numInputs(numInputs), numHiddenLayers(numHiddenLayers), numNeuronsPerHiddenLayer(numNeuronsPerHiddenLayer), numOutputs(numOutputs) {
 
-        Layer inputLayer;
-        for (size_t i = 0; i < numInputs; ++i) {
-            inputLayer.push_back(Neuron(numNeuronsPerHiddenLayer, i));
-        }
-        layers.push_back(inputLayer);
+        // Input layer
+        layers.emplace_back(numInputs, numNeuronsPerHiddenLayer);
 
+        // Hidden layers
         for (size_t i = 0; i < numHiddenLayers; ++i) {
-            Layer recurrentLayer;
-            for (size_t j = 0; j < numNeuronsPerHiddenLayer; ++j) {
-                recurrentLayer.push_back(Neuron(numNeuronsPerHiddenLayer, j, true));
-            }
-            layers.push_back(recurrentLayer);
+            layers.emplace_back(numNeuronsPerHiddenLayer, numNeuronsPerHiddenLayer, true);
         }
 
-        Layer outputLayer;
-        for (size_t i = 0; i < numOutputs; ++i) {
-            outputLayer.push_back(Neuron(numNeuronsPerHiddenLayer, i));
-        }
-        layers.push_back(outputLayer);
+        // Output layer
+        layers.emplace_back(numOutputs, numNeuronsPerHiddenLayer);
     }
 
     std::vector<double> getResults() {
@@ -206,7 +219,7 @@ public:
         Layer& outputLayer = layers.back();
         for (size_t t = 0; t < inputSize; ++t) {
             for (size_t i = 0; i < numOutputs; ++i) {
-                outputLayer[i].updateWeights(layers[numHiddenLayers]); // updateInputWeights
+                outputLayer[i].updateWeights(layers[numHiddenLayers].getVector());
             }
         }
 
@@ -214,7 +227,7 @@ public:
         for (size_t t = 0; t < inputSize; ++t) {
             for (int layer = numHiddenLayers; layer >= 1; --layer) {
                 for (size_t i = 0; i < layers[layer].size(); ++i) {
-                    layers[layer][i].updateWeights(layers[layer - 1]);
+                    layers[layer][i].updateWeights(layers[layer - 1].getVector());
                 }
             }
         }
@@ -234,15 +247,13 @@ public:
             inputLayer[i].setOutputValue(inputValues[i]);
         }
 
-        // std::cout << "inputLayer[0].getOutputValue(): " << inputLayer[0].getOutputValue() << std::endl;
-
         // Perform feedforward for each time step
         for (size_t t = 0; t < inputSequence.size(); ++t) {
             // Perform feedforward for each hidden layer
             for (size_t layer = 1; layer <= numHiddenLayers; ++layer) {
                 // Perform feedforward for each neuron in the hidden layer
                 for (size_t i = 0; i < layers[layer].size(); ++i) {
-                    layers[layer][i].feedForward(layers[layer], (layer == 1) ? inputLayer : layers[layer - 1]);
+                    layers[layer][i].feedForward(layers[layer].getVector(), (layer == 1) ? inputLayer.getVector() : layers[layer - 1].getVector());
                 }
             }
 
@@ -255,7 +266,5 @@ public:
                 outputLayer[i].setOutputValue(outputLayer[i].activationFunction(delta));
             }
         }
-
-        // std::cout << "outputLayer[0].getOutputValue(): " << outputLayer[0].getOutputValue() << std::endl;
     }
 };
