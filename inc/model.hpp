@@ -248,8 +248,12 @@ public:
             inputLayer[i].setOutputValue(inputValues[i]);
         }
 
+        // Define the number of time steps to perform feedforward
+        // TODO: Consider using the size of the input sequence
+        size_t step = 1; // inputSequence.size();
+
         // Perform feedforward for each time step
-        for (size_t t = 0; t < inputSequence.size(); ++t) {
+        for (size_t t = 0; t < step; ++t) {
             // Perform feedforward for each hidden layer
             for (size_t layer = 1; layer <= numHiddenLayers; ++layer) {
                 // Perform feedforward for each neuron in the hidden layer
