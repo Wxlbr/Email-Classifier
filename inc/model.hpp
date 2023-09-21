@@ -37,6 +37,10 @@ public:
         return rand() / double(RAND_MAX);
     }
 
+    bool getIsRecurrent() {
+        return isRecurrent;
+    }
+
     void setOutputValue(double val) {
         outputValue = val;
     }
@@ -47,6 +51,10 @@ public:
 
     std::vector<Weight>& getOutputWeights() {
         return outputWeights;
+    }
+
+    std::vector<Weight>& getRecurrentConnections() {
+        return recurrentConnections;
     }
 
     double activationFunction(double x) {
@@ -61,37 +69,6 @@ public:
         double oldDeltaWeight = neuron.outputWeights[neuronIndex].deltaWeight;
         double newDeltaWeight = learningRate * neuron.getOutputValue() * gradient + momentum * oldDeltaWeight;
         return newDeltaWeight;
-    }
-
-    void feedForward(std::vector<Neuron> prevRecurrentLayer, std::vector<Neuron> prevLayer) {
-        double delta = 0.0;
-
-        for (size_t i = 0; i < prevRecurrentLayer.size(); ++i) {
-            delta += prevRecurrentLayer[i].getOutputValue() * recurrentConnections[i].weight;
-        }
-
-        for (size_t i = 0; i < prevLayer.size(); ++i) {
-            delta += prevLayer[i].getOutputValue() * outputWeights[i].weight;
-        }
-
-        outputValue = activationFunction(delta);
-    }
-
-    void updateWeights(std::vector<Neuron>& prevLayer) {
-        for (size_t i = 0; i < prevLayer.size(); ++i) {
-            Neuron& neuron = prevLayer[i];
-
-            double delta = calculateDelta(neuron);
-
-            if (isRecurrent) {
-                recurrentConnections[neuronIndex].deltaWeight = delta;
-                recurrentConnections[neuronIndex].weight += delta;
-            }
-            else {
-                neuron.outputWeights[neuronIndex].deltaWeight = delta;
-                neuron.outputWeights[neuronIndex].weight += delta;
-            }
-        }
     }
 
     void calculateRecurrentGradients(std::vector<double> previousHiddenLayerOutputs) {
@@ -150,14 +127,37 @@ public:
     void updateWeights(Layer& prevLayer) {
         std::vector<Neuron>& prevNeurons = prevLayer.getVector();
         for (size_t i = 0; i < neurons.size(); ++i) {
-            neurons[i].updateWeights(prevNeurons);
+
+            for (size_t j = 0; j < prevNeurons.size(); ++j) {
+                double delta = neurons[i].calculateDelta(prevNeurons[j]);
+
+                if (neurons[i].getIsRecurrent()) {
+                    prevNeurons[j].getRecurrentConnections()[i].deltaWeight = delta;
+                    prevNeurons[j].getRecurrentConnections()[i].weight += delta;
+                }
+                else {
+                    prevNeurons[j].getOutputWeights()[i].deltaWeight = delta;
+                    prevNeurons[j].getOutputWeights()[i].weight += delta;
+                }
+            }
         }
     }
 
     void feedForward(Layer& prevLayer) {
         std::vector<Neuron>& prevNeurons = prevLayer.getVector();
         for (size_t i = 0; i < neurons.size(); ++i) {
-            neurons[i].feedForward(neurons, prevNeurons);
+            // neurons[i].feedForward(neurons, prevNeurons);
+            double delta = 0.0;
+
+            for (size_t j = 0; j < neurons.size(); ++j) {
+                delta += neurons[j].getOutputValue() * neurons[i].getRecurrentConnections()[j].weight;
+            }
+
+            for (size_t j = 0; j < prevNeurons.size(); ++j) {
+                delta += prevNeurons[j].getOutputValue() * neurons[i].getOutputWeights()[j].weight;
+            }
+
+            neurons[i].setOutputValue(neurons[i].activationFunction(delta));
         }
     }
 };
