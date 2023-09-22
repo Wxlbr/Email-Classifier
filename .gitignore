@@ -2,7 +2,7 @@
 obj/
 build/
 
-# .vscode/
+.vscode/
 
 # Ignore test files
 main.py
