@@ -38,7 +38,7 @@ int main() {
             const std::vector<double>& inputValues = train_input_data[i];
             const std::vector<double>& targetValues = { static_cast<double>(train_target_data[i]) };
 
-            myNetwork.feedForward(inputValues, train_input_data);
+            myNetwork.feedForward(inputValues); // train_input_data
             myNetwork.backPropagation(train_input_data, train_target_data);
 
             std::cout << "Pass: " << i + 1 << "/" << inputSize << std::endl;
@@ -62,7 +62,7 @@ int main() {
 
         int targetValue = test_target_data[i];
 
-        myNetwork.feedForward(inputValues, test_input_data);
+        myNetwork.feedForward(inputValues); // test_input_data
         resultValues.push_back(myNetwork.getResults()[0]);
     }
 

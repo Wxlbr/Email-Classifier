@@ -12,8 +12,6 @@ private:
     Weight biasWeight;
     Weight recurrentWeight;
 
-    bool isRecurrent;
-
     double learningRate = 0.1;
     double momentum = 0.5;
 
@@ -21,9 +19,7 @@ private:
     double gradient;
 
 public:
-    Neuron(size_t numOutputs, bool recurrent = false) {
-        isRecurrent = recurrent;
-
+    Neuron(size_t numOutputs) {
         biasWeight.weight = randomWeight();
         biasWeight.deltaWeight = 0.0;
     }
@@ -32,10 +28,6 @@ public:
         double out = rand() / double(RAND_MAX);
         // std::cout << "Random weight: " << out << std::endl;
         return out;
-    }
-
-    bool getIsRecurrent() {
-        return isRecurrent;
     }
 
     void setOutputValue(double val) {
@@ -89,11 +81,12 @@ public:
 class Layer {
 private:
     std::vector<Neuron> neurons;
+    bool recurrentLayer;
 
 public:
-    Layer(size_t numNeurons, size_t numOutputsPerNeuron, bool recurrent = false) {
+    Layer(size_t numNeurons, size_t numOutputsPerNeuron, bool recurrent = false) : recurrentLayer(recurrent) {
         for (size_t i = 0; i < numNeurons; ++i) {
-            neurons.emplace_back(numOutputsPerNeuron, recurrent);
+            neurons.emplace_back(numOutputsPerNeuron);
         }
     }
 
@@ -122,7 +115,7 @@ public:
         for (size_t i = 0; i < neurons.size(); ++i) {
             double delta = neurons[i].calculateDelta(prevNeurons[i]);
 
-            if (neurons[i].getIsRecurrent()) {
+            if (recurrentLayer) {
                 prevNeurons[i].getRecurrentWeights().deltaWeight = delta;
                 prevNeurons[i].getRecurrentWeights().weight += delta;
             }
@@ -209,13 +202,14 @@ public:
 
         // Loop through each time step
         for (size_t t = 0; t < inputSize; ++t) {
+            double targetValue = targetSequence[t];
+
             // Perform feedforward pass for each time step
-            feedForward(inputSequence[t], inputSequence);
+            feedForward(inputSequence[t]);
 
             // Calculate output layer gradients and deltas
             Layer& outputLayer = layers.back();
             for (size_t i = 0; i < numOutputs; ++i) {
-                double targetValue = targetSequence[t];
                 outputLayer[i].calculateOutputGradients(targetValue);
             }
 
@@ -232,14 +226,12 @@ public:
         }
 
         // Update recurrent layer weights
-        for (size_t t = 0; t < inputSize; ++t) {
-            for (int layer = numHiddenLayers; layer >= 1; --layer) {
-                layers[layer].updateWeights(layers[layer - 1]);
-            }
+        for (int layer = numHiddenLayers; layer >= 1; --layer) {
+            layers[layer].updateWeights(layers[layer - 1]);
         }
     }
 
-    void feedForward(const std::vector<double>& inputValues, const std::vector<std::vector<double>>& inputSequence) {
+    void feedForward(const std::vector<double>& inputValues) {
         Layer& inputLayer = layers[0];
         Layer& outputLayer = layers.back();
 
