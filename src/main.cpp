@@ -11,7 +11,7 @@ int main() {
     std::vector<int> target_data;
     std::vector<std::string> header;
     // ./inc/emailsHotEncoding.csv ./inc/emails.csv
-    loadData("./inc/emailsHotEncoding.csv", input_data, target_data, header, "Prediction", 250, 10);
+    loadData("./inc/emailsHotEncoding.csv", input_data, target_data, header, "Prediction", 250, 10); // 250, 10
 
     // Train test split, 80% train, 20% test
     std::vector<std::vector<double>> train_input_data;
@@ -36,7 +36,7 @@ int main() {
         for (int i = 0; i < train_input_data.size(); ++i) {
 
             const std::vector<double>& inputValues = train_input_data[i];
-            const std::vector<double>& targetValues = { static_cast<double>(train_target_data[i]) };
+            // const std::vector<double>& targetValues = { static_cast<double>(train_target_data[i]) };
 
             myNetwork.feedForward(inputValues); // train_input_data
             myNetwork.backPropagation(train_input_data, train_target_data);

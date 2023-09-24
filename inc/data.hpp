@@ -45,11 +45,18 @@ void loadData(std::string filename, std::vector<std::vector<double>>& data, std:
             index++;
         }
 
-        row.resize(maxColumns); // Shrink row to first x elements
+        row.resize(maxColumns);
         data.push_back(row);
+        // if (maxColumns < row.size() && maxColumns != -1) {
+        //     row.resize(maxColumns); // Shrink row to first x elements
+        // }
     }
 
-    data.resize(maxRows); // Shrink data to first x rows
+    data.resize(maxRows);
+    // if (maxRows < data.size() && maxRows != -1) {
+    //     data.resize(maxRows); // Shrink data to first x rows
+    //     labels.resize(maxRows);
+    // }
 }
 
 void trainTestSplit(std::vector<std::vector<double>>& input_data, std::vector<int>& target_data,
