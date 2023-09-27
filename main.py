@@ -48,10 +48,14 @@ test_labels = np.array(test_labels)
 
 total_text = np.concatenate((train_text, test_text), axis=0)
 
+print(train_text.shape, test_text.shape)
+
 # Pad sequences to make them of equal length
 max_sequence_length = max(len(seq) for seq in total_text)
-train_text = tf.keras.preprocessing.sequence.pad_sequences(train_text, maxlen=max_sequence_length)
-test_text = tf.keras.preprocessing.sequence.pad_sequences(test_text, maxlen=max_sequence_length)
+train_text = tf.keras.preprocessing.sequence.pad_sequences(train_text) #, maxlen=max_sequence_length)
+test_text = tf.keras.preprocessing.sequence.pad_sequences(test_text) # , maxlen=max_sequence_length)
+
+print(train_text.shape, test_text.shape)
 
 # Create an LSTM model
 model = tf.keras.Sequential([

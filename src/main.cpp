@@ -6,175 +6,116 @@
 
 class LSTMCell {
 private:
-    std::vector<double> input_gate_weights;
-    double input_gate_bias;
-    std::vector<double> forget_gate_weights;
-    double forget_gate_bias;
-    std::vector<double> output_gate_weights;
-    double output_gate_bias;
-    std::vector<double> cell_state_weights;
-    double cell_state_bias;
+    int inputSize;
+    int hiddenSize;
+    int outputSize;
 
-    std::vector<double> cell_state;
-    std::vector<double> hidden_state;
+    // Wi, Wf, Wc, Wo
+    std::vector<std::vector<double>> inputWeights;
+    std::vector<std::vector<double>> forgetWeights;
+    std::vector<std::vector<double>> candidateWeights;
+    std::vector<std::vector<double>> outputWeights;
 
-    std::vector<double> input;
-    std::vector<double> predicted_output;
+    // Ui, Uf, Uc, Uo
+    std::vector<std::vector<double>> inputRecurrentWeights;
+    std::vector<std::vector<double>> forgetRecurrentWeights;
+    std::vector<std::vector<double>> candidateRecurrentWeights;
+    std::vector<std::vector<double>> outputRecurrentWeights;
 
-    std::vector<double> output_gate;
+    // bi, bf, bc, bo
+    std::vector<double> inputBiases;
+    std::vector<double> forgetBiases;
+    std::vector<double> candidateBiases;
+    std::vector<double> outputBiases;
 
-    double learning_rate = 0.01;
+    std::vector<double> inputs;
+    std::vector<double> outputs;
+    std::vector<double> states;
+
 
 public:
-    LSTMCell(int input_size) {
-        // Initialize weights and biases
-        input_gate_weights.resize(input_size);
-        forget_gate_weights.resize(input_size);
-        output_gate_weights.resize(input_size);
-        cell_state_weights.resize(input_size);
+    LSTMCell(int inputSize, int hiddenSize, int outputSize) : inputSize(inputSize), hiddenSize(hiddenSize), outputSize(outputSize) {
+        // Initialize weights
+        inputWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        forgetWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        candidateWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        outputWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
 
-        for (int i = 0; i < input_size; ++i) {
-            input_gate_weights[i] = 0.5;
-            forget_gate_weights[i] = 0.6;
-            output_gate_weights[i] = 0.7;
-            cell_state_weights[i] = 0.8;
-        }
+        // Initialize recurrent weights
+        inputRecurrentWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        forgetRecurrentWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        candidateRecurrentWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
+        outputRecurrentWeights = std::vector<std::vector<double>>(4, std::vector<double>(hiddenSize, 0));
 
-        input_gate_bias = 0.1;
-        forget_gate_bias = 0.2;
-        output_gate_bias = 0.3;
-        cell_state_bias = 0.4;
+        // Initialize biases
+        inputBiases = std::vector<double>(hiddenSize, 0);
+        forgetBiases = std::vector<double>(hiddenSize, 0);
+        candidateBiases = std::vector<double>(hiddenSize, 0);
+        outputBiases = std::vector<double>(hiddenSize, 0);
 
-        // Initialize cell state and hidden state
-        cell_state.resize(input_size, 0.0);
-        hidden_state.resize(input_size, 0.0);
-        input.resize(input_size, 0.0);
-        predicted_output.resize(input_size, 0.0);
+        // Initialize inputs, outputs, and states
+        inputs = std::vector<double>(inputSize, 0);
+        outputs = std::vector<double>(outputSize, 0);
+        states = std::vector<double>(hiddenSize, 0);
     }
 
-    void forward(const std::vector<double>& input_values) {
-        if (input_values.size() != input_gate_weights.size()) {
-            std::cerr << "Input size does not match weight size." << std::endl;
-            return;
-        }
-
-        input = input_values;
-
-        // Input gate
-        std::vector<double> input_gate(input_values.size());
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            input_gate[i] = sigmoid(input_gate_weights[i] * input[i] + input_gate_bias);
-        }
-
-        // Forget gate
-        std::vector<double> forget_gate(input_values.size());
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            forget_gate[i] = sigmoid(forget_gate_weights[i] * input[i] + forget_gate_bias);
-        }
-
-        // Update cell state
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            cell_state[i] = cell_state[i] * forget_gate[i] + input_gate[i] * tanh(cell_state_weights[i] * input[i] + cell_state_bias);
-        }
-
-        // Output gate
-        output_gate.resize(input_values.size()); // Initialize the output_gate vector
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            output_gate[i] = sigmoid(output_gate_weights[i] * input[i] + output_gate_bias);
-        }
-
-
-        // Update hidden state
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            hidden_state[i] = output_gate[i] * tanh(cell_state[i]);
-        }
-
-        // Predicted output (for simplicity, it's the same as the hidden state)
-        predicted_output = hidden_state;
+    void setInitialStates(std::vector<double> states) {
+        // Populate with zeros of size hiddenSize
+        this->states = std::vector<double>(hiddenSize, 0);
     }
 
-    std::vector<double> getHiddenState() const {
-        return hidden_state;
-    }
-
-    std::vector<double> getPredictedOutput() const {
-        return predicted_output;
-    }
-
-    std::vector<double> getInput() const {
-        return input;
-    }
-
-    void backward(const std::vector<double>& delta_cell_state, const std::vector<double>& delta_hidden_state) {
-        if (delta_cell_state.size() != delta_hidden_state.size() || delta_cell_state.size() != input.size()) {
-            std::cerr << "Delta sizes do not match input size." << std::endl;
-            return;
-        }
-
-        // Backpropagate through time (BPTT)
-
-        // Input gate, forget gate, and output gate gradients
-        std::vector<double> delta_input_gate(input.size());
-        std::vector<double> delta_forget_gate(input.size());
-        std::vector<double> delta_output_gate(input.size());
-
-        for (size_t i = 0; i < input.size(); ++i) {
-            // Input gate
-            delta_input_gate[i] = delta_cell_state[i] * tanh(cell_state_weights[i] * input[i] + cell_state_bias) * sigmoid_derivative(input_gate_weights[i] * input[i] + input_gate_bias);
-
-            // Forget gate
-            delta_forget_gate[i] = delta_cell_state[i] * cell_state[i] * sigmoid_derivative(forget_gate_weights[i] * input[i] + forget_gate_bias);
-
-            // Output gate
-            delta_output_gate[i] = delta_hidden_state[i] * tanh(cell_state[i]) * sigmoid_derivative(output_gate_weights[i] * input[i] + output_gate_bias);
-        }
-
-        // Gradient for cell state
-        std::vector<double> delta_cell_state_total(input.size());
-        for (size_t i = 0; i < input.size(); ++i) {
-            delta_cell_state_total[i] = delta_cell_state[i] + delta_hidden_state[i] * output_gate[i] * (1 - tanh(cell_state[i]) * tanh(cell_state[i]));
-        }
-
-        // Gradient for input
-        std::vector<double> delta_input(input.size());
-        for (size_t i = 0; i < input.size(); ++i) {
-            delta_input[i] = (delta_input_gate[i] + delta_forget_gate[i]) * input_gate_weights[i];
-        }
-
-        // Update weights and biases
-        for (size_t i = 0; i < input.size(); ++i) {
-            input_gate_weights[i] -= learning_rate * delta_input_gate[i] * input[i];
-            forget_gate_weights[i] -= learning_rate * delta_forget_gate[i] * input[i];
-            output_gate_weights[i] -= learning_rate * delta_output_gate[i] * input[i];
-            cell_state_weights[i] -= learning_rate * delta_cell_state_total[i] * input[i];
-        }
-
-        // Update biases
-        input_gate_bias -= learning_rate * sum(delta_input_gate);
-        forget_gate_bias -= learning_rate * sum(delta_forget_gate);
-        output_gate_bias -= learning_rate * sum(delta_output_gate);
-        cell_state_bias -= learning_rate * sum(delta_cell_state_total);
-    }
-
-private:
     double sigmoid(double x) {
-        return 1.0 / (1.0 + exp(-x));
+        return 1 / (1 + exp(-x));
     }
 
     double tanh(double x) {
-        return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
+        return tanh(x);
     }
 
-    double sigmoid_derivative(double x) {
-        return x * (1.0 - x);
-    }
+    void forward(std::vector<double> inputs) {
+        this->inputs = inputs;
 
-    double sum(const std::vector<double>& values) {
-        double sum = 0.0;
-        for (double value : values) {
-            sum += value;
+        // Forget gate
+        std::vector<double> forgetGate(hiddenSize, 0);
+        for (int i = 0; i < hiddenSize; i++) {
+            forgetGate[i] = sigmoid(inputRecurrentWeights[1][i] * states[i] + forgetRecurrentWeights[1][i] * inputs[i] + forgetBiases[i]);
         }
-        return sum;
+
+        // Input gate
+        std::vector<double> inputGate(hiddenSize, 0);
+        for (int i = 0; i < hiddenSize; i++) {
+            inputGate[i] = sigmoid(inputRecurrentWeights[0][i] * states[i] + inputRecurrentWeights[0][i] * inputs[i] + inputBiases[i]);
+        }
+
+        // Candidate state
+        std::vector<double> candidateState(hiddenSize, 0);
+        for (int i = 0; i < hiddenSize; i++) {
+            candidateState[i] = tanh(inputRecurrentWeights[2][i] * states[i] + candidateRecurrentWeights[2][i] * inputs[i] + candidateBiases[i]);
+        }
+
+        // Update state
+        for (int i = 0; i < hiddenSize; i++) {
+            states[i] = forgetGate[i] * states[i] + inputGate[i] * candidateState[i];
+        }
+
+        // Output gate
+        std::vector<double> outputGate(hiddenSize, 0);
+        for (int i = 0; i < hiddenSize; i++) {
+            outputGate[i] = sigmoid(inputRecurrentWeights[3][i] * states[i] + outputRecurrentWeights[3][i] * inputs[i] + outputBiases[i]);
+        }
+
+        // Update output
+        for (int i = 0; i < hiddenSize; i++) {
+            outputs[i] = outputGate[i] * tanh(states[i]);
+        }
+    }
+
+    std::vector<double> getOutputs() {
+        return outputs;
+    }
+
+    std::vector<double> getStates() {
+        return states;
     }
 };
 
@@ -183,110 +124,93 @@ private:
     std::vector<LSTMCell> cells;
 
 public:
-    LSTMNetwork(int num_cells, int input_size) {
-        cells.resize(num_cells, LSTMCell(input_size));
+    LSTMNetwork(int inputSize, int hiddenSize, int outputSize) {
+        // Initialize LSTM cells
+        LSTMCell cell(inputSize, hiddenSize, outputSize);
+        cells.push_back(cell);
     }
 
-    void train(const std::vector<std::vector<double>>& input_sequence, const std::vector<int>& target_sequence) {
-        if (input_sequence.size() != target_sequence.size()) {
-            std::cerr << "Input and target sequences must have the same length." << std::endl;
-            return;
-        }
+    void forward(std::vector<double> inputs) {
+        std::cout << "Forward pass" << std::endl;
+        // Forward pass through each cell
+        std::vector<double> currentInput = inputs;
 
-        // Initialize delta_cell_state and delta_hidden_state for each cell
-        std::vector<std::vector<double>> delta_cell_state(cells.size());
-        std::vector<std::vector<double>> delta_hidden_state(cells.size());
-
-        for (size_t t = 0; t < input_sequence.size(); ++t) {
-            // Initialize delta_cell_state and delta_hidden_state for this time step
-            for (size_t i = 0; i < cells.size(); ++i) {
-                delta_cell_state[i].resize(cells[i].getInput().size(), 0.0);
-                delta_hidden_state[i].resize(cells[i].getInput().size(), 0.0);
-            }
-
-            // Forward pass
-            for (size_t i = 0; i < cells.size(); ++i) {
-                cells[i].forward(input_sequence[t]);
-            }
-
-            // Calculate the error at the output layer (for classification)
-            std::vector<std::vector<double>> output_error(cells.size());
-            for (size_t i = 0; i < cells.size(); ++i) {
-                for (size_t j = 0; j < cells[i].getPredictedOutput().size(); ++j) {
-                    double target = (j == target_sequence[t]) ? 1.0 : 0.0; // One-hot encoding
-                    output_error[i].push_back(cells[i].getPredictedOutput()[j] - target);
-                }
-            }
-
-            // Backpropagate the error through the LSTM cells
-            for (size_t i = 0; i < cells.size(); ++i) {
-                delta_hidden_state[i] = output_error[i];
-                cells[i].backward(delta_cell_state[i], delta_hidden_state[i]);
-            }
+        // Iterate through the LSTM cells and perform forward pass
+        for (auto& cell : cells) {
+            cell.forward(currentInput);
+            currentInput = cell.getOutputs(); // Update input for the next cell
         }
     }
 
+    void eval(std::vector<double> inputs, int target) {
+        std::cout << "Evaluating" << std::endl;
 
-    std::vector<std::vector<double>> predict(const std::vector<std::vector<double>>& input_sequence) {
-        std::vector<std::vector<double>> predictions;
+        forward(inputs);
 
-        for (const std::vector<double>& input_values : input_sequence) {
-            std::vector<double> prediction(cells.size());
-            for (size_t i = 0; i < cells.size(); ++i) {
-                cells[i].forward(input_values);
-                prediction[i] = cells[i].getPredictedOutput()[0]; // TODO: [0]
+        std::cout << "Forward pass complete" << std::endl;
+
+        std::cout << cells.size() << std::endl;
+
+        LSTMCell lastCell = cells[cells.size() - 1];
+
+        std::cout << "Got last cell" << std::endl;
+
+        // Get outputs from last cell
+        std::vector<double> outputs = lastCell.getOutputs();
+
+        std::cout << "Got outputs" << std::endl;
+
+        // Get max value from outputs
+        double max = outputs[0];
+        int maxIndex = 0;
+        for (int i = 1; i < outputs.size(); i++) {
+            if (outputs[i] > max) {
+                max = outputs[i];
+                maxIndex = i;
             }
-            predictions.push_back(prediction);
         }
 
-        return predictions;
+        // Print prediction
+        std::cout << "Prediction: " << maxIndex << " Target: " << target << std::endl;
     }
+
+
 };
 
 int main() {
-    // Create an LSTM network with 3 cells, each with an input size of 100
-    int num_cells = 3;
-
-    int input_sequence_size = 1000;
-    int input_length = 100;
-
-    LSTMNetwork lstm(num_cells, input_length);
-
     // Load data from emails.csv
-    std::vector<std::vector<double>> input_sequence;
-    std::vector<int> target_sequence;
+    std::vector<std::vector<double>> input_data;
+    std::vector<int> target_data;
     std::vector<std::string> header;
+    // ./inc/emailsHotEncoding.csv ./inc/emails.csv
+    loadData("./inc/emailsHotEncoding.csv", input_data, target_data, header, "Prediction", 250, 10); // 250, 10
 
-    loadData("./inc/emailsHotEncoding.csv", input_sequence, target_sequence, header, "Prediction", input_sequence_size, input_length);
+    // Train test split, 80% train, 20% test
+    std::vector<std::vector<double>> train_input_data;
+    std::vector<int> train_target_data;
+    std::vector<std::vector<double>> test_input_data;
+    std::vector<int> test_target_data;
+    trainTestSplit(input_data, target_data, train_input_data, train_target_data, test_input_data, test_target_data);
 
-    // train test split
-    std::vector<std::vector<double>> input_sequence_train;
-    std::vector<int> target_sequence_train;
-    std::vector<std::vector<double>> input_sequence_test;
-    std::vector<int> target_sequence_test;
+    int inputSize = train_input_data[0].size();
+    int hiddenSize = inputSize;
+    int outputSize = 1;
 
-    trainTestSplit(input_sequence, target_sequence, input_sequence_train, target_sequence_train, input_sequence_test, target_sequence_test);
+    // Initialize LSTM network
+    LSTMNetwork network(inputSize, hiddenSize, outputSize);
 
-    // Train the LSTM network
-    lstm.train(input_sequence_train, target_sequence_train);
-
-    // Make predictions
-    std::vector<std::vector<double>> predictions = lstm.predict(input_sequence_test);
-
-    int correct = 0;
-
-    // Print predictions
-    std::cout << "Predictions:" << std::endl;
-    for (int i = 0; i < predictions.size(); i++) {
-        double pred = predictions[i][0];
-        int pred_class = (pred > 0.5) ? 1 : 0;
-        std::cout << "Prediction: " << pred << " Class: " << pred_class << " Target: " << target_sequence_test[i] << std::endl;
-        if (pred_class == target_sequence_test[i]) {
-            correct++;
-        }
+    // Train LSTM network
+    for (int i = 0; i < train_input_data.size(); i++) {
+        network.forward(train_input_data[i]);
     }
 
-    std::cout << "Accuracy: " << (double) correct / predictions.size() << std::endl;
+    std::cout << "Training complete" << std::endl;
+
+    for (int i = 0; i < test_input_data.size(); i++) {
+        network.eval(test_input_data[i], test_target_data[i]);
+    }
+
+    std::cout << "Testing complete" << std::endl;
 
     return 0;
 }
