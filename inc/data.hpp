@@ -59,6 +59,62 @@ void loadData(std::string filename, std::vector<std::vector<double>>& data, std:
     // }
 }
 
+void loadTextData(std::string filename, std::vector<std::vector<std::string>>& data, std::vector<int>& labels, std::vector<std::string>& header, std::string flagHeader) {
+    // flagHeader = "label_num"
+
+    // Temp Variables
+    std::vector<int> ignoreIndices = {0, 1};
+
+    // Load data from emails.csv
+    std::ifstream file(filename);
+    std::string line;
+    std::getline(file, line);
+    std::stringstream ss(line);
+    std::string cell;
+    int flagIndex = -1;
+    int index = 0;
+
+    while (getline(ss, cell, ',')) {
+        if (std::find(ignoreIndices.begin(), ignoreIndices.end(), index) != ignoreIndices.end()) {
+            index++;
+            continue;
+        }
+        if (cell == flagHeader) {
+            flagIndex = index;
+        }
+        else {
+            header.push_back(cell);
+        }
+        index++;
+    }
+
+    if (flagIndex == -1) {
+        std::cerr << "Flag header not found: " << flagHeader << std::endl;
+        return;
+    }
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string cell;
+        std::vector<std::string> row;
+        int index = 0;
+
+        while (getline(ss, cell, ',')) {
+            if (std::find(ignoreIndices.begin(), ignoreIndices.end(), index) != ignoreIndices.end()) {
+                index++;
+                continue;
+            }
+            if (index == flagIndex) {
+                labels.push_back(stoi(cell));
+            }
+            else {
+                row.push_back(cell);
+            }
+            index++;
+        }
+    }
+}
+
 void trainTestSplit(std::vector<std::vector<double>>& input_data, std::vector<int>& target_data,
         std::vector<std::vector<double>>& train_input_data, std::vector<int>& train_target_data,
         std::vector<std::vector<double>>& test_input_data, std::vector<int>& test_target_data) {
