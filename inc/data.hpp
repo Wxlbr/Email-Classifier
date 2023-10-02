@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 void loadData(std::string filename, std::vector<std::vector<double>>& data, std::vector<int>& labels, std::vector<std::string>& header, std::string flagHeader, int maxRows, int maxColumns) {
 
