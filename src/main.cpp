@@ -172,6 +172,21 @@ public:
         updateHiddenState();
     }
 
+    void backward(const std::vector<double>& dNextHiddenState, const std::vector<double>& dNextCellState) {
+        // Backward pass through LSTM cell
+
+        // Compute gradient loss
+
+        // Compute gradients
+
+        // Accumulate gradients
+
+        // Compute gradient loss with respect to input and hidden state
+
+        // Update weights and biases with gradient descent
+        //      using learning rate as a multiplier
+    }
+
     // Get output
     std::vector<double> getOutput() {
         return h;
@@ -197,10 +212,35 @@ public:
         cells.push_back(cell);
     }
 
-    void forward(const std::vector<double>& inputs) {
+    void forward(std::vector<double>& inputs) {
         // Forward pass through LSTM cells
         for (int i = 0; i < cells.size(); i++) {
             cells[i].forward(inputs);
+        }
+    }
+
+    void BPTT(std::vector<std::vector<double>>& inputs, std::vector<int> targets) {
+        // Backward pass through time
+
+        // TEMP
+        // Loop over inputs
+        std::vector<double> input = inputs[0];
+
+        // Forward pass
+        forward(inputs);
+
+        // Compute loss
+        // Mean squared or entropy
+
+        // Backward pass
+        //    initialise initial gradients and cell states
+        //    for each LSTM cell to 0 in a vector
+        //    loop in reverse order through LSTM cells
+
+        for (int i = cells.size() - 1; i >= 0; i--) {
+            // Pass gradients and cell states to previous LSTM cell
+            LSTMCell cell = cells[i];
+            cell.backward( /* gradients and cell states */ );
         }
     }
 
