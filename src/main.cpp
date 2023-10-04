@@ -9,8 +9,11 @@ class LSTMCell {
 private:
     int inputSize;
     int hiddenSize;
+    double learningRate = 0.1; // TODO: Make this a parameter
 
-    // Initialize
+    // TODO: Add momentum
+
+    // initialise
     std::vector<double> x; // Input values
     std::vector<double> h; // Hidden state
     std::vector<double> c; // Cell state
@@ -18,32 +21,39 @@ private:
     std::vector<double> o; // Output gate
     std::vector<double> wo; // Output gate weights
     std::vector<double> bo; // Output gate bias
+    std::vector<double> dWo; // Gradient of output gate weights
+    std::vector<double> dBo; // Gradient of output gate bias
 
     std::vector<double> i; // Input gate
     std::vector<double> wi; // Input gate weights
     std::vector<double> bi; // Input gate bias
+    std::vector<double> dWi; // Gradient of input gate weights
+    std::vector<double> dBi; // Gradient of input gate bias
 
     std::vector<double> f; // Forget gate
     std::vector<double> wf; // Forget gate weights
     std::vector<double> bf; // Forget gate bias
+    std::vector<double> dWf; // Gradient of forget gate weights
+    std::vector<double> dBf; // Gradient of forget gate bias
 
     std::vector<double> cHat; // Candidate cell state
     std::vector<double> wc; // Candidate cell state weights
     std::vector<double> bc; // Candidate cell state bias
+    std::vector<double> dWc; // Gradient of candidate cell state weights
+    std::vector<double> dBc; // Gradient of candidate cell state bias
 
 public:
     LSTMCell(int inputSize, int hiddenSize) : inputSize(inputSize), hiddenSize(hiddenSize) {
-        // Initialize LSTM cell
-        initializeWeightsAndBiases();
-
-        // Initialize input values, hidden state, and cell state
+        // initialise LSTM cell
         x.resize(inputSize);
         h.resize(hiddenSize);
-        c.resize(hiddenSize);
+        c.resize(hiddenSize);  // TODO: Initialise cell states
+
+        initialiseWeightsAndBiases();
     }
 
-    void initializeWeightsAndBiases() {
-        // Initialize weights and biases using Xavier initialization
+    void initialiseWeightsAndBiases() {
+        // initialise weights and biases using Xavier initialization
 
         double mean = 0;
         double variance = 2.0 / (inputSize + hiddenSize);
@@ -127,6 +137,10 @@ public:
         }
     }
 
+    void updateCellState(std::vector<double> prevCellState) {
+        c = prevCellState;
+    }
+
     void outputGate() {
         // ot = sigmoid(Wo * [ht-1, xt] + bo)
 
@@ -172,24 +186,77 @@ public:
         updateHiddenState();
     }
 
-    void backward(const std::vector<double>& dNextHiddenState, const std::vector<double>& dNextCellState) {
-        // Backward pass through LSTM cell
+    void initialiseGradients() {
+        int totalSize = hiddenSize + inputSize;
 
-        // Compute gradient loss
+        dWo.resize(totalSize);
+        dBo.resize(1);
+        dWi.resize(totalSize);
+        dBi.resize(1);
+        dWf.resize(totalSize);
+        dBf.resize(1);
+        dWc.resize(totalSize);
+        dBc.resize(1);
 
-        // Compute gradients
+        for (int i = 0; i < totalSize; i++) {
+            dWo[i] = 0.0;
+            dWi[i] = 0.0;
+            dWf[i] = 0.0;
+            dWc[i] = 0.0;
+        }
 
-        // Accumulate gradients
+        dBo[0] = 0.0;
+        dBi[0] = 0.0;
+        dBf[0] = 0.0;
+        dBc[0] = 0.0;
+    }
 
-        // Compute gradient loss with respect to input and hidden state
+    void backward(std::vector<double>& dHNext, std::vector<double>& dCNext) {
+        int totalSize = hiddenSize + inputSize;
 
-        // Update weights and biases with gradient descent
-        //      using learning rate as a multiplier
+        for (int t = totalSize - 1; t >= 0; t--) {
+            double dO = dHNext[t] * tanh(c[t]);
+            double dOInput = dO * o[t] * (1.0 - o[t]);
+            dWo[t] += dOInput * x[t];
+            dBo[0] += dOInput;
+
+            double dC = dHNext[t] * o[t] * (1.0 - tanh(c[t]) * tanh(c[t])) + dCNext[t];
+
+            double dI = dC * cHat[t] * i[t] * (1.0 - i[t]);
+            dWi[t] += dI * x[t];
+            dBi[0] += dI;
+
+            double dF = dC * c[t - 1] * f[t] * (1.0 - f[t]);
+            dWf[t] += dF * x[t];
+            dBf[0] += dF;
+
+            double dCt = dC * i[t] * (1.0 - cHat[t] * cHat[t]);
+            dWc[t] += dCt * x[t];
+            dBc[0] += dCt;
+
+            double dXt = (dI * wi[t] + dF * wf[t] + dCt * wc[t] + dO * wo[t]);
+            dHNext[t] = dXt;
+
+            // Update weights and biases with gradient descent
+            wo[t] -= learningRate * dWo[t];
+            bo[0] -= learningRate * dBo[0];
+            wi[t] -= learningRate * dWi[t];
+            bi[0] -= learningRate * dBi[0];
+            wf[t] -= learningRate * dWf[t];
+            bf[0] -= learningRate * dBf[0];
+            wc[t] -= learningRate * dWc[t];
+            bc[0] -= learningRate * dBc[0];
+        }
     }
 
     // Get output
     std::vector<double> getOutput() {
         return h;
+    }
+
+    // Get cell state
+    std::vector<double> getCellState() {
+        return c;
     }
 
     std::vector<double> getSigmoidOutput() {
@@ -199,21 +266,36 @@ public:
         }
         return sigmoidOutput;
     }
+
+    // Getter for the gradient of the hidden state
+    std::vector<double> getGradientHiddenState() {
+        return h;
+    }
+
+    // Getter for the gradient of the cell state
+    std::vector<double> getGradientCellState() {
+        return c;
+    }
 };
 
 class LSTMNetwork {
 private:
     std::vector<LSTMCell> cells;
 
+    // Cell parameters
+    int inputSize;
+    int hiddenSize;
+    int outputSize;
+
 public:
-    LSTMNetwork(int inputSize, int hiddenSize, int outputSize) {
-        // Initialize LSTM cells
+    LSTMNetwork(int inputSize, int hiddenSize, int outputSize) : inputSize(inputSize), hiddenSize(hiddenSize), outputSize(outputSize) {
+        // initialise LSTM cells
         LSTMCell cell(inputSize, hiddenSize);
         cells.push_back(cell);
     }
 
+    // Update the forward call in the LSTMNetwork forward method.
     void forward(std::vector<double>& inputs) {
-        // Forward pass through LSTM cells
         for (int i = 0; i < cells.size(); i++) {
             cells[i].forward(inputs);
         }
@@ -222,39 +304,63 @@ public:
     void BPTT(std::vector<std::vector<double>>& inputs, std::vector<int> targets) {
         // Backward pass through time
 
-        // TEMP
-        // Loop over inputs
-        std::vector<double> input = inputs[0];
+        // Initialize gradients for weights and biases to zero
+        for (LSTMCell& cell : cells) {
+            cell.initialiseGradients();
+        }
 
-        // Forward pass
-        forward(inputs);
+        std::cout << "Initialised gradients" << std::endl;
 
-        // Compute loss
-        // Mean squared or entropy
+        // Loop over input sequences in reverse order
+        for (int seqIndex = inputs.size() - 1; seqIndex >= 0; seqIndex--) {
+            // Forward pass
+            forward(inputs[seqIndex]);
 
-        // Backward pass
-        //    initialise initial gradients and cell states
-        //    for each LSTM cell to 0 in a vector
-        //    loop in reverse order through LSTM cells
+            std::cout << "Forward pass " << inputs.size() - seqIndex << "/" << inputs.size() << " complete" << std::endl;
 
-        for (int i = cells.size() - 1; i >= 0; i--) {
-            // Pass gradients and cell states to previous LSTM cell
-            LSTMCell cell = cells[i];
-            cell.backward( /* gradients and cell states */ );
+            std::cout << "Output: " << cells.back().getOutput()[0] << std::endl;
+
+            // Compute loss for this time step
+            double loss = lossFunction(targets[seqIndex], cells.back().getOutput()[0]);
+
+            std::cout << "Loss: " << loss << std::endl;
+
+            // Backward pass through time for each LSTM cell
+            std::vector<double> dNextHiddenState(hiddenSize, 0.0);
+            std::vector<double> dNextCellState(hiddenSize, 0.0);
+
+            for (int i = cells.size() - 1; i >= 0; i--) {
+                LSTMCell& cell = cells[i];
+
+                // Compute gradients for this time step and accumulate them
+                cell.backward(dNextHiddenState, dNextCellState);
+
+                std::cout << "Backward pass " << i << "/" << cells.size() << " complete" << std::endl;
+
+                // Update the gradients for the next time step
+                dNextHiddenState = cell.getGradientHiddenState();
+                dNextCellState = cell.getGradientCellState();
+            }
         }
     }
 
-    double loss(int target, int prediction) {
+    double lossFunction(int target, int prediction) {
         // Calculate loss
         double loss = 0.5 * pow(target - prediction, 2);
         return loss;
     }
 
+    // double lossFunction(int target, double prediction) {
+    //     return -((target * log(prediction)) + ((1 - target) * log(1 - prediction)));
+    // }
+
+
     void eval(const std::vector<std::vector<double>>& inputs, std::vector<int> targets) {
         // Evaluate LSTM network
         std::vector<double> predictions;
         for (int i = 0; i < inputs.size(); i++) {
-            forward(inputs[i]);
+            std::vector<double> input = inputs[i];
+            forward(input);
             // std::vector<double> output = cells[0].getOutput();
             std::vector<double> output = cells.back().getOutput();
             predictions.push_back(output[0]);
@@ -262,7 +368,7 @@ public:
 
         double totalLoss = 0;
         for (int i = 0; i < predictions.size(); i++) {
-            double lossValue = loss(targets[i], predictions[i]);
+            double lossValue = lossFunction(targets[i], predictions[i]);
             totalLoss += lossValue;
         }
 
@@ -322,13 +428,17 @@ int main() {
     int hiddenSize = inputSize;
     int outputSize = hiddenSize;
 
-    // Initialize LSTM network
+    // initialise LSTM network
     LSTMNetwork network(inputSize, hiddenSize, outputSize);
 
     // Train LSTM network
-    for (int i = 0; i < train_input_data.size(); i++) {
-        network.forward(train_input_data[i]);
-        std::cout << "Forward pass " << i << "/" << train_input_data.size() << " complete" << std::endl;
+    // for (int i = 0; i < train_input_data.size(); i++) {
+    //     network.forward(train_input_data[i]);
+    //     std::cout << "Forward pass " << i << "/" << train_input_data.size() << " complete" << std::endl;
+    // }
+    for (int i = 0; i < 100; i++) {
+        network.BPTT(train_input_data, train_target_data);
+        std::cout << "Backpropagation through time " << i << "/100 complete" << std::endl;
     }
 
     std::cout << "Training complete" << std::endl;
