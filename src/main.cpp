@@ -276,17 +276,42 @@ float ByteModel::Predict() {
     for (int i = 0; i < 256; ++i) {
         probs_[i] = 0;
     }
+
+    std::cout << "Reset probs_" << std::endl;
+
     for (int i = 0; i < 256; ++i) {
         int index = top_ + mid_ + bot_ + i;
         lstm_->SetInput(0, static_cast<float>(index) / 256.0);
         probs_[i] = lstm_->Predict(0)[!vocab_.empty() ? 1 : 0]; // Changed
         total += probs_[i];
     }
+
+    std::cout << "Total: " << total << std::endl;
+
     if (total == 0) total = 1;
     for (int i = 0; i < 256; ++i) {
         probs_[i] /= total;
     }
-    return probs_[byte_map_[top_]];
+
+    std::cout << "Probs: " << std::endl;
+    for (int i = 0; i < probs_.size(); ++i) {
+        std::cout << probs_[i] << " ";
+    }
+    std::cout << std::endl;
+
+    int t = top_; // TODO: top_ value is out of index range
+
+    std::cout << "T: " << t << std::endl;
+
+    int index = byte_map_[t];
+
+    std::cout << "Index: " << index << std::endl;
+
+    float out = probs_[index];
+
+    std::cout << "Out: " << out << std::endl;
+
+    return out;
 }
 
 void ByteModel::Perceive(int bit) {
@@ -435,6 +460,15 @@ BytePredictor::BytePredictor(const std::vector<bool>& vocab) : vocab_(vocab),
 
 int BytePredictor::Predict() {
     model_.Predict();
+    std::cout << "Got Prediction" << std::endl;
+
+    std::valarray<float> p = model_.getProbs();
+
+    for (int i = 0; i < p.size(); ++i) {
+        std::cout << p[i] << " ";
+    }
+    std::cout << std::endl;
+
     if (model_.getProbs()[0] > 0.5) return 0;
     return 1;
 }
