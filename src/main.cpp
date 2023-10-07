@@ -1,484 +1,610 @@
 #include <iostream>
-#include <valarray>
 #include <vector>
-#include <memory>
-#include <numeric>
-#include <stdlib.h>
-#include <math.h>
+#include <random>
+#include <cmath>
+#include <string>
+#include <algorithm> // Added for std::min
 
 #include "data.hpp"
 
-class Sigmoid {
+class LSTMCell {
 private:
-    int logit_size_;
-    std::vector<float> logit_table_;
+    int inputSize;
+    int hiddenSize;
+    double learningRate = 0.01;
+    double clipValue = 1.0;
 
-    float SlowLogit(float p) {
-        return log(p / (1.0 - p));
-    }
+    // Initialize
+    std::vector<double> x; // Input values
+    std::vector<double> h; // Hidden state
+    std::vector<double> c; // Cell state
+
+    std::vector<double> o; // Output gate
+    std::vector<double> wo; // Output gate weights
+    std::vector<double> bo; // Output gate bias
+
+    std::vector<double> i; // Input gate
+    std::vector<double> wi; // Input gate weights
+    std::vector<double> bi; // Input gate bias
+
+    std::vector<double> f; // Forget gate
+    std::vector<double> wf; // Forget gate weights
+    std::vector<double> bf; // Forget gate bias
+
+    std::vector<double> cHat; // Candidate cell state
+    std::vector<double> wc; // Candidate cell state weights
+    std::vector<double> bc; // Candidate cell state bias
+
+    // Backpropagation through time
+    std::vector<double> dOutputGate; // Output gate derivative
+    std::vector<double> dWo; // Output gate weights derivative
+    std::vector<double> dBo; // Output gate bias derivative
+
+    std::vector<double> dInputGate; // Input gate derivative
+    std::vector<double> dWi; // Input gate weights derivative
+    std::vector<double> dBi; // Input gate bias derivative
+
+    std::vector<double> dForgetGate; // Forget gate derivative
+    std::vector<double> dWf; // Forget gate weights derivative
+    std::vector<double> dBf; // Forget gate bias derivative
+
+    std::vector<double> dcHat; // Cell state derivative
+    std::vector<double> dc; // Cell state derivative
+    std::vector<double> dWc; // Cell state weights derivative
+    std::vector<double> dBc; // Cell state bias derivative
+
+    std::vector<double> dHiddenState; // Hidden state derivative
+
+    std::vector<double> daPrev; // Previous hidden state derivative
+    std::vector<double> dcPrev; // Previous cell state derivative
+    std::vector<double> dxt; // Input derivative
 
 public:
-    Sigmoid(int logit_size) : logit_size_(logit_size) {
-        logit_table_.resize(logit_size_);
-        for (int i = 0; i < logit_size_; ++i) {
-            logit_table_[i] = SlowLogit(static_cast<float>(i) / logit_size_);
+    LSTMCell(int inputSize, int hiddenSize) : inputSize(inputSize), hiddenSize(hiddenSize) {
+        // Initialize LSTM cell
+        initializeWeightsAndBiases();
+
+        // Initialize input values, hidden state, and cell state
+        x.resize(inputSize);
+        h.resize(hiddenSize);
+        c.resize(hiddenSize);
+    }
+
+    void initializeWeightsAndBiases() {
+        // Initialize weights and biases using Xavier initialization
+
+        double mean = 0;
+        double variance = 2.0 / inputSize; // (inputSize + hiddenSize);
+        double standardDeviation = sqrt(variance);
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::normal_distribution<> dist(mean, standardDeviation);
+
+        wo.resize(hiddenSize);
+        bo.resize(1);
+        wi.resize(hiddenSize);
+        bi.resize(1);
+        wf.resize(hiddenSize);
+        bf.resize(1);
+        wc.resize(hiddenSize);
+        bc.resize(1);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            wo[i] = dist(gen);
+            wi[i] = dist(gen);
+            wf[i] = dist(gen);
+            wc[i] = dist(gen);
+        }
+
+        bo[0] = dist(gen);
+        bi[0] = dist(gen);
+        bf[0] = dist(gen);
+        bc[0] = dist(gen);
+    }
+
+    double tanh(double x) {
+        return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
+    }
+
+    double sigmoid(double x) {
+        return 1.0 / (1.0 + exp(-x));
+    }
+
+    void forgetGate() {
+        // ft = sigmoid(Wf * [ht-1, xt] + bf)
+
+        int totalSize = hiddenSize + inputSize;
+        f.resize(totalSize);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            f[i] = sigmoid(wf[i] * h[i] + wf[i + totalSize] * x[i] + bf[0]);
         }
     }
 
-    float Logit(float p) const {
-        return logit_table_[p * logit_size_];
-    }
+    void inputGate() {
+        // it = sigmoid(Wi * [ht-1, xt] + bi)
 
-    static float Logistic(float p) {
-        return 1.0 / (1.0 + exp(-p));
-    }
-};
+        int totalSize = hiddenSize + inputSize;
+        i.resize(totalSize);
 
-class LstmLayer {
-private:
-    std::valarray<float> state_, output_gate_error_, state_error_,
-        input_node_error_, input_gate_error_, forget_gate_error_, stored_error_;
-    std::valarray<std::valarray<float>> tanh_state_, output_gate_state_,
-        input_node_state_, input_gate_state_, forget_gate_state_, last_state_,
-        forget_gate_, input_node_, input_gate_, output_gate_, forget_gate_update_,
-        input_node_update_, input_gate_update_, output_gate_update_;
-    float learning_rate_, gradient_clip_;
-    unsigned int num_cells_, epoch_, horizon_, input_size_, output_size_;
-
-    void ClipGradients(std::valarray<float>* arr) {
-        for (unsigned int i = 0; i < arr->size(); ++i) {
-            if ((*arr)[i] < -gradient_clip_) (*arr)[i] = -gradient_clip_;
-            else if ((*arr)[i] > gradient_clip_) (*arr)[i] = gradient_clip_;
+        for (int j = 0; j < totalSize; j++) {
+            i[j] = sigmoid(wi[j] * h[j] + wi[j + totalSize] * x[j] + bi[0]);
         }
     }
 
-public:
-    LstmLayer(unsigned int input_size, unsigned int auxiliary_input_size,
-            unsigned int output_size, unsigned int num_cells, int horizon,
-            float learning_rate, float gradient_clip) : state_(num_cells),
-            output_gate_error_(num_cells), state_error_(num_cells),
-            input_node_error_(num_cells), input_gate_error_(num_cells),
-            forget_gate_error_(num_cells), stored_error_(num_cells),
-            tanh_state_(std::valarray<float>(num_cells), horizon),
-            output_gate_state_(std::valarray<float>(num_cells), horizon),
-            input_node_state_(std::valarray<float>(num_cells), horizon),
-            input_gate_state_(std::valarray<float>(num_cells), horizon),
-            forget_gate_state_(std::valarray<float>(num_cells), horizon),
-            last_state_(std::valarray<float>(num_cells), horizon),
-            forget_gate_(std::valarray<float>(input_size), num_cells),
-            input_node_(std::valarray<float>(input_size), num_cells),
-            input_gate_(std::valarray<float>(input_size), num_cells),
-            output_gate_(std::valarray<float>(input_size), num_cells),
-            forget_gate_update_(std::valarray<float>(input_size), num_cells),
-            input_node_update_(std::valarray<float>(input_size), num_cells),
-            input_gate_update_(std::valarray<float>(input_size), num_cells),
-            output_gate_update_(std::valarray<float>(input_size), num_cells),
-            learning_rate_(learning_rate), gradient_clip_(gradient_clip),
-            num_cells_(num_cells), epoch_(0), horizon_(horizon),
-            input_size_(auxiliary_input_size), output_size_(output_size) {
-        float low = -0.2;
-        float range = 0.4;
-        for (unsigned int i = 0; i < num_cells_; ++i) {
-            for (unsigned int j = 0; j < forget_gate_[i].size(); ++j) {
-            forget_gate_[i][j] = low + Rand() * range;
-            input_node_[i][j] = low + Rand() * range;
-            input_gate_[i][j] = low + Rand() * range;
-            output_gate_[i][j] = low + Rand() * range;
-            }
-            forget_gate_[i][forget_gate_[i].size() - 1] = 1;
+    void candidateCellState() {
+        // cHat = tanh(Wc * [ht-1, xt] + bc)
+
+        int totalSize = hiddenSize + inputSize;
+        cHat.resize(totalSize);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            cHat[i] = tanh(wc[i] * h[i] + wc[i + totalSize] * x[i] + bc[0]);
         }
     }
 
-    void ForwardPass(const std::valarray<float>& input, int input_symbol,
-            std::valarray<float>* hidden, int hidden_start) {
-        last_state_[epoch_] = state_;
-        for (unsigned int i = 0; i < num_cells_; ++i) {
-            forget_gate_state_[epoch_][i] = Sigmoid::Logistic(std::inner_product(
-                &input[0], &input[input.size()],
-                &forget_gate_[i][output_size_], forget_gate_[i][input_symbol]));
-            input_node_state_[epoch_][i] = tanh(std::inner_product(&input[0],
-                &input[input.size()], &input_node_[i][output_size_],
-                input_node_[i][input_symbol]));
-            input_gate_state_[epoch_][i] = Sigmoid::Logistic(std::inner_product(
-                &input[0], &input[input.size()],
-                &input_gate_[i][output_size_], input_gate_[i][input_symbol]));
-            output_gate_state_[epoch_][i] = Sigmoid::Logistic(std::inner_product(
-                &input[0], &input[input.size()],
-                &output_gate_[i][output_size_], output_gate_[i][input_symbol]));
-        }
-        state_ *= forget_gate_state_[epoch_];
-        state_ += input_node_state_[epoch_] * input_gate_state_[epoch_];
-        tanh_state_[epoch_] = tanh(state_);
-        std::slice slice = std::slice(hidden_start, num_cells_, 1);
-        (*hidden)[slice] = output_gate_state_[epoch_] * tanh_state_[epoch_];
-        ++epoch_;
-        if (epoch_ == horizon_) epoch_ = 0;
-    }
+    void updateCellState() {
+        // ct = ft * ct-1 + it * cHat
 
-    void BackwardPass(const std::valarray<float>&input, int epoch,
-            int layer, int input_symbol, std::valarray<float>* hidden_error) {
-        if (epoch == (int)horizon_ - 1) {
-            stored_error_ = *hidden_error;
-            state_error_ = 0;
-            for (unsigned int i = 0; i < num_cells_; ++i) {
-            forget_gate_update_[i] = 0;
-            input_node_update_[i] = 0;
-            input_gate_update_[i] = 0;
-            output_gate_update_[i] = 0;
-            }
-        } else {
-            stored_error_ += *hidden_error;
-        }
+        int totalSize = hiddenSize + inputSize;
+        c.resize(totalSize);
 
-        output_gate_error_ = tanh_state_[epoch] * stored_error_ *
-            output_gate_state_[epoch] * (1.0f - output_gate_state_[epoch]);
-        state_error_ += stored_error_ * output_gate_state_[epoch] * (1.0f -
-            (tanh_state_[epoch] * tanh_state_[epoch]));
-        input_node_error_ = state_error_ * input_gate_state_[epoch] * (1.0f -
-            (input_node_state_[epoch] * input_node_state_[epoch]));
-        input_gate_error_ = state_error_ * input_node_state_[epoch] *
-            input_gate_state_[epoch] * (1.0f - input_gate_state_[epoch]);
-        forget_gate_error_ = state_error_ * last_state_[epoch] *
-            forget_gate_state_[epoch] * (1.0f - forget_gate_state_[epoch]);
-
-        *hidden_error = 0;
-        if (layer > 0) {
-            int offset = output_size_ + num_cells_ + input_size_;
-            for (unsigned int i = 0; i < num_cells_; ++i) {
-            for (unsigned int j = offset; j < offset + num_cells_; ++j) {
-                (*hidden_error)[j-offset] += input_node_[i][j] * input_node_error_[i];
-                (*hidden_error)[j-offset] += input_gate_[i][j] * input_gate_error_[i];
-                (*hidden_error)[j-offset] += forget_gate_[i][j] * forget_gate_error_[i];
-                (*hidden_error)[j-offset] += output_gate_[i][j] * output_gate_error_[i];
-            }
-            }
-        }
-
-        if (epoch > 0) {
-            state_error_ *= forget_gate_state_[epoch];
-            stored_error_ = 0;
-            int offset = output_size_ + input_size_;
-            for (unsigned int i = 0; i < num_cells_; ++i) {
-            for (unsigned int j = offset; j < offset + num_cells_; ++j) {
-                stored_error_[j-offset] += input_node_[i][j] * input_node_error_[i];
-                stored_error_[j-offset] += input_gate_[i][j] * input_gate_error_[i];
-                stored_error_[j-offset] += forget_gate_[i][j] * forget_gate_error_[i];
-                stored_error_[j-offset] += output_gate_[i][j] * output_gate_error_[i];
-            }
-            }
-        }
-
-        ClipGradients(&state_error_);
-        ClipGradients(&stored_error_);
-        ClipGradients(hidden_error);
-
-        std::slice slice = std::slice(output_size_, input.size(), 1);
-        for (unsigned int i = 0; i < num_cells_; ++i) {
-            forget_gate_update_[i][slice] += (learning_rate_ * forget_gate_error_[i]) *
-                input;
-            input_node_update_[i][slice] += (learning_rate_ * input_node_error_[i]) *
-                input;
-            input_gate_update_[i][slice] += (learning_rate_ * input_gate_error_[i]) *
-                input;
-            output_gate_update_[i][slice] += (learning_rate_ * output_gate_error_[i]) *
-                input;
-            forget_gate_update_[i][input_symbol] += learning_rate_ *
-                forget_gate_error_[i];
-            input_node_update_[i][input_symbol] += learning_rate_ *
-                input_node_error_[i];
-            input_gate_update_[i][input_symbol] += learning_rate_ *
-                input_gate_error_[i];
-            output_gate_update_[i][input_symbol] += learning_rate_ *
-                output_gate_error_[i];
-        }
-        if (epoch == 0) {
-            for (unsigned int i = 0; i < num_cells_; ++i) {
-                forget_gate_[i] += forget_gate_update_[i];
-                input_node_[i] += input_node_update_[i];
-                input_gate_[i] += input_gate_update_[i];
-                output_gate_[i] += output_gate_update_[i];
-            }
+        for (int j = 0; j < totalSize; j++) {
+            c[j] = f[j] * c[j] + i[j] * cHat[j];
         }
     }
 
-    static inline float Rand() {
-        return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-    }
-};
+    void outputGate() {
+        // ot = sigmoid(Wo * [ht-1, xt] + bo)
 
-class Lstm {
-private:
-    std::vector<std::unique_ptr<LstmLayer>> layers_;
-    std::vector<unsigned int> input_history_;
-    std::valarray<float> hidden_, hidden_error_;
-    std::valarray<std::valarray<std::valarray<float>>> layer_input_,
-        output_layer_;
-    std::valarray<std::valarray<float>> output_;
-    float learning_rate_;
-    unsigned int num_cells_, epoch_, horizon_, input_size_, output_size_;
+        int totalSize = hiddenSize + inputSize;
+        o.resize(totalSize);
 
-public:
-    Lstm(unsigned int input_size, unsigned int output_size, unsigned int
-            num_cells, unsigned int num_layers, int horizon, float learning_rate,
-            float gradient_clip) : input_history_(horizon),
-            hidden_(num_cells * num_layers + 1), hidden_error_(num_cells),
-            layer_input_(std::valarray<std::valarray<float>>(std::valarray<float>
-            (input_size + 1 + num_cells * 2), num_layers), horizon),
-            output_layer_(std::valarray<std::valarray<float>>(std::valarray<float>
-            (num_cells * num_layers + 1), output_size), horizon),
-            output_(std::valarray<float>(1.0 / output_size, output_size), horizon),
-            learning_rate_(learning_rate), num_cells_(num_cells), epoch_(0),
-            horizon_(horizon), input_size_(input_size), output_size_(output_size) {
-        srand(69761);
-        hidden_[hidden_.size() - 1] = 1;
-        for (int epoch = 0; epoch < horizon; ++epoch) {
-            layer_input_[epoch][0].resize(1 + num_cells + input_size);
-            for (unsigned int i = 0; i < num_layers; ++i) {
-            layer_input_[epoch][i][layer_input_[epoch][i].size() - 1] = 1;
-            }
-        }
-        for (unsigned int i = 0; i < num_layers; ++i) {
-            layers_.push_back(std::unique_ptr<LstmLayer>(new LstmLayer(
-                layer_input_[0][i].size() + output_size, input_size_, output_size_,
-                num_cells, horizon, learning_rate, gradient_clip)));
+        for (int i = 0; i < hiddenSize; i++) {
+            o[i] = sigmoid(wo[i] * h[i] + wo[i + totalSize] * x[i] + bo[0]);
         }
     }
 
-    void SetInput(int index, float val) {
-        for (unsigned int i = 0; i < layers_.size(); ++i) {
-            layer_input_[epoch_][i][index] = val;
+    void updateHiddenState() {
+        // ht = ot * tanh(ct)
+
+        int totalSize = hiddenSize + inputSize;
+        h.resize(totalSize);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            h[i] = o[i] * tanh(c[i]);
         }
     }
 
-    std::valarray<float>& Perceive(unsigned int input) {
-        int last_epoch = epoch_ - 1;
-        if (last_epoch == -1) last_epoch = horizon_ - 1;
-        int old_input = input_history_[last_epoch];
-        input_history_[last_epoch] = input;
-        if (epoch_ == 0) {
-            for (int epoch = horizon_ - 1; epoch >= 0; --epoch) {
-            for (int layer = layers_.size() - 1; layer >= 0; --layer) {
-                int offset = layer * num_cells_;
-                for (unsigned int i = 0; i < output_size_; ++i) {
-                float error = 0;
-                if (i == input_history_[epoch]) error = (1 - output_[epoch][i]);
-                else error = -output_[epoch][i];
-                for (unsigned int j = 0; j < hidden_error_.size(); ++j) {
-                    hidden_error_[j] += output_layer_[epoch][i][j + offset] * error;
-                }
-                }
-                int prev_epoch = epoch - 1;
-                if (prev_epoch == -1) prev_epoch = horizon_ - 1;
-                int input_symbol = input_history_[prev_epoch];
-                if (epoch == 0) input_symbol = old_input;
-                layers_[layer]->BackwardPass(layer_input_[epoch][layer], epoch, layer,
-                    input_symbol, &hidden_error_);
-            }
-            }
-        }
+    void forward(const std::vector<double>& inputs) {
+        // Forward pass through LSTM cell
+        x = inputs;
 
-        output_layer_[epoch_] = output_layer_[last_epoch];
-        for (unsigned int i = 0; i < output_size_; ++i) {
-            float error = 0;
-            if (i == input) error = (1 - output_[last_epoch][i]);
-            else error = -output_[last_epoch][i];
-            output_layer_[epoch_][i] += learning_rate_ * error * hidden_;
-        }
-        return Predict(input);
+        // Forget gate
+        forgetGate();
+
+        // Input gate
+        inputGate();
+
+        // Candidate cell state
+        candidateCellState();
+
+        // Cell state
+        updateCellState();
+
+        // Output gate
+        outputGate();
+
+        // Hidden state
+        updateHiddenState();
     }
 
-    std::valarray<float>& Predict(unsigned int input) {
-        for (unsigned int i = 0; i < layers_.size(); ++i) {
-            auto start = begin(hidden_) + i * num_cells_;
-            std::copy(start, start + num_cells_, begin(layer_input_[epoch_][i]) +
-                input_size_);
-            layers_[i]->ForwardPass(layer_input_[epoch_][i], input, &hidden_, i *
-                num_cells_);
-            if (i < layers_.size() - 1) {
-            auto start2 = begin(layer_input_[epoch_][i + 1]) + num_cells_ +
-                input_size_;
-            std::copy(start, start + num_cells_, start2);
-            }
-        }
-        float max_out = 0;
-        for (unsigned int i = 0; i < output_size_; ++i) {
-            float sum = 0;
-            for (unsigned int j = 0; j < hidden_.size(); ++j) {
-            sum += hidden_[j] * output_layer_[epoch_][i][j];
-            }
-            output_[epoch_][i] = sum;
-            max_out = std::max(sum, max_out);
-        }
-        for (unsigned int i = 0; i < output_size_; ++i) {
-            output_[epoch_][i] = exp(output_[epoch_][i] - max_out);
-        }
-        output_[epoch_] /= output_[epoch_].sum();
-        int epoch = epoch_;
-        ++epoch_;
-        if (epoch_ == horizon_) epoch_ = 0;
-        return output_[epoch];
-    }
-};
+    void derivativeOutputGate(std::vector<double>& dNextHiddenState) {
+        // Derivative of output gate
+        // std::cout << "Derivative of output gate" << std::endl;
 
-class ByteModel {
-private:
-    int top_, mid_, bot_;
-    std::valarray<int> byte_map_;
-    std::valarray<float> probs_;
-    unsigned int bit_context_;
-    std::unique_ptr<Lstm> lstm_;
-    const std::vector<bool>& vocab_;
+        dOutputGate.resize(hiddenSize);
 
-public:
-    ByteModel(const std::vector<bool>& vocab, Lstm* lstm) : top_(255),
-            mid_(0), bot_(0), byte_map_(0, 256), probs_(1.0 / 256, 256),
-            bit_context_(1), lstm_(lstm), vocab_(vocab) {
-        int offset = 0;
-        for (int i = 0; i < 256; ++i) {
-            byte_map_[i] = offset;
-            if (vocab_[i]) ++offset;
+        // do = dh * tanh(ct) * o * (1 - o)
+        for (int i = 0; i < hiddenSize; i++) {
+            dOutputGate[i] = dNextHiddenState[i] * tanh(c[i]) * o[i] * (1.0 - o[i]);
         }
     }
 
-    float Predict() {
-        mid_ = bot_ + ((top_ - bot_) / 2);
-        float num = std::accumulate(&probs_[mid_ + 1], &probs_[top_ + 1], 0.0f);
-        float denom = std::accumulate(&probs_[bot_], &probs_[mid_ + 1], num);
-        if (denom == 0) return 0.5;
-        return num / denom;
+    void derivativeInputGate() {
+        // Derivative of input gate
+        // std::cout << "Derivative of input gate" << std::endl;
+
+        dInputGate.resize(hiddenSize);
+
+        // di = dc * cHat * i * (1 - i)
+        for (int i = 0; i < hiddenSize; i++) {
+            dInputGate[i] = dc[i] * cHat[i] * x[i] * (1.0 - x[i]);
+        }
     }
 
-    void Perceive(int bit) {
-        if (bit) {
-            bot_ = mid_ + 1;
-        } else {
-            top_ = mid_;
+    void derivativeForgetGate() {
+        // Derivative of forget gate
+
+        dForgetGate.resize(hiddenSize);
+
+        // df = dc * ct-1 * f * (1 - f)
+        for (int i = 0; i < hiddenSize; i++) {
+            dForgetGate[i] = dc[i] * c[i] * f[i] * (1.0 - f[i]);
         }
-        bit_context_ += bit_context_ + bit;
-        if (bit_context_ >= 256) {
-            bit_context_ -= 256;
-            const auto& output = lstm_->Perceive(byte_map_[bit_context_]);
-            int offset = 0;
-            for (int i = 0; i < 256; ++i) {
-            if (vocab_[i]) {
-                probs_[i] = output[offset];
-                ++offset;
+    }
+
+    void derivativeCandidateCellState() {
+        // Derivative of candidate cell state
+
+        dcHat.resize(hiddenSize);
+
+        // dcHat = dc * i * (1 - cHat^2)
+        for (int i = 0; i < hiddenSize; i++) {
+            dcHat[i] = dc[i] * x[i] * (1.0 - cHat[i] * cHat[i]);
+        }
+    }
+
+    void backward(std::vector<double>& dNextHiddenState, std::vector<double>& dNextCellState) {
+        // Backward pass through LSTM cell
+        // std::cout << "Backward pass through LSTM cell" << std::endl;
+
+        // Caluclate dc
+        dc.resize(hiddenSize);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            dc[i] = dNextHiddenState[i] * o[i] * (1.0 - tanh(tanh(c[i])) * tanh(tanh(c[i]))) + dNextCellState[i];
+        }
+
+        // Calculate Gate Derivatives
+        derivativeOutputGate(dNextHiddenState);
+        // std::cout << "Derivative of output gate complete" << std::endl;
+        derivativeCandidateCellState(); // Check order
+        // std::cout << "Derivative of candidate cell state complete" << std::endl;
+        derivativeInputGate();
+        // std::cout << "Derivative of input gate complete" << std::endl;
+        derivativeForgetGate();
+        // std::cout << "Derivative of forget gate complete" << std::endl;
+
+        // Calculate Weight Derivatives
+
+        dWo.resize(hiddenSize);
+        dWi.resize(hiddenSize);
+        dWf.resize(hiddenSize);
+        dWc.resize(hiddenSize);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            dWo[i] = dOutputGate[i] * h[i];
+            dWi[i] = dInputGate[i] * h[i];
+            dWf[i] = dForgetGate[i] * h[i];
+            dWc[i] = dcHat[i] * h[i];
+        }
+
+        // std::cout << "Derivative of weights complete" << std::endl;
+
+        // Calculate Bias Derivatives
+        dBo.resize(1, 0.0);
+        dBi.resize(1, 0.0);
+        dBf.resize(1, 0.0);
+        dBc.resize(1, 0.0);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            dBo[0] += dOutputGate[i];
+            dBi[0] += dInputGate[i];
+            dBf[0] += dForgetGate[i];
+            dBc[0] += dcHat[i];
+        }
+
+        // std::cout << "Derivative of biases complete" << std::endl;
+
+        // Calculate Hidden State Derivatives (da_prev, dc_prev, dxt)
+        daPrev.resize(hiddenSize * 2, 0.0);
+        dcPrev.resize(hiddenSize, 0.0);
+        dxt.resize(hiddenSize * 2, 0.0);
+
+        for (int i = 0; i < hiddenSize; i++) {
+            daPrev[i] = wf[i] * dForgetGate[i] + wi[i] * dInputGate[i] + wc[i] * dcHat[i] + wo[i] * dOutputGate[i];
+            daPrev[i + hiddenSize] = wf[i + hiddenSize] * dForgetGate[i] + wi[i + hiddenSize] * dInputGate[i] + wc[i + hiddenSize] * dcHat[i] + wo[i + hiddenSize] * dOutputGate[i];
+            dcPrev[i] = dNextCellState[i] * f[i] + o[i] * (1.0 - tanh(c[i]) * tanh(c[i])) * f[i] * dNextHiddenState[i];
+            dxt[i] = wf[i] * dForgetGate[i] + wi[i] * dInputGate[i] + wc[i] * dcHat[i] + wo[i] * dOutputGate[i];
+            dxt[i + hiddenSize] = wf[i + hiddenSize] * dForgetGate[i] + wi[i + hiddenSize] * dInputGate[i] + wc[i + hiddenSize] * dcHat[i] + wo[i + hiddenSize] * dOutputGate[i];
+        }
+
+        // std::cout << "Derivative of hidden state complete" << std::endl;
+
+        // Clip gradients to prevent exploding gradients
+        for (int i = 0; i < hiddenSize; i++) {
+            dWo[i] = std::min(dWo[i], clipValue);
+            dWo[i] = std::max(dWo[i], -clipValue);
+            dWi[i] = std::min(dWi[i], clipValue);
+            dWi[i] = std::max(dWi[i], -clipValue);
+            dWf[i] = std::min(dWf[i], clipValue);
+            dWf[i] = std::max(dWf[i], -clipValue);
+            dWc[i] = std::min(dWc[i], clipValue);
+            dWc[i] = std::max(dWc[i], -clipValue);
+        }
+
+        dBo[0] = std::min(dBo[0], clipValue);
+        dBo[0] = std::max(dBo[0], -clipValue);
+        dBi[0] = std::min(dBi[0], clipValue);
+        dBi[0] = std::max(dBi[0], -clipValue);
+        dBf[0] = std::min(dBf[0], clipValue);
+        dBf[0] = std::max(dBf[0], -clipValue);
+        dBc[0] = std::min(dBc[0], clipValue);
+        dBc[0] = std::max(dBc[0], -clipValue);
+
+        updateWeightsAndBiases();
+
+        // std::cout << "Update weights and biases complete" << std::endl;
+
+        std::cout << "Output Gradient" << std::endl;
+        for (int i = 0; i < dOutputGate.size(); i++) {
+            std::cout << dOutputGate[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Input Gradient" << std::endl;
+        for (int i = 0; i < dInputGate.size(); i++) {
+            std::cout << dInputGate[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Forget Gradient" << std::endl;
+        for (int i = 0; i < dForgetGate.size(); i++) {
+            std::cout << dForgetGate[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Cell State Gradient" << std::endl;
+        for (int i = 0; i < dcHat.size(); i++) {
+            std::cout << dcHat[i] << " ";
+        }
+        std::cout << std::endl;
+
+        // std::cout << "Backward pass through LSTM cell complete" << std::endl;
+    }
+
+    // Get output
+    std::vector<double> getOutput() {
+        return h;
+    }
+
+    // Get o
+    std::vector<double> getOutputGate() {
+        return o;
+    }
+
+    // Get c
+    std::vector<double> getCellState() {
+        return c;
+    }
+
+    std::vector<double> getSigmoidOutput() {
+        std::vector<double> sigmoidOutput;
+        for (int i = 0; i < h.size(); i++) {
+            sigmoidOutput.push_back(sigmoid(h[i]));
+        }
+        return sigmoidOutput;
+    }
+
+    void updateWeightsAndBiases() {
+        // Clip gradients to a maximum value
+        const double clip_value = 1.0; // You can adjust this value
+
+        for (int i = 0; i < hiddenSize; i++) {
+            // Check if gradients are very small
+            if (std::abs(dWo[i]) < 1e-6) {
+                dWo[i] = 0.0; // Set small gradients to zero
             } else {
-                probs_[i] = 0;
+                // Clip gradient values
+                dWo[i] = std::min(dWo[i], clip_value);
+                dWo[i] = std::max(dWo[i], -clip_value);
             }
+
+            if (std::abs(dWi[i]) < 1e-6) {
+                dWi[i] = 0.0;
+            } else {
+                dWi[i] = std::min(dWi[i], clip_value);
+                dWi[i] = std::max(dWi[i], -clip_value);
             }
-            bit_context_ = 1;
-            top_ = 255;
-            bot_ = 0;
+
+            if (std::abs(dWf[i]) < 1e-6) {
+                dWf[i] = 0.0;
+            } else {
+                dWf[i] = std::min(dWf[i], clip_value);
+                dWf[i] = std::max(dWf[i], -clip_value);
+            }
+
+            if (std::abs(dWc[i]) < 1e-6) {
+                dWc[i] = 0.0;
+            } else {
+                dWc[i] = std::min(dWc[i], clip_value);
+                dWc[i] = std::max(dWc[i], -clip_value);
+            }
+
+            // Update weights
+            wo[i] -= learningRate * dWo[i];
+            wi[i] -= learningRate * dWi[i];
+            wf[i] -= learningRate * dWf[i];
+            wc[i] -= learningRate * dWc[i];
         }
+
+        // Clip bias gradients and update biases
+        dBo[0] = std::min(dBo[0], clip_value);
+        dBo[0] = std::max(dBo[0], -clip_value);
+        dBi[0] = std::min(dBi[0], clip_value);
+        dBi[0] = std::max(dBi[0], -clip_value);
+        dBf[0] = std::min(dBf[0], clip_value);
+        dBf[0] = std::max(dBf[0], -clip_value);
+        dBc[0] = std::min(dBc[0], clip_value);
+        dBc[0] = std::max(dBc[0], -clip_value);
+
+        // Update biases
+        bo[0] -= learningRate * dBo[0];
+        bi[0] -= learningRate * dBi[0];
+        bf[0] -= learningRate * dBf[0];
+        bc[0] -= learningRate * dBc[0];
+    }
+
+
+    std::vector<double> previousDerivativeHiddenState() {
+        return daPrev;
+    }
+
+    std::vector<double> previousDerivativeCellState() {
+        return dcPrev;
     }
 };
 
-class Predictor {
+class LSTMNetwork {
 private:
-    std::unique_ptr<ByteModel> lstm_;
-    std::vector<bool> vocab_;
+    std::vector<LSTMCell> cells;
+
+    std::vector<double> dNextHiddenState;
+    std::vector<double> dNextCellState;
 
 public:
-    Predictor(const std::vector<bool>& vocab) : vocab_(vocab) {
-        srand(0xDEADBEEF);
-        unsigned int vocab_size = 0;
-        for (unsigned int i = 0; i < vocab_.size(); ++i) {
-            if (vocab_[i]) ++vocab_size;
+    LSTMNetwork(int inputSize, int hiddenSize, int outputSize) {
+        // Initialize LSTM cells
+        LSTMCell cell(inputSize, hiddenSize);
+        cells.push_back(cell);
+    }
+
+    void forward(std::vector<double>& inputs) {
+        // Forward pass through LSTM cells
+        for (int i = 0; i < cells.size(); i++) {
+            cells[i].forward(inputs);
         }
-        lstm_.reset(new ByteModel(vocab_,
-            new Lstm(0, vocab_size, 90, 3, 10, 0.05, 2)));
     }
 
-    float Predict() {
-        return lstm_->Predict();
+    void BPTT(const std::vector<std::vector<double>>& inputs, const std::vector<int>& targets, double learning_rate) {
+        // Backward pass through time
+        std::cout << "Backward pass through time" << std::endl;
+
+        dNextHiddenState.resize(cells[0].getOutput().size(), 0.0);
+        dNextCellState.resize(cells[0].getOutput().size(), 0.0);
+
+        for (int i = 0; i < cells[0].getOutput().size(); i++) {
+            dNextHiddenState[i] = (cells[0].getOutput()[i] - targets[i]);
+            dNextCellState[i] = (dNextHiddenState[i] * cells[0].getOutputGate()[i] * (1.0 - tanh(cells[0].getCellState()[i]) * tanh(cells[0].getCellState()[i])));
+        }
+
+        for (int i = cells.size() - 1; i >= 0; i--) {
+            // Pass gradients and cell states to the previous LSTM cell
+            LSTMCell& cell = cells[i];
+            cell.backward(dNextHiddenState, dNextCellState);
+
+            std::cout << "Backward pass " << i << "/" << cells.size() << " complete" << std::endl;
+
+            // Calculate gradients for the previous time step
+            dNextHiddenState = cell.previousDerivativeCellState();
+            dNextCellState = cell.previousDerivativeHiddenState();
+
+            std::cout << "Backward pass " << i << "/" << cells.size() << " complete" << std::endl;
+        }
     }
 
-    void Update(int bit) {
-        lstm_->Perceive(bit);
+    double loss(int target, double prediction) {
+        // Calculate loss
+        double loss = 0.5 * pow(target - prediction, 2);
+        return loss;
+    }
+
+    void eval(std::vector<std::vector<double>>& inputs, std::vector<int>& targets) {
+        // Evaluate LSTM network
+        std::vector<double> predictions;
+        for (int i = 0; i < inputs.size(); i++) {
+            forward(inputs[i]);
+            std::vector<double> output = cells[0].getOutput();
+            predictions.push_back(output[0]);
+        }
+
+        double totalLoss = 0;
+        int correctPositives = 0;
+        int correctNegatives = 0;
+        int incorrectPositives = 0;
+        int incorrectNegatives = 0;
+
+        std::vector<double> uniquePredictions;
+
+        for (int i = 0; i < predictions.size(); i++) {
+            double lossValue = loss(targets[i], predictions[i]);
+            totalLoss += lossValue;
+
+            if (std::find(uniquePredictions.begin(), uniquePredictions.end(), predictions[i]) == uniquePredictions.end()) {
+                uniquePredictions.push_back(predictions[i]);
+            }
+
+            if (predictions[i] > 0.5) {
+                predictions[i] = 1;
+            } else {
+                predictions[i] = 0;
+            }
+
+            if (predictions[i] == 1 && targets[i] == 1) {
+                correctPositives++;
+            } else if (predictions[i] == 0 && targets[i] == 0) {
+                correctNegatives++;
+            } else if (predictions[i] == 1 && targets[i] == 0) {
+                incorrectPositives++;
+            } else if (predictions[i] == 0 && targets[i] == 1) {
+                incorrectNegatives++;
+            }
+        }
+
+        double averageLoss = totalLoss / predictions.size();
+        double accuracy = (correctPositives + correctNegatives) * 100 / (double) predictions.size();
+
+        std::cout << "Average loss: " << averageLoss << std::endl;
+        std::cout << "Accuracy: " << accuracy << "%" << std::endl;
+        std::cout << "Correct positives: " << correctPositives << std::endl;
+        std::cout << "Correct negatives: " << correctNegatives << std::endl;
+        std::cout << "Incorrect positives: " << incorrectPositives << std::endl;
+        std::cout << "Incorrect negatives: " << incorrectNegatives << std::endl;
+
+        std::cout << "Unique predictions: ";
+        for (int i = 0; i < uniquePredictions.size(); i++) {
+            std::cout << uniquePredictions[i] << " ";
+        }
+        std::cout << std::endl;
     }
 };
 
 int main() {
-    std::vector<bool> vocab = {false, true};
-    Predictor predictor(vocab);
-
-    // Load data from emails.csv and split into train and test sets
+    // Load data from emails.csv
     std::vector<std::vector<double>> input_data;
     std::vector<int> target_data;
     std::vector<std::string> header;
-    loadData("./inc/emailsHotEncoding.csv", input_data, target_data, header, "Prediction", 1000, 100);// 250, 10
+    loadData("./inc/emails.csv", input_data, target_data, header, "Prediction", 250, 10);
 
-    // Train-test split, 80% train, 20% test
+    // Train test split, 80% train, 20% test
     std::vector<std::vector<double>> train_input_data;
     std::vector<int> train_target_data;
     std::vector<std::vector<double>> test_input_data;
     std::vector<int> test_target_data;
     trainTestSplit(input_data, target_data, train_input_data, train_target_data, test_input_data, test_target_data);
 
-    int correct_predictions = 0;
-    int total_predictions = 0;
+    int inputSize = train_input_data[0].size();
+    int hiddenSize = inputSize;
+    int outputSize = hiddenSize;
 
-    std::cout << "Starting Training Phase" << std::endl;
+    // Initialize LSTM network
+    LSTMNetwork network(inputSize, hiddenSize, outputSize);
 
-    // Training phase
-    for (int i = 0; i < train_input_data.size(); ++i) {
-        for (int j = 0; j < train_input_data[i].size(); ++j) {
-            std::cout << "Training example " << i+1 << " bit " << j+1 << std::endl;
-            int bit = static_cast<int>(train_input_data[i][j]);
-            int prediction = predictor.Predict();
-
-            if (prediction != 0)
-            prediction = 1;
-
-            std::cout << "Prediction: " << prediction << std::endl;
-            predictor.Update(bit);
-            if (prediction == train_target_data[i]) {
-                correct_predictions++;
-            }
-            total_predictions++;
-        }
-        std::cout << "Completed " << i+1 << "th training example, out of " << train_input_data.size() << std::endl;
+    // Train LSTM network
+    double learning_rate = 0.01; // You can adjust the learning rate
+    for (int i = 0; i < train_input_data.size(); i++) {
+        network.forward(train_input_data[i]);
+        network.BPTT(train_input_data, train_target_data, learning_rate);
+        std::cout << "Forward pass " << i << "/" << train_input_data.size() << " complete" << std::endl;
     }
 
-    std::cout << "Completed Training Phase" << std::endl;
+    std::cout << "Training complete" << std::endl;
 
-    std::vector<float> uniquePreds;
+    network.eval(test_input_data, test_target_data);
 
-    total_predictions = 0;
-    correct_predictions = 0;
-
-    // Testing phase
-    for (int i = 0; i < test_input_data.size(); ++i) {
-        for (int j = 0; j < test_input_data[i].size(); ++j) {
-        int bit = static_cast<int>(test_input_data[i][j]);
-        int prediction = predictor.Predict();
-
-        if (prediction != 0)
-            prediction = 1;
-
-        // If not in unique predictions, add it
-        if (std::find(uniquePreds.begin(), uniquePreds.end(), prediction) == uniquePreds.end()) {
-            uniquePreds.push_back(prediction);
-        }
-
-        if (prediction == test_target_data[i]) {
-            correct_predictions++;
-        }
-        total_predictions++;
-        }
-    }
-
-    std::cout << "Completed Testing Phase" << std::endl;
-
-    double accuracy = static_cast<double>(correct_predictions) / total_predictions * 100.0;
-    std::cout << "Accuracy: " << accuracy << "%" << std::endl;
-
-    std::cout << "Unique Predictions: " << std::endl;
-    for (int i = 0; i < uniquePreds.size(); ++i) {
-        std::cout << uniquePreds[i] << std::endl;
-    }
-
+    std::cout << "Testing complete" << std::endl;
 
     return 0;
 }
