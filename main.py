@@ -20,18 +20,18 @@ class GRU:
         self.hidden_size = hidden_size
 
         # Parameters
-        # Should have shape (hidden_size, input_size)
-        self.Wz = np.random.randn(hidden_size, input_size)
-        self.Uz = np.random.randn(hidden_size, hidden_size)
-        self.bz = np.zeros((hidden_size, 1))
+        # Xavier initialisation
+        self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
+        self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.bz = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
-        self.Wr = np.random.randn(hidden_size, input_size)
-        self.Ur = np.random.randn(hidden_size, hidden_size)
-        self.br = np.zeros((hidden_size, 1))
+        self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
+        self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.br = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
-        self.Wh = np.random.randn(hidden_size, input_size)
-        self.Uh = np.random.randn(hidden_size, hidden_size)
-        self.bh = np.zeros((hidden_size, 1))
+        self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
+        self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.bh = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
     def forward(self, x, h_prev):
         # Reset gate
@@ -94,6 +94,17 @@ class GRU:
         for epoch in range(epochs):
             total_loss = 0.0
             h_prev = np.zeros((self.hidden_size, 1))
+            m = {}  # Initialize first moment estimates
+            v = {}  # Initialize second moment estimates
+            t = 0  # Initialize time step
+            beta1 = 0.9
+            beta2 = 0.999
+            epsilon = 1e-8
+
+            for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
+                m[param_name] = np.zeros_like(self.__dict__[param_name])
+                v[param_name] = np.zeros_like(self.__dict__[param_name])
+
             for x, target in zip(X, y):
                 # Forward pass
                 h, rz, rr, h_candidate = self.forward(x, h_prev)
@@ -102,31 +113,83 @@ class GRU:
                 loss = np.mean((h - target)**2)
                 total_loss += loss
 
+                # print(h, rz, rr, h_candidate, loss)
+
                 # Compute gradients using backpropagation
                 dh_next = 2 * (h - target)
                 dh_prev, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.backward(
                     x, h_prev, h, rz, rr, h_candidate, dh_next)
 
-                # Update parameters using Adam optimizer (simplified)
-                # In practice, you would use a dedicated optimization library like TensorFlow or PyTorch
-                # to handle parameter updates.
-                learning_rate = 0.01
-                beta1 = 0.9
-                beta2 = 0.999
-                epsilon = 1e-8
+                t += 1  # Increase the time step
 
-                # Update parameter values
-                self.Wz -= learning_rate * dWz
-                self.Uz -= learning_rate * dUz
-                self.bz -= learning_rate * dbz
+                # Update parameters using Adam Optimiser
 
-                self.Wr -= learning_rate * dWr
-                self.Ur -= learning_rate * dUr
-                self.br -= learning_rate * dbr
+                # dWz
+                m['Wz'] = beta1 * m['Wz'] + (1 - beta1) * dWz
+                v['Wz'] = beta2 * v['Wz'] + (1 - beta2) * (dWz**2)
+                m_hat = m['Wz'] / (1 - beta1**t)
+                v_hat = v['Wz'] / (1 - beta2**t)
+                self.Wz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
-                self.Wh -= learning_rate * dWh
-                self.Uh -= learning_rate * dUh
-                self.bh -= learning_rate * dbh
+                # dUz
+                m['Uz'] = beta1 * m['Uz'] + (1 - beta1) * dUz
+                v['Uz'] = beta2 * v['Uz'] + (1 - beta2) * (dUz**2)
+                m_hat = m['Uz'] / (1 - beta1**t)
+                v_hat = v['Uz'] / (1 - beta2**t)
+                self.Uz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dbz
+                m['bz'] = beta1 * m['bz'] + (1 - beta1) * dbz
+                v['bz'] = beta2 * v['bz'] + (1 - beta2) * (dbz**2)
+                m_hat = m['bz'] / (1 - beta1**t)
+                v_hat = v['bz'] / (1 - beta2**t)
+                self.bz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dWr
+                m['Wr'] = beta1 * m['Wr'] + (1 - beta1) * dWr
+                v['Wr'] = beta2 * v['Wr'] + (1 - beta2) * (dWr**2)
+                m_hat = m['Wr'] / (1 - beta1**t)
+                v_hat = v['Wr'] / (1 - beta2**t)
+                self.Wr -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dUr
+                m['Ur'] = beta1 * m['Ur'] + (1 - beta1) * dUr
+                v['Ur'] = beta2 * v['Ur'] + (1 - beta2) * (dUr**2)
+                m_hat = m['Ur'] / (1 - beta1**t)
+                v_hat = v['Ur'] / (1 - beta2**t)
+                self.Ur -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dbr
+                m['br'] = beta1 * m['br'] + (1 - beta1) * dbr
+                v['br'] = beta2 * v['br'] + (1 - beta2) * (dbr**2)
+                m_hat = m['br'] / (1 - beta1**t)
+                v_hat = v['br'] / (1 - beta2**t)
+                self.br -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dWh
+                m['Wh'] = beta1 * m['Wh'] + (1 - beta1) * dWh
+                v['Wh'] = beta2 * v['Wh'] + (1 - beta2) * (dWh**2)
+                m_hat = m['Wh'] / (1 - beta1**t)
+                v_hat = v['Wh'] / (1 - beta2**t)
+                self.Wh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dUh
+                m['Uh'] = beta1 * m['Uh'] + (1 - beta1) * dUh
+                v['Uh'] = beta2 * v['Uh'] + (1 - beta2) * (dUh**2)
+                m_hat = m['Uh'] / (1 - beta1**t)
+                v_hat = v['Uh'] / (1 - beta2**t)
+                self.Uh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # dbh
+                m['bh'] = beta1 * m['bh'] + (1 - beta1) * dbh
+                v['bh'] = beta2 * v['bh'] + (1 - beta2) * (dbh**2)
+                m_hat = m['bh'] / (1 - beta1**t)
+                v_hat = v['bh'] / (1 - beta2**t)
+                self.bh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+                # Clip gradients to mitigate exploding gradients
+                for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
+                    np.clip(self.__dict__[param_name], -1, 1, out=self.__dict__[param_name])
 
                 h_prev = h
 
@@ -154,34 +217,33 @@ if __name__ == "__main__":
     hidden_size = 4
     gru = GRU(input_size, hidden_size)
 
-    num_inputs = 100
-
-    # X_train = [np.random.randn(input_size, 1) for _ in range(10)]
-    # print(X_train)
-    # y_train = [1, 1, 1, 1, 0, 0, 0, 0, 1, 1]
-
-    with open('./inc/emails.csv', 'r', encoding='utf-8') as f:
+    with open('./inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
         data = pd.read_csv(f)
-        # row
-        X_train = [data.iloc[i][:input_size].values.tolist() if input_size < len(
-            data.iloc[i]) else data.iloc[i][:len(
-                data.iloc[i])-1].values.tolist() for i in range(num_inputs)]
-        # column
-        y_train = [data['Prediction'][i] for i in range(num_inputs)]
 
-    print(X_train)
-    print(y_train)
+    # num_inputs = round(len(data) * 0.8)
+    # num_tests = round(len(data) * 0.2)
+
+    num_inputs = 100
+    num_tests = 100
+
+    X_train = [data.iloc[i][:input_size].values.tolist() if input_size < len(
+        data.iloc[i]) else data.iloc[i][:len(
+            data.iloc[i])-1].values.tolist() for i in range(num_inputs)]
+
+    y_train = [data['Prediction'][i] for i in range(num_inputs)]
+
+    # print(X_train)
+    # print(y_train)
 
     gru.train(X_train, y_train, learning_rate=0.01, epochs=100)
 
-    test_size = 100
-    num_test = 100
+    test_size = input_size
 
     X_test = [data.iloc[i][input_size:(input_size + test_size)].values.tolist() if input_size + test_size < len(
         data.iloc[i]) else data.iloc[i][input_size:len(
-            data.iloc[i])-1].values.tolist() for i in range(num_test)]
+            data.iloc[i])-1].values.tolist() for i in range(num_tests)]
 
-    y_test = [data['Prediction'][i+input_size] for i in range(num_test)]
+    y_test = [data['Prediction'][i+input_size] for i in range(num_tests)]
 
     predictions = gru.predict(X_test)
     correct = 0
