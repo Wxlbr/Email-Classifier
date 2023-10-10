@@ -3,17 +3,24 @@ import pandas as pd
 
 # Activation functions
 
+# Batch normalization function
+def batch_normalize(x, gamma, beta, epsilon=1e-5):
+    mean = np.mean(x, axis=0)
+    var = np.var(x, axis=0)
+    x_normalized = (x - mean) / np.sqrt(var + epsilon)
+    out = gamma * x_normalized + beta
+    return out, x_normalized, mean, var
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-
 def tanh(x):
     return np.tanh(x)
 
+def relu(x):
+    return np.maximum(0, x)
+
 # GRU Layer class
-
-
 class GRU:
     def __init__(self, input_size, hidden_size):
         self.input_size = input_size
@@ -22,16 +29,27 @@ class GRU:
         # Parameters
         # Xavier initialisation
         self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        # self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.Uz = np.eye(hidden_size) * 0.01
         self.bz = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
         self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        # self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.Ur = np.eye(hidden_size) * 0.01
         self.br = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
         self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        # self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
+        self.Uh = np.eye(hidden_size) * 0.01
         self.bh = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
+
+        # Batch normalization parameters
+        self.gamma_z = np.ones((hidden_size, 1))
+        self.beta_z = np.zeros((hidden_size, 1))
+        self.gamma_r = np.ones((hidden_size, 1))
+        self.beta_r = np.zeros((hidden_size, 1))
+        self.gamma_h_candidate = np.ones((hidden_size, 1))
+        self.beta_h_candidate = np.zeros((hidden_size, 1))
 
     def forward(self, x, h_prev):
         # Reset gate
@@ -46,10 +64,21 @@ class GRU:
         h_candidate = tanh(np.dot(self.Wh, np.array(x).reshape(-1, 1)) +
                            np.dot(self.Uh, rr * h_prev) + self.bh)
 
-        # New hidden state
-        h = rz * h_prev + (1 - rz) * h_candidate
+        # Batch normalization for reset gate
+        rz_normalized, _, _, _ = batch_normalize(rz, self.gamma_z, self.beta_z)
 
-        return h, rz, rr, h_candidate
+        # Batch normalization for update gate
+        rr_normalized, _, _, _ = batch_normalize(rr, self.gamma_r, self.beta_r)
+
+        # Batch normalization for candidate hidden state
+        h_candidate_normalized, _, _, _ = batch_normalize(h_candidate, self.gamma_h_candidate, self.beta_h_candidate)
+
+        # New hidden state
+        # h = rz * h_prev + (1 - rz) * h_candidate
+        h = rz_normalized * h_prev + (1 - rz_normalized) * h_candidate_normalized
+
+        # return h, rz, rr, h_candidate
+        return h, rz_normalized, rr_normalized, h_candidate_normalized
 
     def backward(self, x, h_prev, h, rz, rr, h_candidate, dh_next):
         # Gradient with respect to the output hidden state
@@ -88,6 +117,22 @@ class GRU:
         dUh = np.dot(dh_candidate * (1 - rz), (rr * h_prev).T)
         dbh = np.sum(dh_candidate * (1 - rz), axis=1, keepdims=True)
 
+        # print('Gradient with respect to the output hidden state: ', dh)
+        # print('Gradient with respect to the reset gate: ', drz)
+        # print('Gradient with respect to the update gate: ', drr)
+        # print('Gradient with respect to the candidate hidden state: ', dh_candidate)
+        # print('Gradient with respect to the new hidden state: ', dh_prev)
+        # print('Gradients with respect to parameters:')
+        # print('dWz: ', dWz)
+        # print('dUz: ', dUz)
+        # print('dbz: ', dbz)
+        # print('dWr: ', dWr)
+        # print('dUr: ', dUr)
+        # print('dbr: ', dbr)
+        # print('dWh: ', dWh)
+        # print('dUh: ', dUh)
+        # print('dbh: ', dbh)
+
         return dh_prev, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh
 
     def train(self, X, y, learning_rate, epochs):
@@ -99,7 +144,7 @@ class GRU:
             t = 0  # Initialize time step
             beta1 = 0.9
             beta2 = 0.999
-            epsilon = 1e-8
+            epsilon = 1e-4
 
             for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
                 m[param_name] = np.zeros_like(self.__dict__[param_name])
@@ -217,7 +262,7 @@ if __name__ == "__main__":
     hidden_size = 4
     gru = GRU(input_size, hidden_size)
 
-    with open('./inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
+    with open('./inc/emails.csv', 'r', encoding='utf-8') as f:
         data = pd.read_csv(f)
 
     # num_inputs = round(len(data) * 0.8)
@@ -252,7 +297,8 @@ if __name__ == "__main__":
 
     for i, pred in enumerate(predictions):
         # print(f"Prediction {i + 1}:")
-        p = 1 if mod(pred.mean()) > 0.5 else 0
+        print(f"Predicted: {pred.mean()}")
+        p = 1 if pred.mean() > 0.5 else 0
         if p == y_test[i]:
             correct += 1
         if p == 1:
