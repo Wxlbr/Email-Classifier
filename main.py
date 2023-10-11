@@ -251,6 +251,38 @@ class GRU:
             h_prev = h
         return predictions
 
+    def update(self, learning_rate):
+        # Update parameters using Adam Optimiser
+        pass
+
+class GRULayer:
+    def __init__(self, input_size, hidden_size, num_cells):
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_cells = num_cells
+        self.cells = [GRU(input_size, hidden_size) for _ in range(num_cells)]
+        self.h_prev = [np.zeros((hidden_size, 1)) for _ in range(num_cells)]
+
+    def forward(self, x):
+        outputs = []
+        for i in range(self.num_cells):
+            h, _, _, _ = self.cells[i].forward(x, self.h_prev[i])
+            outputs.append(h)
+            self.h_prev[i] = h
+            x = h  # Output of one cell is the input to the next
+        return outputs
+
+    def backward(self, d_outputs):
+        dh_next = np.zeros((self.hidden_size, 1))
+        for i in reversed(range(self.num_cells)):
+            dh = d_outputs[i] + dh_next  # Add gradients from the next cell
+            dh_prev, *_ = self.cells[i].backward(self.h_prev[i], dh, dh, dh, dh, dh, dh)
+            dh_next = dh_prev  # Pass the gradient to the previous cell
+        return dh_next
+
+    def update(self, learning_rate):
+        for cell in self.cells:
+            cell.update(learning_rate)
 
 def mod(x):
     return x if x > 0 else -x
