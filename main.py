@@ -51,6 +51,11 @@ class GRU:
         self.gamma_h_candidate = np.ones((hidden_size, 1))
         self.beta_h_candidate = np.zeros((hidden_size, 1))
 
+        # Adam Optimiser parameters
+        self.m = {}
+        self.v = {}
+        self.t = 0
+
     def forward(self, x, h_prev):
         # Reset gate
         rz = sigmoid(np.dot(self.Wz, np.array(x).reshape(-1, 1)) +
@@ -139,16 +144,12 @@ class GRU:
         for epoch in range(epochs):
             total_loss = 0.0
             h_prev = np.zeros((self.hidden_size, 1))
-            m = {}  # Initialize first moment estimates
-            v = {}  # Initialize second moment estimates
-            t = 0  # Initialize time step
-            beta1 = 0.9
-            beta2 = 0.999
-            epsilon = 1e-4
+            self.t = 0  # Initialize time step
+
 
             for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-                m[param_name] = np.zeros_like(self.__dict__[param_name])
-                v[param_name] = np.zeros_like(self.__dict__[param_name])
+                self.m[param_name] = np.zeros_like(self.__dict__[param_name]) # Initialize first moment vector
+                self.v[param_name] = np.zeros_like(self.__dict__[param_name]) # Initialize second moment vector
 
             for x, target in zip(X, y):
                 # Forward pass
@@ -165,76 +166,10 @@ class GRU:
                 dh_prev, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.backward(
                     x, h_prev, h, rz, rr, h_candidate, dh_next)
 
-                t += 1  # Increase the time step
+                self.t += 1  # Increase the time step
 
                 # Update parameters using Adam Optimiser
-
-                # dWz
-                m['Wz'] = beta1 * m['Wz'] + (1 - beta1) * dWz
-                v['Wz'] = beta2 * v['Wz'] + (1 - beta2) * (dWz**2)
-                m_hat = m['Wz'] / (1 - beta1**t)
-                v_hat = v['Wz'] / (1 - beta2**t)
-                self.Wz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dUz
-                m['Uz'] = beta1 * m['Uz'] + (1 - beta1) * dUz
-                v['Uz'] = beta2 * v['Uz'] + (1 - beta2) * (dUz**2)
-                m_hat = m['Uz'] / (1 - beta1**t)
-                v_hat = v['Uz'] / (1 - beta2**t)
-                self.Uz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dbz
-                m['bz'] = beta1 * m['bz'] + (1 - beta1) * dbz
-                v['bz'] = beta2 * v['bz'] + (1 - beta2) * (dbz**2)
-                m_hat = m['bz'] / (1 - beta1**t)
-                v_hat = v['bz'] / (1 - beta2**t)
-                self.bz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dWr
-                m['Wr'] = beta1 * m['Wr'] + (1 - beta1) * dWr
-                v['Wr'] = beta2 * v['Wr'] + (1 - beta2) * (dWr**2)
-                m_hat = m['Wr'] / (1 - beta1**t)
-                v_hat = v['Wr'] / (1 - beta2**t)
-                self.Wr -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dUr
-                m['Ur'] = beta1 * m['Ur'] + (1 - beta1) * dUr
-                v['Ur'] = beta2 * v['Ur'] + (1 - beta2) * (dUr**2)
-                m_hat = m['Ur'] / (1 - beta1**t)
-                v_hat = v['Ur'] / (1 - beta2**t)
-                self.Ur -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dbr
-                m['br'] = beta1 * m['br'] + (1 - beta1) * dbr
-                v['br'] = beta2 * v['br'] + (1 - beta2) * (dbr**2)
-                m_hat = m['br'] / (1 - beta1**t)
-                v_hat = v['br'] / (1 - beta2**t)
-                self.br -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dWh
-                m['Wh'] = beta1 * m['Wh'] + (1 - beta1) * dWh
-                v['Wh'] = beta2 * v['Wh'] + (1 - beta2) * (dWh**2)
-                m_hat = m['Wh'] / (1 - beta1**t)
-                v_hat = v['Wh'] / (1 - beta2**t)
-                self.Wh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dUh
-                m['Uh'] = beta1 * m['Uh'] + (1 - beta1) * dUh
-                v['Uh'] = beta2 * v['Uh'] + (1 - beta2) * (dUh**2)
-                m_hat = m['Uh'] / (1 - beta1**t)
-                v_hat = v['Uh'] / (1 - beta2**t)
-                self.Uh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # dbh
-                m['bh'] = beta1 * m['bh'] + (1 - beta1) * dbh
-                v['bh'] = beta2 * v['bh'] + (1 - beta2) * (dbh**2)
-                m_hat = m['bh'] / (1 - beta1**t)
-                v_hat = v['bh'] / (1 - beta2**t)
-                self.bh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-                # Clip gradients to mitigate exploding gradients
-                for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-                    np.clip(self.__dict__[param_name], -1, 1, out=self.__dict__[param_name])
+                self.update(self.t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh)
 
                 h_prev = h
 
@@ -251,9 +186,83 @@ class GRU:
             h_prev = h
         return predictions
 
-    def update(self, learning_rate):
+    def update(self, t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh):
         # Update parameters using Adam Optimiser
-        pass
+        beta1 = 0.9
+        beta2 = 0.999
+        epsilon = 1e-4
+        learning_rate = 0.01
+
+        m = self.m
+        v = self.v
+
+        # dWz
+        m['Wz'] = beta1 * m['Wz'] + (1 - beta1) * dWz
+        v['Wz'] = beta2 * v['Wz'] + (1 - beta2) * (dWz**2)
+        m_hat = m['Wz'] / (1 - beta1**t)
+        v_hat = v['Wz'] / (1 - beta2**t)
+        self.Wz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dUz
+        m['Uz'] = beta1 * m['Uz'] + (1 - beta1) * dUz
+        v['Uz'] = beta2 * v['Uz'] + (1 - beta2) * (dUz**2)
+        m_hat = m['Uz'] / (1 - beta1**t)
+        v_hat = v['Uz'] / (1 - beta2**t)
+        self.Uz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dbz
+        m['bz'] = beta1 * m['bz'] + (1 - beta1) * dbz
+        v['bz'] = beta2 * v['bz'] + (1 - beta2) * (dbz**2)
+        m_hat = m['bz'] / (1 - beta1**t)
+        v_hat = v['bz'] / (1 - beta2**t)
+        self.bz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dWr
+        m['Wr'] = beta1 * m['Wr'] + (1 - beta1) * dWr
+        v['Wr'] = beta2 * v['Wr'] + (1 - beta2) * (dWr**2)
+        m_hat = m['Wr'] / (1 - beta1**t)
+        v_hat = v['Wr'] / (1 - beta2**t)
+        self.Wr -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dUr
+        m['Ur'] = beta1 * m['Ur'] + (1 - beta1) * dUr
+        v['Ur'] = beta2 * v['Ur'] + (1 - beta2) * (dUr**2)
+        m_hat = m['Ur'] / (1 - beta1**t)
+        v_hat = v['Ur'] / (1 - beta2**t)
+        self.Ur -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dbr
+        m['br'] = beta1 * m['br'] + (1 - beta1) * dbr
+        v['br'] = beta2 * v['br'] + (1 - beta2) * (dbr**2)
+        m_hat = m['br'] / (1 - beta1**t)
+        v_hat = v['br'] / (1 - beta2**t)
+        self.br -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dWh
+        m['Wh'] = beta1 * m['Wh'] + (1 - beta1) * dWh
+        v['Wh'] = beta2 * v['Wh'] + (1 - beta2) * (dWh**2)
+        m_hat = m['Wh'] / (1 - beta1**t)
+        v_hat = v['Wh'] / (1 - beta2**t)
+        self.Wh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dUh
+        m['Uh'] = beta1 * m['Uh'] + (1 - beta1) * dUh
+        v['Uh'] = beta2 * v['Uh'] + (1 - beta2) * (dUh**2)
+        m_hat = m['Uh'] / (1 - beta1**t)
+        v_hat = v['Uh'] / (1 - beta2**t)
+        self.Uh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # dbh
+        m['bh'] = beta1 * m['bh'] + (1 - beta1) * dbh
+        v['bh'] = beta2 * v['bh'] + (1 - beta2) * (dbh**2)
+        m_hat = m['bh'] / (1 - beta1**t)
+        v_hat = v['bh'] / (1 - beta2**t)
+        self.bh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # Clip gradients to mitigate exploding gradients
+        for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
+            np.clip(self.__dict__[param_name], -1, 1, out=self.__dict__[param_name])
+
 
 class GRULayer:
     def __init__(self, input_size, hidden_size, num_cells):
