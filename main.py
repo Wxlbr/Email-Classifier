@@ -20,7 +20,7 @@ def tanh(x):
 def relu(x):
     return np.maximum(0, x)
 
-# GRU Layer class
+# GRU cell class
 class GRU:
     def __init__(self, input_size, hidden_size):
         self.input_size = input_size
@@ -146,11 +146,6 @@ class GRU:
             h_prev = np.zeros((self.hidden_size, 1))
             self.t = 0  # Initialize time step
 
-
-            for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-                self.m[param_name] = np.zeros_like(self.__dict__[param_name]) # Initialize first moment vector
-                self.v[param_name] = np.zeros_like(self.__dict__[param_name]) # Initialize second moment vector
-
             for x, target in zip(X, y):
                 # Forward pass
                 h, rz, rr, h_candidate = self.forward(x, h_prev)
@@ -193,70 +188,72 @@ class GRU:
         epsilon = 1e-4
         learning_rate = 0.01
 
-        m = self.m
-        v = self.v
+        if not self.m and not self.v:
+            for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
+                self.m[param_name] = np.zeros_like(self.__dict__[param_name])
+                self.v[param_name] = np.zeros_like(self.__dict__[param_name])
 
         # dWz
-        m['Wz'] = beta1 * m['Wz'] + (1 - beta1) * dWz
-        v['Wz'] = beta2 * v['Wz'] + (1 - beta2) * (dWz**2)
-        m_hat = m['Wz'] / (1 - beta1**t)
-        v_hat = v['Wz'] / (1 - beta2**t)
+        self.m['Wz'] = beta1 * self.m['Wz'] + (1 - beta1) * dWz
+        self.v['Wz'] = beta2 * self.v['Wz'] + (1 - beta2) * (dWz**2)
+        m_hat = self.m['Wz'] / (1 - beta1**t)
+        v_hat = self.v['Wz'] / (1 - beta2**t)
         self.Wz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dUz
-        m['Uz'] = beta1 * m['Uz'] + (1 - beta1) * dUz
-        v['Uz'] = beta2 * v['Uz'] + (1 - beta2) * (dUz**2)
-        m_hat = m['Uz'] / (1 - beta1**t)
-        v_hat = v['Uz'] / (1 - beta2**t)
+        self.m['Uz'] = beta1 * self.m['Uz'] + (1 - beta1) * dUz
+        self.v['Uz'] = beta2 * self.v['Uz'] + (1 - beta2) * (dUz**2)
+        m_hat = self.m['Uz'] / (1 - beta1**t)
+        v_hat = self.v['Uz'] / (1 - beta2**t)
         self.Uz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dbz
-        m['bz'] = beta1 * m['bz'] + (1 - beta1) * dbz
-        v['bz'] = beta2 * v['bz'] + (1 - beta2) * (dbz**2)
-        m_hat = m['bz'] / (1 - beta1**t)
-        v_hat = v['bz'] / (1 - beta2**t)
+        self.m['bz'] = beta1 * self.m['bz'] + (1 - beta1) * dbz
+        self.v['bz'] = beta2 * self.v['bz'] + (1 - beta2) * (dbz**2)
+        m_hat = self.m['bz'] / (1 - beta1**t)
+        v_hat = self.v['bz'] / (1 - beta2**t)
         self.bz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dWr
-        m['Wr'] = beta1 * m['Wr'] + (1 - beta1) * dWr
-        v['Wr'] = beta2 * v['Wr'] + (1 - beta2) * (dWr**2)
-        m_hat = m['Wr'] / (1 - beta1**t)
-        v_hat = v['Wr'] / (1 - beta2**t)
+        self.m['Wr'] = beta1 * self.m['Wr'] + (1 - beta1) * dWr
+        self.v['Wr'] = beta2 * self.v['Wr'] + (1 - beta2) * (dWr**2)
+        m_hat = self.m['Wr'] / (1 - beta1**t)
+        v_hat = self.v['Wr'] / (1 - beta2**t)
         self.Wr -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dUr
-        m['Ur'] = beta1 * m['Ur'] + (1 - beta1) * dUr
-        v['Ur'] = beta2 * v['Ur'] + (1 - beta2) * (dUr**2)
-        m_hat = m['Ur'] / (1 - beta1**t)
-        v_hat = v['Ur'] / (1 - beta2**t)
+        self.m['Ur'] = beta1 * self.m['Ur'] + (1 - beta1) * dUr
+        self.v['Ur'] = beta2 * self.v['Ur'] + (1 - beta2) * (dUr**2)
+        m_hat = self.m['Ur'] / (1 - beta1**t)
+        v_hat = self.v['Ur'] / (1 - beta2**t)
         self.Ur -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dbr
-        m['br'] = beta1 * m['br'] + (1 - beta1) * dbr
-        v['br'] = beta2 * v['br'] + (1 - beta2) * (dbr**2)
-        m_hat = m['br'] / (1 - beta1**t)
-        v_hat = v['br'] / (1 - beta2**t)
+        self.m['br'] = beta1 * self.m['br'] + (1 - beta1) * dbr
+        self.v['br'] = beta2 * self.v['br'] + (1 - beta2) * (dbr**2)
+        m_hat = self.m['br'] / (1 - beta1**t)
+        v_hat = self.v['br'] / (1 - beta2**t)
         self.br -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dWh
-        m['Wh'] = beta1 * m['Wh'] + (1 - beta1) * dWh
-        v['Wh'] = beta2 * v['Wh'] + (1 - beta2) * (dWh**2)
-        m_hat = m['Wh'] / (1 - beta1**t)
-        v_hat = v['Wh'] / (1 - beta2**t)
+        self.m['Wh'] = beta1 * self.m['Wh'] + (1 - beta1) * dWh
+        self.v['Wh'] = beta2 * self.v['Wh'] + (1 - beta2) * (dWh**2)
+        m_hat = self.m['Wh'] / (1 - beta1**t)
+        v_hat = self.v['Wh'] / (1 - beta2**t)
         self.Wh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dUh
-        m['Uh'] = beta1 * m['Uh'] + (1 - beta1) * dUh
-        v['Uh'] = beta2 * v['Uh'] + (1 - beta2) * (dUh**2)
-        m_hat = m['Uh'] / (1 - beta1**t)
-        v_hat = v['Uh'] / (1 - beta2**t)
+        self.m['Uh'] = beta1 * self.m['Uh'] + (1 - beta1) * dUh
+        self.v['Uh'] = beta2 * self.v['Uh'] + (1 - beta2) * (dUh**2)
+        m_hat = self.m['Uh'] / (1 - beta1**t)
+        v_hat = self.v['Uh'] / (1 - beta2**t)
         self.Uh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # dbh
-        m['bh'] = beta1 * m['bh'] + (1 - beta1) * dbh
-        v['bh'] = beta2 * v['bh'] + (1 - beta2) * (dbh**2)
-        m_hat = m['bh'] / (1 - beta1**t)
-        v_hat = v['bh'] / (1 - beta2**t)
+        self.m['bh'] = beta1 * self.m['bh'] + (1 - beta1) * dbh
+        self.v['bh'] = beta2 * self.v['bh'] + (1 - beta2) * (dbh**2)
+        m_hat = self.m['bh'] / (1 - beta1**t)
+        v_hat = self.v['bh'] / (1 - beta2**t)
         self.bh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # Clip gradients to mitigate exploding gradients
@@ -270,7 +267,8 @@ class GRULayer:
         self.hidden_size = hidden_size
         self.num_cells = num_cells
         self.cells = [GRU(input_size, hidden_size) for _ in range(num_cells)]
-        self.h_prev = [np.zeros((hidden_size, 1)) for _ in range(num_cells)]
+        self.h_prev = np.zeros((num_cells, hidden_size, 1))
+        self.X = []
 
     def forward(self, x):
         outputs = []
@@ -285,13 +283,58 @@ class GRULayer:
         dh_next = np.zeros((self.hidden_size, 1))
         for i in reversed(range(self.num_cells)):
             dh = d_outputs[i] + dh_next  # Add gradients from the next cell
-            dh_prev, *_ = self.cells[i].backward(self.h_prev[i], dh, dh, dh, dh, dh, dh)
+            dh_prev, *_ = self.cells[i].backward(self.X[i], dh, dh, dh, dh, dh, dh)
             dh_next = dh_prev  # Pass the gradient to the previous cell
         return dh_next
 
-    def update(self, learning_rate):
+    def update(self, t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh):
         for cell in self.cells:
-            cell.update(learning_rate)
+            cell.update(t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh)
+
+    def train(self, X, y, learning_rate, epochs):
+        self.X = X
+
+        for epoch in range(epochs):
+            total_loss = 0.0
+            for cell in self.cells:
+                cell.t = 0  # Initialize time step
+                cell.m = {}
+                cell.v = {}
+
+            for j in range(len(X)):
+                x = X[j]
+                target = y[j]
+                outputs = self.forward(x)
+                h, rz, rr, h_candidate = outputs[-1]
+
+                loss = np.mean((h - target) ** 2)
+                total_loss += loss
+
+                dh_next = self.backward(
+                    d_outputs=[2 * (h - target)])
+
+                for i in reversed(range(self.num_cells)):
+                    _, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.cells[i].backward(
+                        x=self.X[i], h_prev=self.h_prev[i], h=h, rz=rz, rr=rr, h_candidate=h_candidate,
+                        dh_next=dh_next)
+                    dh_next = np.zeros((self.hidden_size, 1))  # Reset to zero for all cells except the first one
+
+                for i in range(self.num_cells):
+                    self.cells[i].t += 1  # Increase the time step
+                    self.cells[i].update(
+                        t=self.cells[i].t, dWz=dWz, dUz=dUz, dbz=dbz, dWr=dWr, dUr=dUr, dbr=dbr,
+                        dWh=dWh, dUh=dUh, dbh=dbh)
+                    self.h_prev[i] = outputs[i]
+
+            average_loss = total_loss / len(X)
+            print(f"Epoch {epoch + 1}/{epochs}, Loss: {average_loss:.4f}")
+
+    def predict(self, X):
+        predictions = []
+        for x in X:
+            outputs = self.forward(x)
+            predictions.append(outputs[-1][0])
+        return predictions
 
 def mod(x):
     return x if x > 0 else -x
@@ -301,7 +344,8 @@ def mod(x):
 if __name__ == "__main__":
     input_size = 100
     hidden_size = 4
-    gru = GRU(input_size, hidden_size)
+    # gru = GRU(input_size, hidden_size)
+    gru = GRULayer(input_size, hidden_size, 1)
 
     with open('./inc/emails.csv', 'r', encoding='utf-8') as f:
         data = pd.read_csv(f)
