@@ -269,6 +269,7 @@ class GRULayer:
         self.cells = [GRU(input_size, hidden_size) for _ in range(num_cells)]
         self.h_prev = np.zeros((num_cells, hidden_size, 1))
         self.X = []
+        self.t = 0
 
     def forward(self, x):
         outputs = []
@@ -282,9 +283,9 @@ class GRULayer:
     def backward(self, d_outputs):
         dh_next = np.zeros((self.hidden_size, 1))
         for i in reversed(range(self.num_cells)):
-            dh = d_outputs[i] + dh_next  # Add gradients from the next cell
-            dh_prev, *_ = self.cells[i].backward(self.X[i], dh, dh, dh, dh, dh, dh)
-            dh_next = dh_prev  # Pass the gradient to the previous cell
+            dh_next, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.cells[i].backward(
+                self.X[self.t], self.h_prev[i], d_outputs[i], dh_next)
+            self.update(self.t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh)
         return dh_next
 
     def update(self, t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh):
@@ -296,35 +297,30 @@ class GRULayer:
 
         for epoch in range(epochs):
             total_loss = 0.0
+            self.t = 0  # Initialize time step
             for cell in self.cells:
                 cell.t = 0  # Initialize time step
                 cell.m = {}
                 cell.v = {}
 
             for j in range(len(X)):
-                x = X[j]
-                target = y[j]
-                outputs = self.forward(x)
-                h, rz, rr, h_candidate = outputs[-1]
+                self.h_prev = np.zeros((self.num_cells, self.hidden_size, 1))
 
-                loss = np.mean((h - target) ** 2)
-                total_loss += loss
+                for i in range(len(X[j])):
+                    # Forward pass
+                    outputs = self.forward(X[j][i])
 
-                dh_next = self.backward(
-                    d_outputs=[2 * (h - target)])
+                    # Calculate MSE loss
+                    loss = np.mean((outputs[-1] - y[j][i])**2)
+                    total_loss += loss
 
-                for i in reversed(range(self.num_cells)):
-                    _, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.cells[i].backward(
-                        x=self.X[i], h_prev=self.h_prev[i], h=h, rz=rz, rr=rr, h_candidate=h_candidate,
-                        dh_next=dh_next)
-                    dh_next = np.zeros((self.hidden_size, 1))  # Reset to zero for all cells except the first one
+                    # Compute gradients using backpropagation
+                    dh_next = 2 * (outputs[-1] - y[j][i])
+                    dh_prev = self.backward(dh_next)
 
-                for i in range(self.num_cells):
-                    self.cells[i].t += 1  # Increase the time step
-                    self.cells[i].update(
-                        t=self.cells[i].t, dWz=dWz, dUz=dUz, dbz=dbz, dWr=dWr, dUr=dUr, dbr=dbr,
-                        dWh=dWh, dUh=dUh, dbh=dbh)
-                    self.h_prev[i] = outputs[i]
+                    dh_next = dh_prev
+
+                    self.t += 1
 
             average_loss = total_loss / len(X)
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {average_loss:.4f}")
