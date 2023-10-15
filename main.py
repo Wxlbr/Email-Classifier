@@ -28,18 +28,28 @@ class GRU:
 
         # Parameters
         # Xavier initialisation
+
+        '''
+            Rules for matrix multiplication:
+            - The number of columns of the 1st matrix must equal the number of rows of the 2nd matrix
+            - The answer matrix always has the same number of rows as the 1st matrix, and the same number of columns as the 2nd matrix
+            e.g. (3, 2) x (2, 4) = (3, 4)
+            e.g. (hidden_size, input_size) x (input_size, 1) = (hidden_size, 1)
+
+            Weights are matrices of shape (hidden_size, input_size)
+            Update gate weights are matrices of shape (hidden_size, hidden_size)
+            Biases are matrices of shape (hidden_size, 1)
+        '''
+
         self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        # self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
         self.Uz = np.eye(hidden_size) * 0.01
         self.bz = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
         self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        # self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
         self.Ur = np.eye(hidden_size) * 0.01
         self.br = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
         self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        # self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2)
         self.Uh = np.eye(hidden_size) * 0.01
         self.bh = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
 
@@ -57,16 +67,23 @@ class GRU:
         self.t = 0
 
     def forward(self, x, h_prev):
+
         # Reset gate
-        rz = sigmoid(np.dot(self.Wz, np.array(x).reshape(-1, 1)) +
+        rz = sigmoid(np.dot(self.Wz, x) +
                      np.dot(self.Uz, h_prev) + self.bz)
 
+        print(f"Wz: {self.Wz.shape}")
+        print(f"Uz: {self.Uz.shape}")
+        print(f"bz: {self.bz.shape}")
+        print(f"h_prev: {h_prev.shape}")
+        print(f"rz: {rz.shape}")
+
         # Update gate
-        rr = sigmoid(np.dot(self.Wr, np.array(x).reshape(-1, 1)) +
+        rr = sigmoid(np.dot(self.Wr, x) +
                      np.dot(self.Ur, h_prev) + self.br)
 
         # Candidate hidden state
-        h_candidate = tanh(np.dot(self.Wh, np.array(x).reshape(-1, 1)) +
+        h_candidate = tanh(np.dot(self.Wh, x) +
                            np.dot(self.Uh, rr * h_prev) + self.bh)
 
         # Batch normalization for reset gate
@@ -193,6 +210,11 @@ class GRU:
                 self.m[param_name] = np.zeros_like(self.__dict__[param_name])
                 self.v[param_name] = np.zeros_like(self.__dict__[param_name])
 
+        print(f"t: {t}")
+        print(f"dWz: {dWz.shape}")
+        print(dWz)
+        print(f"self.m['Wz']: {self.m['Wz'].shape}")
+
         # dWz
         self.m['Wz'] = beta1 * self.m['Wz'] + (1 - beta1) * dWz
         self.v['Wz'] = beta2 * self.v['Wz'] + (1 - beta2) * (dWz**2)
@@ -267,16 +289,24 @@ class GRULayer:
         self.hidden_size = hidden_size
         self.num_cells = num_cells
         self.cells = [GRU(input_size, hidden_size) for _ in range(num_cells)]
-        self.h_prev = np.zeros((num_cells, hidden_size, 1))
+        self.h_prev = np.zeros((num_cells, hidden_size, input_size))
+        self.rr_prev = np.zeros((num_cells, hidden_size, input_size))
+        self.rz_prev = np.zeros((num_cells, hidden_size, input_size))
+        self.h_candidate_prev = np.zeros((num_cells, hidden_size, input_size))
         self.X = []
         self.t = 0
 
     def forward(self, x):
         outputs = []
         for i in range(self.num_cells):
-            h, _, _, _ = self.cells[i].forward(x, self.h_prev[i])
+            h, rr, rz, h_candidate = self.cells[i].forward(x, self.h_prev[i])
             outputs.append(h)
-            self.h_prev[i] = h
+            print(h.shape)
+            print(self.h_prev[i].shape)
+            self.h_prev[i] = h.reshape((self.hidden_size, self.input_size))
+            self.rr_prev[i] = rr
+            self.rz_prev[i] = rz
+            self.h_candidate_prev[i] = h_candidate
             x = h  # Output of one cell is the input to the next
         return outputs
 
@@ -284,7 +314,7 @@ class GRULayer:
         dh_next = np.zeros((self.hidden_size, 1))
         for i in reversed(range(self.num_cells)):
             dh_next, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh = self.cells[i].backward(
-                self.X[self.t], self.h_prev[i], d_outputs[i], dh_next)
+                self.X[self.t], self.h_prev[i], d_outputs[i], dh_next, self.rr_prev[i], self.rz_prev[i], self.h_candidate_prev[i])
             self.update(self.t, dWz, dUz, dbz, dWr, dUr, dbr, dWh, dUh, dbh)
         return dh_next
 
@@ -304,18 +334,21 @@ class GRULayer:
                 cell.v = {}
 
             for j in range(len(X)):
-                self.h_prev = np.zeros((self.num_cells, self.hidden_size, 1))
+                # self.h_prev = np.zeros((self.num_cells, self.hidden_size, 1))
+                self.h_prev = np.zeros((self.num_cells, self.hidden_size, self.input_size))
 
                 for i in range(len(X[j])):
                     # Forward pass
                     outputs = self.forward(X[j][i])
 
                     # Calculate MSE loss
-                    loss = np.mean((outputs[-1] - y[j][i])**2)
+                    # loss = np.mean((outputs[-1] - y[j][i])**2)
+                    loss = np.mean((outputs[-1] - y[j])**2)
+
                     total_loss += loss
 
                     # Compute gradients using backpropagation
-                    dh_next = 2 * (outputs[-1] - y[j][i])
+                    dh_next = 2 * (outputs[-1] - y[j])
                     dh_prev = self.backward(dh_next)
 
                     dh_next = dh_prev
@@ -340,8 +373,8 @@ def mod(x):
 if __name__ == "__main__":
     input_size = 100
     hidden_size = 4
-    # gru = GRU(input_size, hidden_size)
-    gru = GRULayer(input_size, hidden_size, 1)
+    gru = GRU(input_size, hidden_size)
+    # gru = GRULayer(input_size, hidden_size, 1)
 
     with open('./inc/emails.csv', 'r', encoding='utf-8') as f:
         data = pd.read_csv(f)
