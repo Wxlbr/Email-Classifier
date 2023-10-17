@@ -9,9 +9,6 @@ def sigmoid(x):
 def tanh(x):
     return np.tanh(x)
 
-def relu(x):
-    return np.maximum(0, x)
-
 class BatchNorm:
     def __init__(self, input_size):
         self.input_size = input_size
@@ -95,7 +92,7 @@ class GRU:
         # return h, rz, rr, h_candidate
         return h, rz_normalized, rr_normalized, h_candidate_normalized
 
-    def backward(self, x, h_prev, rz, rr, h_candidate, dh):
+    def backward(self, x, h_prev, rz, rr, h_candidate, dh, update=True):
         # Gradient with respect to the hidden state
         # dh = dh * (1 - rz) + np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2)) # Check this
 
@@ -124,6 +121,9 @@ class GRU:
         self.dUh[self.t] = np.dot(dh_candidate * (1 - rz), (rr * h_prev).T)
         self.dbh[self.t] = np.sum(dh_candidate * (1 - rz), axis=1, keepdims=True)
 
+        if update:
+            self.update()
+
     def train(self, X, y, epochs):
         for epoch in range(epochs):
             total_loss = 0.0
@@ -141,9 +141,6 @@ class GRU:
                 # Compute gradients using backpropagation
                 dh_next = 2 * (h - target)
                 self.backward(x, h_prev, rz, rr, h_candidate, dh_next)
-
-                # Update parameters using Adam Optimiser
-                self.update()
 
                 self.t += 1  # Increase the time step
 
@@ -163,81 +160,25 @@ class GRU:
         return predictions
 
     def update(self):
-        t = self.t + 1
-
         # Update parameters using Adam Optimiser
         beta1 = 0.9
         beta2 = 0.999
         epsilon = 1e-4
         learning_rate = 0.01
 
-        if not self.m and not self.v:
-            for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-                self.m[param_name] = np.zeros_like(self.__dict__[param_name])
-                self.v[param_name] = np.zeros_like(self.__dict__[param_name])
+        for param in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
+            dparam = getattr(self, 'd' + param)[self.t]
+            if param not in self.m:
+                self.m[param] = np.zeros_like(dparam)
+                self.v[param] = np.zeros_like(dparam)
 
-        # dWz
-        self.m['Wz'] = beta1 * self.m['Wz'] + (1 - beta1) * self.dWz[self.t]
-        self.v['Wz'] = beta2 * self.v['Wz'] + (1 - beta2) * (self.dWz[self.t]**2)
-        m_hat = self.m['Wz'] / (1 - beta1**t)
-        v_hat = self.v['Wz'] / (1 - beta2**t)
-        self.Wz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+            self.m[param] = beta1 * self.m[param] + (1 - beta1) * dparam
+            self.v[param] = beta2 * self.v[param] + (1 - beta2) * (dparam ** 2)
 
-        # dUz
-        self.m['Uz'] = beta1 * self.m['Uz'] + (1 - beta1) * self.dUz[self.t]
-        self.v['Uz'] = beta2 * self.v['Uz'] + (1 - beta2) * (self.dUz[self.t]**2)
-        m_hat = self.m['Uz'] / (1 - beta1**t)
-        v_hat = self.v['Uz'] / (1 - beta2**t)
-        self.Uz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+            m_correlated = self.m[param] / (1 - beta1 ** (self.t + 1))
+            v_correlated = self.v[param] / (1 - beta2 ** (self.t + 1))
 
-        # dbz
-        self.m['bz'] = beta1 * self.m['bz'] + (1 - beta1) * self.dbz[self.t]
-        self.v['bz'] = beta2 * self.v['bz'] + (1 - beta2) * (self.dbz[self.t]**2)
-        m_hat = self.m['bz'] / (1 - beta1**t)
-        v_hat = self.v['bz'] / (1 - beta2**t)
-        self.bz -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dWr
-        self.m['Wr'] = beta1 * self.m['Wr'] + (1 - beta1) * self.dWr[self.t]
-        self.v['Wr'] = beta2 * self.v['Wr'] + (1 - beta2) * (self.dWr[self.t]**2)
-        m_hat = self.m['Wr'] / (1 - beta1**t)
-        v_hat = self.v['Wr'] / (1 - beta2**t)
-        self.Wr -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dUr
-        self.m['Ur'] = beta1 * self.m['Ur'] + (1 - beta1) * self.dUr[self.t]
-        self.v['Ur'] = beta2 * self.v['Ur'] + (1 - beta2) * (self.dUr[self.t]**2)
-        m_hat = self.m['Ur'] / (1 - beta1**t)
-        v_hat = self.v['Ur'] / (1 - beta2**t)
-        self.Ur -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dbr
-        self.m['br'] = beta1 * self.m['br'] + (1 - beta1) * self.dbr[self.t]
-        self.v['br'] = beta2 * self.v['br'] + (1 - beta2) * (self.dbr[self.t]**2)
-        m_hat = self.m['br'] / (1 - beta1**t)
-        v_hat = self.v['br'] / (1 - beta2**t)
-        self.br -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dWh
-        self.m['Wh'] = beta1 * self.m['Wh'] + (1 - beta1) * self.dWh[self.t]
-        self.v['Wh'] = beta2 * self.v['Wh'] + (1 - beta2) * (self.dWh[self.t]**2)
-        m_hat = self.m['Wh'] / (1 - beta1**t)
-        v_hat = self.v['Wh'] / (1 - beta2**t)
-        self.Wh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dUh
-        self.m['Uh'] = beta1 * self.m['Uh'] + (1 - beta1) * self.dUh[self.t]
-        self.v['Uh'] = beta2 * self.v['Uh'] + (1 - beta2) * (self.dUh[self.t]**2)
-        m_hat = self.m['Uh'] / (1 - beta1**t)
-        v_hat = self.v['Uh'] / (1 - beta2**t)
-        self.Uh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-        # dbh
-        self.m['bh'] = beta1 * self.m['bh'] + (1 - beta1) * self.dbh[self.t]
-        self.v['bh'] = beta2 * self.v['bh'] + (1 - beta2) * (self.dbh[self.t]**2)
-        m_hat = self.m['bh'] / (1 - beta1**t)
-        v_hat = self.v['bh'] / (1 - beta2**t)
-        self.bh -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+            setattr(self, param, getattr(self, param) - learning_rate * m_correlated / (np.sqrt(v_correlated) + epsilon))
 
         # Clip gradients to mitigate exploding gradients
         for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
