@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from gensim.models import Word2Vec
+
 # Activation functions
 
 def sigmoid(x):
@@ -30,51 +34,53 @@ class GRU:
         self.hidden_size = hidden_size
 
         # Parameters
-        # Xavier initialisation
-        self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Uz = np.eye(hidden_size) * 0.01
-        self.bz = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
+        # Xavier initialization
+        self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
+        self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
+        self.bz = np.zeros((hidden_size, 1)) # Shape (hidden_size, 1)
 
-        self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Ur = np.eye(hidden_size) * 0.01
-        self.br = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
+        self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
+        self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
+        self.br = np.zeros((hidden_size, 1)) # Shape (hidden_size, 1)
 
-        self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2)
-        self.Uh = np.eye(hidden_size) * 0.01
-        self.bh = np.zeros((hidden_size, 1)) / np.sqrt(hidden_size / 2)
+        self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
+        self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
+        self.bh = np.zeros((hidden_size, 1))
 
         # Batch normalization parameters
         self.norm_z = BatchNorm(hidden_size)
         self.norm_r = BatchNorm(hidden_size)
         self.norm_h = BatchNorm(hidden_size)
 
-        # Adam Optimiser parameters
+        # Adam Optimizer parameters
         self.m = {}
         self.v = {}
 
         self.t = 0
 
-        self.dWz = np.zeros((input_size, hidden_size, input_size))
-        self.dUz = np.zeros((input_size, hidden_size, hidden_size))
-        self.dbz = np.zeros((input_size, hidden_size, 1))
+        self.dWz = np.zeros_like(self.Wz) # Shape (hidden_size, input_size)
+        self.dUz = np.zeros_like(self.Uz) # Shape (hidden_size, hidden_size)
+        self.dbz = np.zeros_like(self.bz) # Shape (hidden_size, 1)
 
-        self.dWr = np.zeros((input_size, hidden_size, input_size))
-        self.dUr = np.zeros((input_size, hidden_size, hidden_size))
-        self.dbr = np.zeros((input_size, hidden_size, 1))
+        self.dWr = np.zeros_like(self.Wr) # Shape (hidden_size, input_size)
+        self.dUr = np.zeros_like(self.Ur) # Shape (hidden_size, hidden_size)
+        self.dbr = np.zeros_like(self.br) # Shape (hidden_size, 1)
 
-        self.dWh = np.zeros((input_size, hidden_size, input_size))
-        self.dUh = np.zeros((input_size, hidden_size, hidden_size))
-        self.dbh = np.zeros((input_size, hidden_size, 1))
+        self.dWh = np.zeros_like(self.Wh) # Shape (hidden_size, input_size)
+        self.dUh = np.zeros_like(self.Uh) # Shape (hidden_size, hidden_size)
+        self.dbh = np.zeros_like(self.bh) # Shape (hidden_size, 1)
 
     def forward(self, x, h_prev):
+        # x = np.array(x).reshape(-1, 1)
+
         # Reset gate
-        rz = sigmoid(np.dot(self.Wz, np.array(x).reshape(-1, 1)) + np.dot(self.Uz, h_prev) + self.bz)
+        rz = sigmoid(np.dot(self.Wz, x) + np.dot(self.Uz, h_prev) + self.bz)
 
         # Update gate
-        rr = sigmoid(np.dot(self.Wr, np.array(x).reshape(-1, 1)) + np.dot(self.Ur, h_prev) + self.br)
+        rr = sigmoid(np.dot(self.Wr, x) + np.dot(self.Ur, h_prev) + self.br)
 
         # Candidate hidden state
-        h_candidate = tanh(np.dot(self.Wh, np.array(x).reshape(-1, 1)) + np.dot(self.Uh, rr * h_prev) + self.bh)
+        h_candidate = tanh(np.dot(self.Wh, x) + np.dot(self.Uh, rr * h_prev) + self.bh)
 
         # Batch normalization for reset gate
         rz_normalized = self.norm_z.forward(rz)
@@ -97,27 +103,37 @@ class GRU:
         # dh = dh * (1 - rz) + np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2)) # Check this
 
         # Ensure that x has the correct shape (input_size, 1)
-        x_reshaped = np.array(x).reshape((self.input_size, 1))
+        x = np.array(x).reshape((self.input_size, 1))
 
         # Gradient with respect to the reset gate
         dz = (dh * (h_candidate - h_prev)) * (rz * (1 - rz))
 
         # Gradient with respect to the update gate
-        dr = (np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2))) * (rr * (1 - rr))
+        dr = np.dot(self.Uz.T, dz) * (rr * (1 - rr))
 
         # Gradient with respect to the candidate hidden state
         dh_candidate = np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2))
 
+        print(dz.shape, x.shape, h_prev.shape)
+
         # Gradients with respect to parameters
-        self.dWz[self.t] = np.dot(dz, x_reshaped.T)
-        self.dUz[self.t] = np.dot(dz, h_prev.T)
+        self.dWz[self.t] = np.dot(dz, x)
+        self.dUz[self.t] = np.dot(dz, h_prev)
         self.dbz[self.t] = np.sum(dz, axis=1, keepdims=True)
 
-        self.dWr[self.t] = np.dot(dr, x_reshaped.T)
-        self.dUr[self.t] = np.dot(dr, h_prev.T)
+        self.dWr[self.t] = np.dot(dr, x)
+        self.dUr[self.t] = np.dot(dr.T, h_prev)
         self.dbr[self.t] = np.sum(dr, axis=1, keepdims=True)
 
-        self.dWh[self.t] = np.dot(dh_candidate * (1 - rz), x_reshaped.T)
+        # print(dr.T.shape, h_prev.shape)
+        # print((dh_candidate * (1 - rz)).T.shape, (rr * h_prev).T.shape)
+        # print((dh_candidate * (1 - rz)).T.shape, (rr * h_prev).shape)
+        print((dh_candidate * (1 - rz)).shape, (rr * h_prev).T.shape)
+        # print((dh_candidate * (1 - rz)).shape, (rr * h_prev).shape)
+
+        print(rr.shape, h_prev.shape)
+
+        self.dWh[self.t] = np.dot(dh_candidate * (1 - rz), x.T).T
         self.dUh[self.t] = np.dot(dh_candidate * (1 - rz), (rr * h_prev).T)
         self.dbh[self.t] = np.sum(dh_candidate * (1 - rz), axis=1, keepdims=True)
 
@@ -178,62 +194,78 @@ class GRU:
             m_correlated = self.m[param] / (1 - beta1 ** (self.t + 1))
             v_correlated = self.v[param] / (1 - beta2 ** (self.t + 1))
 
-            setattr(self, param, getattr(self, param) - learning_rate * m_correlated / (np.sqrt(v_correlated) + epsilon))
+            # Update the parameter
+            param_val = getattr(self, param)
+
+            numerator = learning_rate * m_correlated
+            denominator = np.sqrt(v_correlated) + epsilon
+            difference = numerator / denominator
+
+            if len(param_val.shape) == 2 and len(difference.T.shape) == 2:
+                param_val -= difference
+            else:
+                param_val -= difference.T
+
+            setattr(self, param, param_val)
 
         # Clip gradients to mitigate exploding gradients
         for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
             np.clip(self.__dict__[param_name], -1, 1, out=self.__dict__[param_name])
 
+
+
 # Example usage
 if __name__ == "__main__":
-    input_size = 100
-    hidden_size = 4
-    gru = GRU(input_size, hidden_size)
+    # Read data from inc/kaggleDataset.csv
+    with open('inc/kaggleDataset.csv', 'r', encoding='utf-8') as f:
+        emails = pd.read_csv(f)
 
-    with open('./inc/emails.csv', 'r', encoding='utf-8') as f:
-        data = pd.read_csv(f)
+    # Shuffle the data
+    emails = emails.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    # num_inputs = round(len(data) * 0.8)
-    # num_tests = round(len(data) * 0.2)
+    # Get the labels
+    labels = emails.pop('label')
+    labels = labels.map({'ham': 0, 'spam': 1})
 
-    num_inputs = 100
-    num_tests = 100
+    # Get the text
+    text = emails.pop('text')
 
-    X_train = [data.iloc[i][:input_size].values.tolist() if input_size < len(
-        data.iloc[i]) else data.iloc[i][:len(
-            data.iloc[i])-1].values.tolist() for i in range(num_inputs)]
+    # Split the text into lowercase words
+    text = text.apply(lambda x: x.lower().split(' '))
 
-    y_train = [data['Prediction'][i] for i in range(num_inputs)]
+    # Word2Vec
+    model = Word2Vec(sentences=text, vector_size=100, window=5, min_count=1, workers=30)
+    words = list(model.wv.index_to_key)
 
-    # print(X_train)
-    # print(y_train)
-
-    gru.train(X_train, y_train, epochs=100)
-
-    test_size = input_size
-
-    X_test = [data.iloc[i][input_size:(input_size + test_size)].values.tolist() if input_size + test_size < len(
-        data.iloc[i]) else data.iloc[i][input_size:len(
-            data.iloc[i])-1].values.tolist() for i in range(num_tests)]
-
-    y_test = [data['Prediction'][i+input_size] for i in range(num_tests)]
-
-    predictions = gru.predict(X_test)
-    correct = 0
-    positives = 0
-    negatives = 0
-
-    for i, pred in enumerate(predictions):
-        # print(f"Prediction {i + 1}:")
-        print(f"Predicted: {pred.mean()}")
-        p = 1 if pred.mean() > 0.5 else 0
-        if p == y_test[i]:
-            correct += 1
-        if p == 1:
-            positives += 1
+    # Convert text to word vectors
+    word_vectors = []
+    for sentence in text:
+        sentence_vectors = [model.wv[word] for word in sentence if word in model.wv]
+        if len(sentence_vectors) > 0:
+            word_vectors.append(sentence_vectors)
         else:
-            negatives += 1
+            word_vectors.append([np.zeros(100)])
 
-    print(f"Accuracy: {correct / len(y_test)}")
-    print(f"Positives: {positives}")
-    print(f"Negatives: {negatives}")
+    # Padding the sequences to make them of equal length
+    padded_vectors = tf.keras.preprocessing.sequence.pad_sequences(word_vectors, padding='post')
+
+    # Reduce the data size by sampling to 1000 vectors of length 100 each of single words
+    sample_size = 1000
+    sample_indices = np.random.choice(len(padded_vectors), sample_size, replace=False)
+
+    padded_vectors_sampled = padded_vectors[sample_indices]
+    labels_sampled = labels.iloc[sample_indices]
+
+    # Get the input size
+    input_size = padded_vectors_sampled.shape[2]
+
+    # exit()
+
+    # Split the sampled data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(padded_vectors_sampled, labels_sampled, test_size=0.2, random_state=42)
+
+    hidden_size = 4
+
+    model = GRU(input_size, hidden_size)
+
+    model.train(X_train, y_train, epochs=1)
