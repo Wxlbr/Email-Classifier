@@ -1,271 +1,198 @@
 import numpy as np
 import pandas as pd
-
-import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from gensim.models import Word2Vec
 
-# Activation functions
-
+# Sigmoid function
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+# Derivative of sigmoid function
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Tanh function
 def tanh(x):
     return np.tanh(x)
 
-class BatchNorm:
-    def __init__(self, input_size):
-        self.input_size = input_size
-        self.gamma = np.ones((input_size, 1))
-        self.beta = np.zeros((input_size, 1))
-        self.epsilon = 1e-5
+# Derivative of tanh function
+def tanh_derivative(x):
+    return 1 - x ** 2
 
-    def forward(self, x):
-        mean = np.mean(x, axis=0)
-        var = np.var(x, axis=0)
-        x_normalized = (x - mean) / np.sqrt(var + self.epsilon)
-        output = self.gamma * x_normalized + self.beta
-        return output
+def softmax(x):
+    return np.exp(x) / np.sum(np.exp(x), axis=0)
 
-# GRU cell class
+def relu(x):
+    return np.maximum(0, x)
+
+class Word2VecWrapper:
+    def __init__(self, sentences):
+        self.word2vec = Word2Vec(sentences, min_count=1)
+
+    def vectorise(self, sentence, pad):
+        vecs = [self.word2vec.wv[word] for word in sentence if word in self.word2vec.wv]
+        if len(vecs) < pad:
+            vecs += [[0] * self.word2vec.vector_size] * (pad - len(vecs))
+        return vecs[:pad]
+
 class GRU:
-    def __init__(self, input_size, hidden_size):
-        self.input_size = input_size
-        self.hidden_size = hidden_size
+    def __init__(self, input_size, hidden_size, output_size):
+        # Initialize weights
+        self.Wr = np.random.randn(hidden_size, input_size)
+        self.Ur = np.random.randn(hidden_size, hidden_size)
+        self.Br = np.zeros((hidden_size, 1))
 
-        # Parameters
-        # Xavier initialization
-        self.Wz = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
-        self.Uz = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
-        self.bz = np.zeros((hidden_size, 1)) # Shape (hidden_size, 1)
+        self.Wz = np.random.randn(hidden_size, input_size)
+        self.Uz = np.random.randn(hidden_size, hidden_size)
+        self.Bz = np.zeros((hidden_size, 1))
 
-        self.Wr = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
-        self.Ur = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
-        self.br = np.zeros((hidden_size, 1)) # Shape (hidden_size, 1)
+        self.Wh = np.random.randn(hidden_size, input_size)
+        self.Uh = np.random.randn(hidden_size, hidden_size)
+        self.Bh = np.zeros((hidden_size, 1))
 
-        self.Wh = np.random.randn(hidden_size, input_size) / np.sqrt(input_size / 2) # Shape (hidden_size, input_size)
-        self.Uh = np.random.randn(hidden_size, hidden_size) / np.sqrt(hidden_size / 2) # Shape (hidden_size, hidden_size)
-        self.bh = np.zeros((hidden_size, 1))
-
-        # Batch normalization parameters
-        self.norm_z = BatchNorm(hidden_size)
-        self.norm_r = BatchNorm(hidden_size)
-        self.norm_h = BatchNorm(hidden_size)
-
-        # Adam Optimizer parameters
-        self.m = {}
-        self.v = {}
-
-        self.t = 0
-
-        self.dWz = np.zeros_like(self.Wz) # Shape (hidden_size, input_size)
-        self.dUz = np.zeros_like(self.Uz) # Shape (hidden_size, hidden_size)
-        self.dbz = np.zeros_like(self.bz) # Shape (hidden_size, 1)
-
-        self.dWr = np.zeros_like(self.Wr) # Shape (hidden_size, input_size)
-        self.dUr = np.zeros_like(self.Ur) # Shape (hidden_size, hidden_size)
-        self.dbr = np.zeros_like(self.br) # Shape (hidden_size, 1)
-
-        self.dWh = np.zeros_like(self.Wh) # Shape (hidden_size, input_size)
-        self.dUh = np.zeros_like(self.Uh) # Shape (hidden_size, hidden_size)
-        self.dbh = np.zeros_like(self.bh) # Shape (hidden_size, 1)
+        self.Wy = np.random.randn(output_size, hidden_size)
+        self.By = np.zeros((output_size, 1))
 
     def forward(self, x, h_prev):
-        # x = np.array(x).reshape(-1, 1)
+        z = sigmoid(np.dot(self.Wz, x) + np.dot(self.Uz, h_prev) + self.Bz)
+        r = sigmoid(np.dot(self.Wr, x) + np.dot(self.Ur, h_prev) + self.Br)
+        h_hat = tanh(np.dot(self.Wh, x) + np.dot(self.Uh, np.multiply(r, h_prev)) + self.Bh)
+        h_next = np.multiply(1 - z, h_prev) + np.multiply(z, h_hat)
+        y = np.dot(self.Wy, h_next) + self.By
+        return y, h_next, z, r, h_hat
 
-        # Reset gate
-        rz = sigmoid(np.dot(self.Wz, x) + np.dot(self.Uz, h_prev) + self.bz)
+    def backward(self, d_y, h_prev, h_next, x, z, r, h_hat):
+        d_Wy = np.dot(d_y, h_next.T)
+        d_By = d_y
+        d_h_next = np.dot(self.Wy.T, d_y)
 
-        # Update gate
-        rr = sigmoid(np.dot(self.Wr, x) + np.dot(self.Ur, h_prev) + self.br)
+        d_z = d_h_next * (h_prev - h_hat)
+        d_r = np.dot(self.Uh.T, np.multiply(d_h_next, h_prev - h_hat)) * h_prev * (1 - r)
 
-        # Candidate hidden state
-        h_candidate = tanh(np.dot(self.Wh, x) + np.dot(self.Uh, rr * h_prev) + self.bh)
+        d_h_hat = np.dot(self.Uh.T, np.multiply(d_h_next, 1 - r))
+        d_Wh = np.dot(d_h_hat, x.T)
+        d_Uh = np.dot(d_h_hat, np.multiply(r, h_prev).T)
+        d_Bh = d_h_hat
 
-        # Batch normalization for reset gate
-        rz_normalized = self.norm_z.forward(rz)
+        d_Wz = np.dot(d_z, x.T)
+        d_Uz = np.dot(d_z, h_prev.T)
+        d_Bz = d_z
 
-        # Batch normalization for update gate
-        rr_normalized = self.norm_r.forward(rr)
+        d_Wr = np.dot(d_r, x.T)
+        d_Ur = np.dot(d_r, h_prev.T)
+        d_Br = d_r
 
-        # Batch normalization for candidate hidden state
-        h_candidate_normalized = self.norm_h.forward(h_candidate)
+        d_x = (np.dot(self.Wr.T, d_r) + np.dot(self.Wz.T, d_z) + np.dot(self.Wh.T, d_h_hat))
 
-        # New hidden state
-        # h = rz * h_prev + (1 - rz) * h_candidate
-        h = rz_normalized * h_prev + (1 - rz_normalized) * h_candidate_normalized
+        # Clip to prevent exploding gradients
+        for gradient in [d_Wy, d_By, d_Wh, d_Uh, d_Bh, d_Wz, d_Uz, d_Bz, d_Wr, d_Ur, d_Br]:
+            np.clip(gradient, -1, 1, out=gradient)
 
-        # return h, rz, rr, h_candidate
-        return h, rz_normalized, rr_normalized, h_candidate_normalized
+        return {
+            'Wy': d_Wy,
+            'By': d_By,
+            'Wh': d_Wh,
+            'Uh': d_Uh,
+            'Bh': d_Bh,
+            'Wz': d_Wz,
+            'Uz': d_Uz,
+            'Bz': d_Bz,
+            'Wr': d_Wr,
+            'Ur': d_Ur,
+            'Br': d_Br
+        }
 
-    def backward(self, x, h_prev, rz, rr, h_candidate, dh, update=True):
-        # Gradient with respect to the hidden state
-        # dh = dh * (1 - rz) + np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2)) # Check this
+    def adam_optimizer(self, gradients, v, s, t, learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-4):
+        v_corrected = {}
+        s_corrected = {}
+        for key in gradients.keys():
+            v[key] = beta1 * v[key] + (1 - beta1) * gradients[key]
+            v_corrected[key] = v[key] / (1 - beta1 ** t)
+            s[key] = beta2 * s[key] + (1 - beta2) * (gradients[key] ** 2)
+            s_corrected[key] = s[key] / (1 - beta2 ** t)
 
-        # Ensure that x has the correct shape (input_size, 1)
-        x = np.array(x).reshape((self.input_size, 1))
+            if hasattr(self, key):
+                setattr(self, key, getattr(self, key) - learning_rate * v_corrected[key] / (np.sqrt(s_corrected[key]) + epsilon))
 
-        # Gradient with respect to the reset gate
-        dz = (dh * (h_candidate - h_prev)) * (rz * (1 - rz))
+        return self
 
-        # Gradient with respect to the update gate
-        dr = np.dot(self.Uz.T, dz) * (rr * (1 - rr))
+    def train_network(self, X, Y, iterations=10, learning_rate=0.01):
+        hidden_size = self.Wy.shape[1]
+        v = {
+            'Wy': np.zeros_like(self.Wy),
+            'Wh': np.zeros_like(self.Wh),
+            'Wz': np.zeros_like(self.Wz),
+            'Uz': np.zeros_like(self.Uz),
+            'Uh': np.zeros_like(self.Uh),
+            'Ur': np.zeros_like(self.Ur),
+            'By': np.zeros_like(self.By),
+            'Bh': np.zeros_like(self.Bh),
+            'Bz': np.zeros_like(self.Bz),
+            'Br': np.zeros_like(self.Br),
+            'Wr': np.zeros_like(self.Wr),
+        }
+        s = v.copy()
 
-        # Gradient with respect to the candidate hidden state
-        dh_candidate = np.dot(self.Uh.T, dh * (1 - rz) * (1 - h_candidate**2))
+        for i in range(1, iterations + 1):
+            loss = 0
+            h_prev = np.zeros((hidden_size, 1))
+            for j in range(len(X)):
+                x, y = X[j], Y[j]
+                y_pred, h_prev, z, r, h_hat = self.forward(x, h_prev)
 
-        print(dz.shape, x.shape, h_prev.shape)
+                # Compute the predicted output and the loss
+                loss += np.square(y_pred - y).sum()
 
-        # Gradients with respect to parameters
-        self.dWz[self.t] = np.dot(dz, x)
-        self.dUz[self.t] = np.dot(dz, h_prev)
-        self.dbz[self.t] = np.sum(dz, axis=1, keepdims=True)
+                d_y = 2 * (y_pred - y)
+                gradients = self.backward(d_y, h_prev, h_prev, x, z, r, h_hat)
+                self.adam_optimizer(gradients, v, s, i, learning_rate)
+            if i % 1 == 0:
+                print(f'Iteration {i}, Loss: {loss / len(X)}')
 
-        self.dWr[self.t] = np.dot(dr, x)
-        self.dUr[self.t] = np.dot(dr.T, h_prev)
-        self.dbr[self.t] = np.sum(dr, axis=1, keepdims=True)
+    def accuracy(self, X, Y):
+        correct = 0
+        for i in range(len(X)):
+            x, y = X[i], Y[i]
+            y_pred, _, _, _, _ = self.forward(x, np.zeros((self.Wy.shape[1], 1)))
+            if (y_pred.mean() > 0.5 == y):
+                correct += 1
+            print(y_pred.mean(), y_pred.mean() > 0.5, y)
+        return correct / len(X) * 100
 
-        # print(dr.T.shape, h_prev.shape)
-        # print((dh_candidate * (1 - rz)).T.shape, (rr * h_prev).T.shape)
-        # print((dh_candidate * (1 - rz)).T.shape, (rr * h_prev).shape)
-        print((dh_candidate * (1 - rz)).shape, (rr * h_prev).T.shape)
-        # print((dh_candidate * (1 - rz)).shape, (rr * h_prev).shape)
+# Load the data
+data = pd.read_csv('inc/kaggleDataset.csv')
+text = data['text'].tolist()
 
-        print(rr.shape, h_prev.shape)
+# Get the labels
+labels = data.pop('label')
+labels = labels.map({'ham': 0, 'spam': 1})
 
-        self.dWh[self.t] = np.dot(dh_candidate * (1 - rz), x.T).T
-        self.dUh[self.t] = np.dot(dh_candidate * (1 - rz), (rr * h_prev).T)
-        self.dbh[self.t] = np.sum(dh_candidate * (1 - rz), axis=1, keepdims=True)
+model = Word2VecWrapper([sentence.split() for sentence in text])
 
-        if update:
-            self.update()
+# Convert the text to word vectors
+padded_vectors = np.array([model.vectorise(sentence, pad=100) for sentence in text])
 
-    def train(self, X, y, epochs):
-        for epoch in range(epochs):
-            total_loss = 0.0
-            h_prev = np.zeros((self.hidden_size, 1))
-            self.t = 0  # Initialize time step
+# Reduce the data size by sampling to 1000 vectors of length 100 each of single words
+sample_size = 2000
+sample_indices = np.random.choice(len(padded_vectors), sample_size, replace=False)
 
-            for x, target in zip(X, y):
-                # Forward pass
-                h, rz, rr, h_candidate = self.forward(x, h_prev)
+padded_vectors_sampled = padded_vectors[sample_indices]
+labels_sampled = labels[sample_indices]
 
-                # Calculate MSE loss
-                loss = np.mean((h - target)**2)
-                total_loss += loss
+# print(padded_vectors_sampled)
+print('[Gathered input data]')
 
-                # Compute gradients using backpropagation
-                dh_next = 2 * (h - target)
-                self.backward(x, h_prev, rz, rr, h_candidate, dh_next)
+# Split the sampled data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(padded_vectors_sampled, labels_sampled, test_size=0.2, random_state=42)
 
-                self.t += 1  # Increase the time step
+X_train = np.array(X_train)
+X_test = np.array(X_test)
+y_train = np.array(y_train)
+y_test = np.array(y_test)
 
-                h_prev = h
+# Train the network
+gru = GRU(100, 100, 1)
+gru.train_network(X_train, y_train, iterations=20, learning_rate=0.001)
 
-            # Print average loss for the epoch
-            average_loss = total_loss / len(X)
-            print(f"Epoch {epoch + 1}/{epochs}, Loss: {average_loss:.4f}")
-
-    def predict(self, X):
-        predictions = []
-        h_prev = np.zeros((self.hidden_size, 1))
-        for x in X:
-            h, _, _, _ = self.forward(x, h_prev)
-            predictions.append(h)
-            h_prev = h
-        return predictions
-
-    def update(self):
-        # Update parameters using Adam Optimiser
-        beta1 = 0.9
-        beta2 = 0.999
-        epsilon = 1e-4
-        learning_rate = 0.01
-
-        for param in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-            dparam = getattr(self, 'd' + param)[self.t]
-            if param not in self.m:
-                self.m[param] = np.zeros_like(dparam)
-                self.v[param] = np.zeros_like(dparam)
-
-            self.m[param] = beta1 * self.m[param] + (1 - beta1) * dparam
-            self.v[param] = beta2 * self.v[param] + (1 - beta2) * (dparam ** 2)
-
-            m_correlated = self.m[param] / (1 - beta1 ** (self.t + 1))
-            v_correlated = self.v[param] / (1 - beta2 ** (self.t + 1))
-
-            # Update the parameter
-            param_val = getattr(self, param)
-
-            numerator = learning_rate * m_correlated
-            denominator = np.sqrt(v_correlated) + epsilon
-            difference = numerator / denominator
-
-            if len(param_val.shape) == 2 and len(difference.T.shape) == 2:
-                param_val -= difference
-            else:
-                param_val -= difference.T
-
-            setattr(self, param, param_val)
-
-        # Clip gradients to mitigate exploding gradients
-        for param_name in ['Wz', 'Uz', 'bz', 'Wr', 'Ur', 'br', 'Wh', 'Uh', 'bh']:
-            np.clip(self.__dict__[param_name], -1, 1, out=self.__dict__[param_name])
-
-
-
-# Example usage
-if __name__ == "__main__":
-    # Read data from inc/kaggleDataset.csv
-    with open('inc/kaggleDataset.csv', 'r', encoding='utf-8') as f:
-        emails = pd.read_csv(f)
-
-    # Shuffle the data
-    emails = emails.sample(frac=1, random_state=42).reset_index(drop=True)
-
-    # Get the labels
-    labels = emails.pop('label')
-    labels = labels.map({'ham': 0, 'spam': 1})
-
-    # Get the text
-    text = emails.pop('text')
-
-    # Split the text into lowercase words
-    text = text.apply(lambda x: x.lower().split(' '))
-
-    # Word2Vec
-    model = Word2Vec(sentences=text, vector_size=100, window=5, min_count=1, workers=30)
-    words = list(model.wv.index_to_key)
-
-    # Convert text to word vectors
-    word_vectors = []
-    for sentence in text:
-        sentence_vectors = [model.wv[word] for word in sentence if word in model.wv]
-        if len(sentence_vectors) > 0:
-            word_vectors.append(sentence_vectors)
-        else:
-            word_vectors.append([np.zeros(100)])
-
-    # Padding the sequences to make them of equal length
-    padded_vectors = tf.keras.preprocessing.sequence.pad_sequences(word_vectors, padding='post')
-
-    # Reduce the data size by sampling to 1000 vectors of length 100 each of single words
-    sample_size = 1000
-    sample_indices = np.random.choice(len(padded_vectors), sample_size, replace=False)
-
-    padded_vectors_sampled = padded_vectors[sample_indices]
-    labels_sampled = labels.iloc[sample_indices]
-
-    # Get the input size
-    input_size = padded_vectors_sampled.shape[2]
-
-    # exit()
-
-    # Split the sampled data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(padded_vectors_sampled, labels_sampled, test_size=0.2, random_state=42)
-
-    hidden_size = 4
-
-    model = GRU(input_size, hidden_size)
-
-    model.train(X_train, y_train, epochs=1)
+# Test the network
+print(f'Accuracy: {gru.accuracy(X_test, y_test):.2f}%')
