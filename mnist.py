@@ -4,7 +4,7 @@ from keras.utils import np_utils
 
 from dense import Dense
 from activations import Tanh
-from losses import mse, mse_prime
+from losses import MSE
 from network import train, predict
 
 
@@ -33,7 +33,7 @@ network = [
 ]
 
 # train
-train(network, mse, mse_prime, x_train, y_train, epochs=100, learning_rate=0.1)
+train(network, x_train, y_train, epochs=100, learning_rate=0.1)
 
 # test
 for x, y in zip(x_test, y_test):

@@ -1,2 +1,3 @@
 # Ignore build directories
 .vscode/
+.__pycache__/
