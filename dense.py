@@ -8,17 +8,20 @@ class Dense(Layer):
     Dense layer (fully connected layer)
     '''
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, activation=Sigmoid()):
         super().__init__()
         self.weights = np.random.randn(output_size, input_size)
         self.bias = np.random.randn(output_size, 1)
+        self.activation = activation
 
     def forward(self, input_value):
         self.input = input_value
         self.output = np.dot(self.weights, self.input) + self.bias
+        self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
+        output_gradient = self.activation.backward(output_gradient, learning_rate)
         weights_gradient = np.dot(output_gradient, self.input.T)
         input_gradient = np.dot(self.weights.T, output_gradient)
         self.weights -= weights_gradient * learning_rate
@@ -35,7 +38,7 @@ class Convolutional(Layer):
     depth: number of kernels
     '''
 
-    def __init__(self, input_shape, kernel_size, depth):
+    def __init__(self, input_shape, kernel_size, depth, activation=Sigmoid()):
         super().__init__()
         input_depth, input_height, input_width = input_shape
         self.depth = depth
@@ -45,6 +48,7 @@ class Convolutional(Layer):
         self.kernels_shape = (depth, input_depth, kernel_size, kernel_size)
         self.kernels = np.random.randn(*self.kernels_shape)
         self.biases = np.random.randn(*self.output_shape)
+        self.activation = activation
 
     def forward(self, input_value):
         self.input = input_value
@@ -53,9 +57,12 @@ class Convolutional(Layer):
             for j in range(self.input_depth):
                 # print(self.input[j], self.kernels[i, j], "valid")
                 self.output[i] += signal.correlate2d(self.input[j], self.kernels[i, j], "valid")
+        self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
+        output_gradient = self.activation.backward(output_gradient, learning_rate)
+
         kernels_gradient = np.zeros(self.kernels_shape)
         input_gradient = np.zeros(self.input_shape)
 

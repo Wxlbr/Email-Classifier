@@ -31,7 +31,7 @@ text = emails.pop('text')
 text = text.apply(lambda x: x.lower().split(' '))
 
 # Word2Vec
-model = Word2Vec(sentences=text, vector_size=100, window=5, min_count=1, workers=4)
+model = Word2Vec(sentences=text, vector_size=100, window=5, min_count=1, workers=30)
 words = list(model.wv.index_to_key)
 
 # Convert text to word vectors
@@ -75,12 +75,9 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
 network = [
     Convolutional((1, max_height, max_width), 3, 5),
-    Sigmoid(),
     Reshape((5, max_height - 3 + 1, max_width - 3 + 1), (5 * (max_height - 3 + 1) * (max_width - 3 + 1), 1)),
     Dense(5 * (max_height - 3 + 1) * (max_width - 3 + 1), 100),
-    Sigmoid(),
     Dense(100, 1),
-    Sigmoid()
 ]
 
 # train

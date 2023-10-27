@@ -11,3 +11,11 @@ class Layer:
         # TODO: Optimiser
         # Update parameters and return input gradient
         pass
+
+    def save(self, file):
+        # Save layer parameters
+        pass
+
+    def load(self, file):
+        # Load layer parameters
+        pass
