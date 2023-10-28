@@ -1,3 +1,4 @@
+import numpy as np
 
 class Matrix:
     def __init__(self, values):
@@ -65,25 +66,24 @@ class Matrix:
     def to_list(self):
         return self.values
 
-import numpy as np
+if __name__ == '__main__':
+    # Test matrix multiplication
+    a = Matrix([[1, 2], [3, 4]])
+    b = Matrix([[5, 6], [7, 8]])
 
-# Test matrix multiplication
-a = Matrix([[1, 2], [3, 4]])
-b = Matrix([[5, 6], [7, 8]])
+    print(a * b)
+    print(np.dot(a.to_list(), b.to_list()))
 
-print(a * b)
-print(np.dot(a.to_list(), b.to_list()))
+    # Test matrix addition
+    a = Matrix([[1, 2], [3, 4]])
+    b = Matrix([[5, 6], [7, 8]])
 
-# Test matrix addition
-a = Matrix([[1, 2], [3, 4]])
-b = Matrix([[5, 6], [7, 8]])
+    print(a + b)
+    print(np.add(a.to_list(), b.to_list()))
 
-print(a + b)
-print(np.add(a.to_list(), b.to_list()))
+    # Test matrix subtraction
+    a = Matrix([[1, 2], [3, 4]])
+    b = Matrix([[5, 6], [7, 8]])
 
-# Test matrix subtraction
-a = Matrix([[1, 2], [3, 4]])
-b = Matrix([[5, 6], [7, 8]])
-
-print(a - b)
-print(np.subtract(a.to_list(), b.to_list()))
+    print(a - b)
+    print(np.subtract(a.to_list(), b.to_list()))

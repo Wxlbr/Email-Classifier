@@ -1,10 +1,10 @@
+import pandas as pd
+import numpy as np
+
 from reshape import Reshape
 from network import train, accuracy
 from dense import Dense, Convolutional
-
-from sklearn.model_selection import train_test_split
-
-import pandas as pd
+from split import train_test_split
 
 
 # Read data from inc/kaggleDataset.csv
@@ -26,6 +26,12 @@ print(Y.shape)
 
 # Split into train and test sets
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+
+# Convert to numpy arrays
+X_train = np.array(X_train)
+X_test = np.array(X_test)
+Y_train = np.array(Y_train)
+Y_test = np.array(Y_test)
 
 kernal_size = 1
 depth = 5
