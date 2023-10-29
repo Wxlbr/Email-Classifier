@@ -66,6 +66,30 @@ class Matrix:
     def to_list(self):
         return self.values
 
+def dot(x: list, y: list) -> list:
+    # For testing purposes as numpy is faster
+    return np.dot(x, y)
+
+    assert len(x[0]) == len(y), f"Invalid dimensions: {len(x[0])} != {len(y)}"
+
+    result = []
+    for i in range(len(x)):
+        row = []
+        for j in range(len(y[0])):
+            total = 0
+            for k in range(len(y)):
+                total += x[i][k] * y[k][j]
+            row.append(total)
+        result.append(row)
+
+    return result
+
+def mul(x: list, y: float) -> list:
+    # For testing purposes as numpy is faster
+    return np.multiply(x, y)
+
+    return [[value * y for value in row] for row in x]
+
 if __name__ == '__main__':
     # Test matrix multiplication
     a = Matrix([[1, 2], [3, 4]])

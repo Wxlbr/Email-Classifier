@@ -1,7 +1,9 @@
 import numpy as np
 from scipy import signal
-from activation import Tanh, Sigmoid, Softmax
+
+from activation import Sigmoid
 from layer import Layer
+from matrix import dot, mul
 
 class Dense(Layer):
     '''
@@ -16,16 +18,16 @@ class Dense(Layer):
 
     def forward(self, input_value):
         self.input = input_value
-        self.output = np.dot(self.weights, self.input) + self.bias
+        self.output = dot(self.weights, self.input) + self.bias
         self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
         output_gradient = self.activation.backward(output_gradient, learning_rate)
-        weights_gradient = np.dot(output_gradient, self.input.T)
-        input_gradient = np.dot(self.weights.T, output_gradient)
-        self.weights -= weights_gradient * learning_rate
-        self.bias -= output_gradient * learning_rate
+        weights_gradient = dot(output_gradient, self.input.T)
+        input_gradient = dot(self.weights.T, output_gradient)
+        self.weights -= mul(weights_gradient, learning_rate)
+        self.bias -= mul(output_gradient, learning_rate)
         return input_gradient
 
 class Convolutional(Layer):
