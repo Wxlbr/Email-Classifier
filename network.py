@@ -1,3 +1,5 @@
+import time
+
 from loss import MSE, BinaryCrossEntropy
 
 def predict(network, input_value):
@@ -28,6 +30,7 @@ def train(network, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse'
     # training loop
     for e in range(epochs):
         error = 0
+        start = time.time()
         for x, y in zip(x_train, y_train):
             # forward
             output = predict(network, x)
@@ -46,5 +49,7 @@ def train(network, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse'
             if validation_data:
                 x_val, y_val = validation_data
                 print(f", val_accuracy={accuracy(network, x_val, y_val):.4f}%", end="")
+
+            print(f", duration={time.time() - start:.2f}s", end="")
 
             print()

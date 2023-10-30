@@ -5,6 +5,33 @@ from activation import Sigmoid
 from layer import Layer
 from matrix import dot, mul
 
+def convolve2d(input_array, kernel_array, mode="full"):
+    # Testing as signal is faster
+    return signal.convolve2d(input_array, kernel_array, mode=mode)
+
+    if mode not in ["full", "valid"]:
+        raise ValueError("Mode must be one of 'full' or 'valid'")
+
+    input_height, input_width = input_array.shape
+    kernel_height, kernel_width = kernel_array.shape
+    if mode == "full":
+        output_height = input_height + kernel_height - 1
+        output_width = input_width + kernel_width - 1
+        pad_height = kernel_height - 1
+        pad_width = kernel_width - 1
+        input_array = np.pad(input_array, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant')
+    elif mode == "valid":
+        output_height = input_height - kernel_height + 1
+        output_width = input_width - kernel_width + 1
+
+    output = np.zeros((output_height, output_width))
+
+    for y in range(output_height):
+        for x in range(output_width):
+            output[y, x] = np.sum(input_array[y:y + kernel_height, x:x + kernel_width] * kernel_array)
+
+    return output
+
 class Dense(Layer):
     '''
     Dense layer (fully connected layer)
@@ -58,7 +85,7 @@ class Convolutional(Layer):
         for i in range(self.depth):
             for j in range(self.input_depth):
                 # print(self.input[j], self.kernels[i, j], "valid")
-                self.output[i] += signal.correlate2d(self.input[j], self.kernels[i, j], "valid")
+                self.output[i] += convolve2d(self.input[j], self.kernels[i, j], "valid")
         self.output = self.activation.forward(self.output)
         return self.output
 
@@ -70,8 +97,8 @@ class Convolutional(Layer):
 
         for i in range(self.depth):
             for j in range(self.input_depth):
-                kernels_gradient[i, j] = signal.correlate2d(self.input[j], output_gradient[i], "valid")
-                input_gradient[j] += signal.convolve2d(output_gradient[i], self.kernels[i, j], "full")
+                kernels_gradient[i, j] = convolve2d(self.input[j], output_gradient[i], "valid")
+                input_gradient[j] += convolve2d(output_gradient[i], self.kernels[i, j], "full")
 
         self.kernels -= learning_rate * kernels_gradient
         self.biases -= learning_rate * output_gradient
