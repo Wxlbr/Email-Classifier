@@ -1,16 +1,17 @@
+import os
 import numpy as np
 import requests
-import os
 
 from dense import Dense, Convolutional
 from reshape import Reshape
 from activation import Sigmoid
-from network import train, predict, accuracy
+from network import train
 
 def get_file(url, path):
     if not os.path.exists(path):
-        r = requests.get(url, allow_redirects=True)
-        open(path, 'wb').write(r.content)
+        r = requests.get(url, allow_redirects=True, timeout=10)
+        with open(path, 'wb') as f:
+            f.write(r.content)
 
     return path
 
@@ -26,9 +27,6 @@ def load_data():
 
     return (train_examples, train_labels), (test_examples, test_labels)
 
-def to_categorical(y, num_classes):
-    return np.eye(num_classes)[y]
-
 def preprocess_data(x, y, limit):
     zero_index = np.where(y == 0)[0][:limit]
     one_index = np.where(y == 1)[0][:limit]
@@ -37,7 +35,7 @@ def preprocess_data(x, y, limit):
     x, y = x[all_indices], y[all_indices]
     x = x.reshape(len(x), 1, 28, 28)
     x = x.astype("float32") / 255
-    y = to_categorical(y, 2)
+    y = np.eye(2)[y]
     y = y.reshape(len(y), 2, 1)
     return x, y
 
@@ -48,8 +46,7 @@ if __name__ == '__main__':
     x_train, y_train = preprocess_data(x_train, y_train, 100)
     x_test, y_test = preprocess_data(x_test, y_test, 100)
 
-
-    print(x_train.shape)
+    # print(x_train.shape)
 
     # neural network
     network = [
@@ -72,11 +69,11 @@ if __name__ == '__main__':
     )
 
     # test
-    for x, y in zip(x_test, y_test):
-        output = predict(network, x)
-        print(f"pred: {np.argmax(output)}, true: {np.argmax(y)}")
+    # for x, y in zip(x_test, y_test):
+    #     output = predict(network, x)
+    #     print(f"pred: {np.argmax(output)}, true: {np.argmax(y)}")
 
-    # Accuracy
-    accuracy = accuracy(network, x_test, y_test)
+    # # Accuracy
+    # accuracy = accuracy(network, x_test, y_test)
 
-    print(f"Accuracy: {accuracy:.4f}%")
+    # print(f"Accuracy: {accuracy:.4f}%")

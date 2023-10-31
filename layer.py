@@ -8,7 +8,6 @@ class Layer:
         pass
 
     def backward(self, output_gradient, learning_rate):
-        # TODO: Optimiser
         # Update parameters and return input gradient
         pass
 
