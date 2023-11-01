@@ -72,15 +72,12 @@ def dot(x: list, y: list) -> list:
 
     assert len(x[0]) == len(y), f"Invalid dimensions: {len(x[0])} != {len(y)}"
 
-    result = []
+    result = [[0 for _ in range(len(y[0]))] for _ in range(len(x))]
+
     for i in range(len(x)):
-        row = []
         for j in range(len(y[0])):
-            total = 0
             for k in range(len(y)):
-                total += x[i][k] * y[k][j]
-            row.append(total)
-        result.append(row)
+                result[i][j] += x[i][k] * y[k][j]
 
     return result
 

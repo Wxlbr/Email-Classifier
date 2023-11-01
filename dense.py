@@ -15,10 +15,10 @@ def convolve2d(input_array, kernel_array, mode="full"):
     input_height, input_width = input_array.shape
     kernel_height, kernel_width = kernel_array.shape
     if mode == "full":
-        output_height = input_height + kernel_height - 1
-        output_width = input_width + kernel_width - 1
         pad_height = kernel_height - 1
         pad_width = kernel_width - 1
+        output_height = input_height + pad_height
+        output_width = input_width + pad_width
         input_array = np.pad(input_array, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant')
     elif mode == "valid":
         output_height = input_height - kernel_height + 1
@@ -84,7 +84,6 @@ class Convolutional(Layer):
         self.output = np.copy(self.biases)
         for i in range(self.depth):
             for j in range(self.input_depth):
-                # print(self.input[j], self.kernels[i, j], "valid")
                 self.output[i] += convolve2d(self.input[j], self.kernels[i, j], "valid")
         self.output = self.activation.forward(self.output)
         return self.output
