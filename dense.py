@@ -35,6 +35,10 @@ def convolve2d(input_array, kernel_array, mode="full"):
 class Dense(Layer):
     '''
     Dense layer (fully connected layer)
+
+    input_size: size of input vector
+    output_size: size of output vector
+    activation: activation function
     '''
 
     def __init__(self, input_size, output_size, activation=Sigmoid()):
@@ -65,6 +69,7 @@ class Convolutional(Layer):
         e.g. [[1, 2, 3], [4, 5, 6]] -> depth = 1, height = 2, width = 3
     kernel_size: size of kernel (square)
     depth: number of kernels
+    activation: activation function
     '''
 
     def __init__(self, input_shape, kernel_size, depth, activation=Sigmoid()):
@@ -101,4 +106,33 @@ class Convolutional(Layer):
 
         self.kernels -= learning_rate * kernels_gradient
         self.biases -= learning_rate * output_gradient
+        return input_gradient
+
+class Recurrent(Layer):
+    '''
+    Recurrent layer (fully connected layer with recurrent connections)
+
+    input_size: size of input vector
+    output_size: size of output vector
+    activation: activation function
+    '''
+
+    def __init__(self, input_size, output_size, activation=Sigmoid()):
+        super().__init__()
+        self.weights = np.random.randn(output_size, input_size + output_size)
+        self.bias = np.random.randn(output_size, 1)
+        self.activation = activation
+
+    def forward(self, input_value):
+        self.input = input_value
+        self.output = dot(self.weights, np.vstack((self.input, self.output))) + self.bias
+        self.output = self.activation.forward(self.output)
+        return self.output
+
+    def backward(self, output_gradient, learning_rate):
+        output_gradient = self.activation.backward(output_gradient, learning_rate)
+        weights_gradient = dot(output_gradient, np.vstack((self.input, self.output)).T)
+        input_gradient = dot(self.weights.T, output_gradient)[:self.input.shape[0]]
+        self.weights -= mul(weights_gradient, learning_rate)
+        self.bias -= mul(output_gradient, learning_rate)
         return input_gradient
