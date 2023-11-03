@@ -122,16 +122,17 @@ class Recurrent(Layer):
         self.weights = np.random.randn(output_size, input_size + output_size)
         self.bias = np.random.randn(output_size, 1)
         self.activation = activation
+        self.output = np.zeros((output_size, 1))
 
     def forward(self, input_value):
-        self.input = input_value
-        self.output = dot(self.weights, np.vstack((self.input, self.output))) + self.bias
+        self.input = input_value.reshape(-1, 1)
+        self.output = dot(self.weights, np.concatenate((self.input, self.output), axis=0)) + self.bias
         self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
         output_gradient = self.activation.backward(output_gradient, learning_rate)
-        weights_gradient = dot(output_gradient, np.vstack((self.input, self.output)).T)
+        weights_gradient = dot(output_gradient, np.concatenate((self.input, self.output), axis=0).T)
         input_gradient = dot(self.weights.T, output_gradient)[:self.input.shape[0]]
         self.weights -= mul(weights_gradient, learning_rate)
         self.bias -= mul(output_gradient, learning_rate)
