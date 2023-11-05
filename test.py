@@ -3,11 +3,20 @@ from network import train, accuracy
 
 import numpy as np
 
-# Define a sample input sequence
-input_sequence = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]])
+# XOR
+input_sequence = np.array([
+    [[0], [0], [0]],
+    [[0], [1], [1]],
+    [[1], [0], [1]],
+    [[1], [1], [0]],
+])
 
-# Define a sample output sequence
-output_sequence = np.array([[0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [0.1, 0.2, 0.3]])
+output_sequence = np.array([
+    [[0]],
+    [[1]],
+    [[1]],
+    [[0]],
+])
 
 # Define network
 network = [

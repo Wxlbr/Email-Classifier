@@ -119,21 +119,24 @@ class Recurrent(Layer):
 
     def __init__(self, input_size, output_size, activation=Sigmoid()):
         super().__init__()
-        self.weights = np.random.randn(output_size, input_size + output_size)
+        self.weights = np.random.randn(output_size, input_size)
+        self.recurrent_weights = np.random.randn(output_size, output_size)
         self.bias = np.random.randn(output_size, 1)
         self.activation = activation
-        self.output = np.zeros((output_size, 1))
 
     def forward(self, input_value):
-        self.input = input_value.reshape(-1, 1)
-        self.output = dot(self.weights, np.concatenate((self.input, self.output), axis=0)) + self.bias
+        self.input = input_value
+        self.output = np.copy(self.bias)
+        self.output = dot(self.weights, self.input) + dot(self.recurrent_weights, self.output) + self.bias
         self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
         output_gradient = self.activation.backward(output_gradient, learning_rate)
-        weights_gradient = dot(output_gradient, np.concatenate((self.input, self.output), axis=0).T)
-        input_gradient = dot(self.weights.T, output_gradient)[:self.input.shape[0]]
+        weights_gradient = dot(output_gradient, self.input.T)
+        recurrent_weights_gradient = dot(output_gradient, self.output.T)
+        input_gradient = dot(self.weights.T, output_gradient)
         self.weights -= mul(weights_gradient, learning_rate)
-        self.bias -= mul(output_gradient, learning_rate)
+        self.recurrent_weights -= mul(recurrent_weights_gradient, learning_rate)
+        self.bias -= mul(np.sum(output_gradient, axis=1, keepdims=True), learning_rate)
         return input_gradient
