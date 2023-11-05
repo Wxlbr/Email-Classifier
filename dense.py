@@ -79,33 +79,33 @@ class Convolutional(Layer):
         self.input_shape = input_shape
         self.input_depth = input_depth
         self.output_shape = (depth, input_height - kernel_size + 1, input_width - kernel_size + 1)
-        self.kernels_shape = (depth, input_depth, kernel_size, kernel_size)
-        self.kernels = np.random.randn(*self.kernels_shape)
-        self.biases = np.random.randn(*self.output_shape)
+        self.kernel_shape = (depth, input_depth, kernel_size, kernel_size)
+        self.kernel = np.random.randn(*self.kernel_shape)
+        self.bias = np.random.randn(*self.output_shape)
         self.activation = activation
 
     def forward(self, input_value):
         self.input = input_value
-        self.output = np.copy(self.biases)
+        self.output = np.copy(self.bias)
         for i in range(self.depth):
             for j in range(self.input_depth):
-                self.output[i] += convolve2d(self.input[j], self.kernels[i, j], "valid")
+                self.output[i] += convolve2d(self.input[j], self.kernel[i, j], "valid")
         self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
         output_gradient = self.activation.backward(output_gradient, learning_rate)
 
-        kernels_gradient = np.zeros(self.kernels_shape)
+        kernel_gradient = np.zeros(self.kernel_shape)
         input_gradient = np.zeros(self.input_shape)
 
         for i in range(self.depth):
             for j in range(self.input_depth):
-                kernels_gradient[i, j] = convolve2d(self.input[j], output_gradient[i], "valid")
-                input_gradient[j] += convolve2d(output_gradient[i], self.kernels[i, j], "full")
+                kernel_gradient[i, j] = convolve2d(self.input[j], output_gradient[i], "valid")
+                input_gradient[j] += convolve2d(output_gradient[i], self.kernel[i, j], "full")
 
-        self.kernels -= learning_rate * kernels_gradient
-        self.biases -= learning_rate * output_gradient
+        self.kernel -= learning_rate * kernel_gradient
+        self.bias -= learning_rate * output_gradient
         return input_gradient
 
 class Recurrent(Layer):
@@ -122,19 +122,21 @@ class Recurrent(Layer):
         self.weights = np.random.randn(output_size, input_size)
         self.recurrent_weights = np.random.randn(output_size, output_size)
         self.bias = np.random.randn(output_size, 1)
+        self.hidden_state = np.zeros((output_size, 1))
         self.activation = activation
 
     def forward(self, input_value):
         self.input = input_value
         self.output = np.copy(self.bias)
-        self.output = dot(self.weights, self.input) + dot(self.recurrent_weights, self.output) + self.bias
+        self.hidden_state = dot(self.recurrent_weights, self.hidden_state)
+        self.output = dot(self.weights, self.input) + self.hidden_state + self.bias
         self.output = self.activation.forward(self.output)
         return self.output
 
     def backward(self, output_gradient, learning_rate):
         output_gradient = self.activation.backward(output_gradient, learning_rate)
         weights_gradient = dot(output_gradient, self.input.T)
-        recurrent_weights_gradient = dot(output_gradient, self.output.T)
+        recurrent_weights_gradient = dot(output_gradient, self.hidden_state.T)
         input_gradient = dot(self.weights.T, output_gradient)
         self.weights -= mul(weights_gradient, learning_rate)
         self.recurrent_weights -= mul(recurrent_weights_gradient, learning_rate)
