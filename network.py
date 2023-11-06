@@ -40,8 +40,10 @@ def train(network, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse'
 
             # backward
             gradient = loss.derivative(y, output)
+            # print(gradient)
             for layer in reversed(network):
                 gradient = layer.backward(gradient, learning_rate)
+                # print(gradient)
 
         if verbose:
             print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")

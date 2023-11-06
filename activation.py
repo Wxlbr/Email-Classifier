@@ -12,6 +12,7 @@ class Activation(Layer):
         return self.activation(self.input)
 
     def backward(self, output_gradient, learning_rate):
+        # print(output_gradient.shape, self.activation_derivative(self.input).shape)
         return np.multiply(output_gradient, self.activation_derivative(self.input))
 
 class Tanh(Activation):

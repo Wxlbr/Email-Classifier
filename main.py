@@ -3,7 +3,7 @@ import numpy as np
 
 from reshape import Reshape
 from network import train, accuracy
-from dense import Dense, Convolutional
+from dense import Recurrent
 from split import train_test_split
 
 
@@ -13,14 +13,16 @@ with open('inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
 
 X = emails.drop('Prediction', axis=1).values
 Y = emails['Prediction'].values
-X = X.reshape((X.shape[0], 1, X.shape[1], 1))
+X = X.reshape((X.shape[0], X.shape[1], 1))
 Y = Y.reshape((Y.shape[0], 1, 1))
+# X = X.reshape((X.shape[0], 1, X.shape[1], 1))
+# Y = Y.reshape((Y.shape[0], 1, 1))
 
-max_height = X.shape[2]
+max_height = X.shape[1]
 max_width = 1
 
-print(X.shape)
-print(Y.shape)
+# print(X.shape)
+# print(Y.shape)
 
 # exit()
 
@@ -33,18 +35,14 @@ X_test = np.array(X_test)
 Y_train = np.array(Y_train)
 Y_test = np.array(Y_test)
 
-kernal_size = 1
-depth = 5
-
 network = [
-    Convolutional((1, max_height, max_width), kernal_size, depth),
-    Reshape((depth, max_height - kernal_size + 1, max_width - kernal_size + 1), (depth * (max_height - kernal_size + 1) * (max_width - kernal_size + 1), 1)),
-    Dense(depth * (max_height - kernal_size + 1) * (max_width - kernal_size + 1), 100),
-    Dense(100, 1),
+    Recurrent(max_height, max_width)
 ]
 
 # train
-train(network, X_train, Y_train, 100, 0.01, validation_data=(X_test, Y_test))
+train(network, X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
+train(network, X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
+train(network, X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
 
 # accuracy
 print(f"Accuracy: {accuracy(network, X_test, Y_test):.4f}%")
