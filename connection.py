@@ -5,6 +5,7 @@ import os
 import base64
 from google.oauth2.credentials import Credentials
 import pickle
+from bs4 import BeautifulSoup
 
 def authenticate():
     SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.labels', 'https://www.googleapis.com/auth/gmail.modify']
@@ -33,6 +34,38 @@ def get_user_emails(service):
 
     return messages
 
+def get_email_content(service, message_id):
+    message = service.users().messages().get(userId='me', id=message_id).execute()
+    payload = message['payload']
+    headers = payload['headers']
+    subject = [header['value'] for header in headers if header['name'] == 'Subject'][0]
+
+    # The email body is in the 'data' field of the 'body' property of the 'payload'
+    body_data = payload['body']['data']
+    body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
+
+    # Parse HTML content using BeautifulSoup to extract plaintext
+    soup = BeautifulSoup(body_text, 'html.parser')
+    plaintext_content = soup.get_text(separator='\n')
+
+    # Remove empty lines
+    plaintext_content = '\n'.join([line for line in plaintext_content.split('\n') if line.strip()])
+
+    # Remove no alphanumeric characters
+    plaintext_content = ' '.join(x if x.isalnum() else "" for x in plaintext_content.split())
+
+    # Remove duplicate spaces
+    plaintext_content = ' '.join(plaintext_content.split())
+
+    # Remove leading and trailing spaces
+    plaintext_content = plaintext_content.strip()
+
+    # Lowercase
+    plaintext_content = plaintext_content.lower()
+
+    print("Subject:", subject)
+    print(f"Plaintext Content:\n{plaintext_content}")
+
 def get_email_labels(service, message_id):
     labels = service.users().messages().get(userId='me', id=message_id).execute()['labelIds']
 
@@ -53,17 +86,20 @@ if __name__ == "__main__":
 
     # Get user emails
     user_emails = get_user_emails(service)
-    print("User Emails:", user_emails)
+    # print("User Emails:", user_emails)
 
     # Choose a message_id from user_emails
     if user_emails:
         message_id = user_emails[0]['id']
 
         # Get email labels
-        email_labels = get_email_labels(service, message_id)
-        print("Email Labels:", email_labels)
+        # email_labels = get_email_labels(service, message_id)
+        # print("Email Labels:", email_labels)
 
         # Assign email labels
-        label_ids = ['Safe']
-        assign_email_labels(service, message_id, label_ids)
-        print("Labels assigned successfully.")
+        # label_ids = ['Safe']
+        # assign_email_labels(service, message_id, label_ids)
+        # print("Labels assigned successfully.")
+
+        # Get email content
+        get_email_content(service, message_id)
