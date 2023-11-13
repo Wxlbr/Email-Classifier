@@ -5,3 +5,6 @@ __pycache__/
 # Ignore private files
 credentials.json
 token.pickle
+
+# Ignore test files
+test.py
