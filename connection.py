@@ -41,6 +41,7 @@ def get_email_content(service, message_id):
     subject = [header['value'] for header in headers if header['name'] == 'Subject'][0]
 
     # The email body is in the 'data' field of the 'body' property of the 'payload'
+    # TODO: KeyError: 'data'
     body_data = payload['body']['data']
     body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
 

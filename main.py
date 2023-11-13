@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 
-from reshape import Reshape
 from network import train, accuracy
-from dense import Recurrent
+from layer import Recurrent
 from split import train_test_split
 
 
