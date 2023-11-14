@@ -8,30 +8,46 @@ import pickle
 from bs4 import BeautifulSoup
 
 def authenticate():
+
+    # If modifying these scopes, delete the file token.pickle
     SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.labels', 'https://www.googleapis.com/auth/gmail.modify']
 
-    token_path = 'token.pickle' # User access token
+    # The file at token_path stores the user's access and refresh tokens, and is
+    # created automatically when the authorisation flow completes for the first time
+    token_path = 'token.pickle'
+
+    # Credentials for the API
     creds = None
 
+    # Check if token_path exists
     if os.path.exists(token_path):
         with open(token_path, 'rb') as token:
             creds = pickle.load(token)
 
-    # If there are no (valid) credentials available, let the user log in.
+    # If there are no (valid) credentials available, let the user log in
     if not creds or not creds.valid:
+
+        # Use 0Auth2.0 flow to generate credentials
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', SCOPES)
         creds = flow.run_local_server(port=8080)
+
         # Save the credentials for next time
         with open(token_path, 'wb') as token:
             pickle.dump(creds, token)
 
+    # Return the authenticated Gmail API credentials
     return creds
 
 def get_user_emails(service):
+
+    # Get a list of messages
     result = service.users().messages().list(userId='me').execute()
+
+    # Get the messages from the result
     messages = result.get('messages', [])
 
+    # Return the messages
     return messages
 
 def get_email_content(service, message_id):
@@ -68,15 +84,28 @@ def get_email_content(service, message_id):
     print(f"Plaintext Content:\n{plaintext_content}")
 
 def get_email_labels(service, message_id):
-    labels = service.users().messages().get(userId='me', id=message_id).execute()['labelIds']
 
+    # Get the message
+    result = service.users().messages().get(userId='me', id=message_id).execute()
+
+    # Get the labels
+    labels = result.get('labelIds', [])
+
+    # Return the labels
     return labels
 
 def assign_email_labels(service, message_id, labels):
+
+    # Get the existing labels
     existing_labels = service.users().labels().list(userId='me').execute()
+
+    # Get the label IDs
     label_ids = [label['id'] for label in existing_labels['labels'] if label['name'] in labels]
 
+    # Assign the labels to a request body
     body = {'removeLabelIds': [], 'addLabelIds': label_ids}
+
+    # Modify the message
     service.users().messages().modify(userId='me', id=message_id, body=body).execute()
 
 # Main execution
