@@ -8,18 +8,28 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 class Connection:
+    OAUTH_PORT = 8080
+    API_VERSION = 'v1'
+    API_SCOPES = [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.labels',
+        'https://www.googleapis.com/auth/gmail.modify'
+    ]
 
-    def __init__(self):
-        self.__SCOPES = [
-                            'https://www.googleapis.com/auth/gmail.readonly',
-                            'https://www.googleapis.com/auth/gmail.labels',
-                            'https://www.googleapis.com/auth/gmail.modify'
-                        ]
+    def __init__(self, token_path='token.pickle', app_credentials_path='credentials.json'):
+        '''
+        Initialise the connection object
+        '''
 
         self.__service = None
         self.__credentials = None
+        self.__token_path = token_path
+        self.__app_credentials_path = app_credentials_path
 
     def check_connected(self, reconnect=False):
+        '''
+        Check if the connection is valid, and reconnect if necessary
+        '''
 
         # Check for valid credentials and service or reconnect flag
         if (not self.__credentials or not self.__credentials.valid) or (not self.__service) or (reconnect):
@@ -28,35 +38,41 @@ class Connection:
             self.update_credentials()
 
             # Rebuild service
-            self.__service = build('gmail', 'v1', credentials=self.__credentials)
+            self.__service = build('gmail', self.API_VERSION, credentials=self.__credentials)
 
     def update_credentials(self):
-
-        # The file at token_path stores the user's access and refresh tokens, and is
-        # created automatically when the authorisation flow completes for the first time
-        token_path = 'token.pickle'
+        '''
+        Update the credentials for the connection with the Gmail API
+        '''
 
         # Credentials for the API
         self.__credentials = None
 
         # Check if token_path exists
-        if os.path.exists(token_path):
-            with open(token_path, 'rb') as token:
+        # The file at token_path stores the user's access and refresh tokens, and is
+        # created automatically when the authorisation flow completes for the first time
+        if os.path.exists(self.__token_path):
+            with open(self.__token_path, 'rb') as token:
                 self.__credentials = pickle.load(token)
 
         # If there are no (valid) credentials available, let the user log in
         if not self.__credentials or not self.__credentials.valid:
 
             # Use 0Auth2.0 flow to generate credentials
+            # TODO: Error handling for invalid credentials
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', self.__SCOPES)
-            self.__credentials = flow.run_local_server(port=8080)
+                self.__app_credentials_path, self.API_SCOPES)
+            self.__credentials = flow.run_local_server(port=self.OAUTH_PORT)
 
             # Save the credentials for next time
-            with open(token_path, 'wb') as token:
+            with open(self.__token_path, 'wb') as token:
                 pickle.dump(self.__credentials, token)
 
     def get_user_emails(self):
+        '''
+        Retrieve a list of the user's emails
+        '''
+
         self.check_connected()
 
         # Get a list of messages
@@ -69,6 +85,10 @@ class Connection:
         return messages
 
     def get_email_content(self, message_id):
+        '''
+        Retrieve the content of an email based on its ID
+        '''
+
         self.check_connected()
 
         message = self.__service.users().messages().get(userId='me', id=message_id).execute()
@@ -85,6 +105,17 @@ class Connection:
         content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
 
         # Clean the plaintext content
+        content = self._clean_content(content)
+
+        # For debugging
+        print(f"Subject: {subject}")
+        print(f"Plaintext Content:\n{content}")
+
+    def _clean_content(self, content):
+        '''
+        Clean and return the content
+        '''
+
         cleaned_content = []
         for word in content.lower().split():
             if not word.isalnum():
@@ -94,10 +125,13 @@ class Connection:
 
         content = ' '.join(cleaned_content)
 
-        print("Subject:", subject)
-        print(f"Plaintext Content:\n{content}")
+        return content
 
     def get_email_labels(self, message_id):
+        '''
+        Retrieve the labels of an email based on its ID
+        '''
+
         self.check_connected()
 
         # Get the message
@@ -110,6 +144,10 @@ class Connection:
         return labels
 
     def assign_email_labels(self, message_id, labels):
+        '''
+        Assign labels to an email based on its ID
+        '''
+
         self.check_connected()
 
         # Get the existing labels
