@@ -1,10 +1,11 @@
 import os
+import re
+import html
 import base64
 import pickle
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from bs4 import BeautifulSoup
 
 class Connection:
 
@@ -72,38 +73,29 @@ class Connection:
 
         message = self.__service.users().messages().get(userId='me', id=message_id).execute()
         payload = message['payload']
-        headers = payload['headers']
-        subject = [header['value'] for header in headers if header['name'] == 'Subject'][0]
 
-        # The email body is in the 'data' field of the 'body' property of the 'payload'
-        # TODO: Test if this is always the case
-        # body_data = payload['body']['data']
+        # Get the email subject
+        subject = [header['value'] for header in payload['headers'] if header['name'] == 'Subject'][0]
+
+        # Get email body data as base64url encoded string
         body_data = payload['parts'][0]['body']['data']
         body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
-        # Parse HTML content using BeautifulSoup to extract plaintext
-        soup = BeautifulSoup(body_text, 'html.parser')
-        plaintext_content = soup.get_text(separator='\n')
+        # Parse HTML content
+        content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
 
-        # TODO: Check that it is not removing text connected to a symbol e.g. Full stop, comma, etc.
+        # Clean the plaintext content
+        cleaned_content = []
+        for word in content.lower().split():
+            if not word.isalnum():
+                word = ''.join(char for char in word if char.isalnum())
+            if word:
+                cleaned_content.append(word)
 
-        # Remove empty lines
-        plaintext_content = '\n'.join([line for line in plaintext_content.split('\n') if line.strip()])
-
-        # Remove no alphanumeric characters
-        plaintext_content = ' '.join(x if x.isalnum() else "" for x in plaintext_content.split())
-
-        # Remove duplicate spaces
-        plaintext_content = ' '.join(plaintext_content.split())
-
-        # Remove leading and trailing spaces
-        plaintext_content = plaintext_content.strip()
-
-        # Lowercase
-        plaintext_content = plaintext_content.lower()
+        content = ' '.join(cleaned_content)
 
         print("Subject:", subject)
-        print(f"Plaintext Content:\n{plaintext_content}")
+        print(f"Plaintext Content:\n{content}")
 
     def get_email_labels(self, message_id):
         self.check_connected()
