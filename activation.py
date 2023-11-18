@@ -1,9 +1,9 @@
 import numpy as np
-from layer import Layer
 
-class Activation(Layer):
+class Activation():
     def __init__(self, activation, activation_derivative):
-        super().__init__()
+        self.input = None
+        self.output = None
         self.activation = activation
         self.activation_derivative = activation_derivative
 
@@ -36,7 +36,11 @@ class Sigmoid(Activation):
 
         super().__init__(sigmoid, sigmoid_derivative)
 
-class Softmax(Layer):
+class Softmax():
+    def __init__(self):
+        self.input = None
+        self.output = None
+
     def forward(self, input_value):
         tmp = np.exp(input_value)
         self.output = tmp / np.sum(tmp)

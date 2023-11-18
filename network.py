@@ -2,56 +2,61 @@ import time
 
 from loss import MSE, BinaryCrossEntropy
 
-def predict(network, input_value):
-    output = input_value
-    for layer in network:
-        output = layer.forward(output)
-    return output
+class Network:
 
-def accuracy(network, x_test, y_test):
-    correct = 0
-    for x, y in zip(x_test, y_test):
-        pred = predict(network, x)[0][0] > 0.5
-        if y[0][0] == pred:
-            correct += 1
+    def __init__(self, layers):
+        self.layers = layers
 
-    return correct / x_test.shape[0] * 100
+    def predict(self, input_value):
+        output = input_value
+        for layer in self.layers:
+            output = layer.forward(output)
+        return output
 
-def train(network, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse', validation_data=None, verbose=True):
+    def accuracy(self, x_test, y_test):
+        correct = 0
+        for x, y in zip(x_test, y_test):
+            pred = self.predict(x)[0][0] > 0.5
+            if y[0][0] == pred:
+                correct += 1
 
-    # select loss function
-    if loss == 'mse':
-        loss = MSE()
-    elif loss == 'binary_crossentropy':
-        loss = BinaryCrossEntropy()
-    else:
-        raise Exception('Unknown loss function.')
+        return correct / x_test.shape[0] * 100
 
-    # training loop
-    for e in range(epochs):
-        error = 0
-        start = time.time()
-        for x, y in zip(x_train, y_train):
-            # forward
-            output = predict(network, x)
+    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse', validation_data=None, verbose=True):
 
-            # error
-            error += loss.calc(y, output)
+        # select loss function
+        if loss == 'mse':
+            loss = MSE()
+        elif loss == 'binary_crossentropy':
+            loss = BinaryCrossEntropy()
+        else:
+            raise Exception('Unknown loss function.')
 
-            # backward
-            gradient = loss.derivative(y, output)
-            # print(gradient)
-            for layer in reversed(network):
-                gradient = layer.backward(gradient, learning_rate)
+        # training loop
+        for e in range(epochs):
+            error = 0
+            start = time.time()
+            for x, y in zip(x_train, y_train):
+                # forward
+                output = self.predict(x)
+
+                # error
+                error += loss.calc(y, output)
+
+                # backward
+                gradient = loss.derivative(y, output)
                 # print(gradient)
+                for layer in reversed(self.layers):
+                    gradient = layer.backward(gradient, learning_rate)
+                    # print(gradient)
 
-        if verbose:
-            print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")
+            if verbose:
+                print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")
 
-            if validation_data:
-                x_val, y_val = validation_data
-                print(f", val_accuracy={accuracy(network, x_val, y_val):.4f}%", end="")
+                if validation_data:
+                    x_val, y_val = validation_data
+                    print(f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
 
-            print(f", duration={time.time() - start:.2f}s", end="")
+                print(f", duration={time.time() - start:.2f}s", end="")
 
-            print()
+                print()

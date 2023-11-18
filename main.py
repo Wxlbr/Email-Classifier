@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from network import train, accuracy
+from network import Network
 from layer import Recurrent
 from split import train_test_split
 
@@ -34,14 +34,16 @@ X_test = np.array(X_test)
 Y_train = np.array(Y_train)
 Y_test = np.array(Y_test)
 
-network = [
+layers = [
     Recurrent(max_height, max_width)
 ]
 
+network = Network(layers)
+
 # train
-train(network, X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
-train(network, X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
-train(network, X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
+network.train(X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
+network.train(X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
+network.train(X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
 
 # accuracy
-print(f"Accuracy: {accuracy(network, X_test, Y_test):.4f}%")
+print(f"Accuracy: {network.accuracy(X_test, Y_test):.4f}%")
