@@ -8,3 +8,4 @@ token.pickle
 
 # Ignore test files
 test.py
+inc/words.txt

@@ -1,6 +1,7 @@
 import os
 import re
 import html
+import json
 import base64
 import pickle
 
@@ -111,6 +112,9 @@ class Connection:
         print(f"Subject: {subject}")
         print(f"Plaintext Content:\n{content}")
 
+        # Return the plaintext content
+        return content
+
     def _clean_content(self, content):
         '''
         Clean and return the content
@@ -162,6 +166,37 @@ class Connection:
         # Modify the message
         self.__service.users().messages().modify(userId='me', id=message_id, body=body).execute()
 
+    def word_counter(self, plaintext):
+        '''
+        Return a dictionary of words and their hot encoded frequencies from the plaintext
+        '''
+
+        # Get the words
+        with open('inc/words.json', 'r', encoding='utf-8') as f:
+            words = {word: 0 for word in json.load(f)}
+
+        # Count the frequencies
+        for word in plaintext.split():
+            if word in words:
+                words[word] += 1
+
+        # Hot encode the frequencies
+        words = self._hot_encode(words)
+
+        # For debugging
+        with open('./inc/words.txt', 'w', encoding='utf-8') as f:
+            json.dump(words, f)
+
+        for word, frequency in words.items():
+            if frequency > 0:
+                print(f"{word}: {frequency}")
+
+        # Return the words
+        return words
+
+    def _hot_encode(self, dictionary):
+        return {key: 1 if value > 0 else value for key, value in dictionary.items()}
+
 # Main execution
 if __name__ == "__main__":
     conn = Connection()
@@ -170,4 +205,7 @@ if __name__ == "__main__":
     messages = conn.get_user_emails()
 
     # Get the content of the first email
-    conn.get_email_content(messages[0]['id'])
+    content = conn.get_email_content(messages[1]['id'])
+
+    # Count word frequencies
+    conn.word_counter(content)
