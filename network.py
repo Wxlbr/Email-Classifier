@@ -1,6 +1,8 @@
 import time
+import json
 
 from loss import MSE, BinaryCrossEntropy
+from layer import Recurrent
 
 class Network:
 
@@ -60,3 +62,23 @@ class Network:
                 print(f", duration={time.time() - start:.2f}s", end="")
 
                 print()
+
+    # TODO: Add checks for layer type and activation type
+    def save(self, path):
+        data = {i: layer.info() for i, layer in enumerate(self.layers)}
+
+        print(data)
+
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+
+    def load(self, path):
+        self.layers.clear()
+
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        for i in data:
+            layer = Recurrent(data[i]['input_size'], data[i]['output_size'])
+            layer.load(data[i])
+            self.layers.append(layer)

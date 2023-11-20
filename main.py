@@ -40,10 +40,15 @@ layers = [
 
 network = Network(layers)
 
+network.save('inc/model.json')
+network.load('inc/model.json')
+
 # train
 network.train(X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
-network.train(X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
-network.train(X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
+# network.train(X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
+# network.train(X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
+
+network.save('inc/model.json')
 
 # accuracy
 print(f"Accuracy: {network.accuracy(X_test, Y_test):.4f}%")

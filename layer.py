@@ -47,6 +47,10 @@ class Recurrent():
         self.input = None
         self.output = None
 
+        # Initialise sizes of input and output
+        self.input_size = input_size
+        self.output_size = output_size
+
         # Initialise weights and biases to random values
         self.weights = np.random.randn(output_size, input_size)
         self.recurrent_weights = np.random.randn(output_size, output_size)
@@ -95,3 +99,26 @@ class Recurrent():
 
         # Return gradient with respect to input
         return input_gradient
+
+    # TODO: Remove numpy dependency
+    def info(self):
+        '''
+        Return a dictionary containing the variables of the layer
+        '''
+
+        return {
+            'input_size': self.input_size,
+            'output_size': self.output_size,
+            'weights': self.weights.tolist(),
+            'recurrent_weights': self.recurrent_weights.tolist(),
+            'bias': self.bias.tolist(),
+        }
+
+    def load(self, info):
+        '''
+        Load the variables of the layer from a dictionary
+        '''
+
+        self.weights = np.array(info.get('weights', self.weights))
+        self.recurrent_weights = np.array(info.get('recurrent_weights', self.recurrent_weights))
+        self.bias = np.array(info.get('bias', self.bias))
