@@ -26,6 +26,8 @@ class Network:
 
     def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse', validation_data=None, verbose=True):
 
+        assert len(x_train) == len(y_train), "Training data and labels must be of same length."
+
         # select loss function
         if loss == 'mse':
             loss = MSE()

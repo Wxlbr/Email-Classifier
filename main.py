@@ -1,5 +1,3 @@
-import time
-
 import pandas as pd
 import numpy as np
 
@@ -8,78 +6,98 @@ from layer import Recurrent
 from split import train_test_split
 from connection import Connection
 
-# Read data from inc/kaggleDataset.csv
-with open('inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
-    emails = pd.read_csv(f)
+class Classifier:
 
-# print(emails.shape)
+    def __init__(self):
+        self.conn = Connection()
+        self.net = None
 
-X = emails.drop('Prediction', axis=1).values
-# X = X[:-1]
-Y = emails['Prediction'].values
-# Y = Y[:-1]
+    def main(self):
+        '''
+        Classify the emails
+        '''
 
-# print(X.shape, Y.shape)
-# time.sleep(2)
+        if self.net is None:
+            self.new_network()
 
-X = X.reshape((X.shape[0], X.shape[1], 1))
-Y = Y.reshape((Y.shape[0], 1, 1))
-# X = X.reshape((X.shape[0], 1, X.shape[1], 1))
-# Y = Y.reshape((Y.shape[0], 1, 1))
+        # Get the user's emails
+        messages = self.conn.get_user_emails()
 
-max_height = X.shape[1]
-max_width = 1
+        # Classify each email
+        for i, message in enumerate(messages):
+            if i == 1:
+                break
 
-# print(X.shape)
-# print(Y.shape)
+            self.classify_email(message['id'])
 
-# exit()
+    def classify_email(self, message_id):
+        '''
+        Get the content of the email, classify it and assign the label
+        '''
 
-# Split into train and test sets
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        # Get the content of the first email
+        content = self.conn.get_email_content(message_id)
 
-# Convert to numpy arrays
-X_train = np.array(X_train)
-X_test = np.array(X_test)
-Y_train = np.array(Y_train)
-Y_test = np.array(Y_test)
+        # Count word frequencies
+        content = self.conn.word_counter(content)
 
-layers = [
-    Recurrent(max_height, max_width)
-]
+        # Convert to list of values
+        content = [content[key] for key in content]
 
-network = Network(layers)
+        # Predict the class label of the email
+        predicted_class = round(self.net.predict(content)[0][0])
 
-# network.save('inc/model.json')
-# network.load('inc/model.json')
+        # Assign the label
+        label = 'Safe' if predicted_class == 0 else 'Unsafe'
 
-# train
-# network.train(X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
-# network.train(X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
-# network.train(X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
+        # Assign the label to the email
+        self.conn.assign_email_labels(message_id, [label])
 
-# network.save('inc/model.json')
-network.load('inc/model.json')
+    def new_network(self, X=None, Y=None):
+        '''
+        Train the network
+        '''
 
-# accuracy
-# print(f"Accuracy: {network.accuracy(X_test, Y_test):.4f}%")
+        if X is None or Y is None:
+            X, Y = self._default_training_data()
 
-conn = Connection()
+        max_height = X.shape[1]
+        max_width = 1
 
-# Get the user's emails
-messages = conn.get_user_emails()
+        # Split into train and test sets
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
-# Get the content of the first email
-for i in range(10):
-    content = conn.get_email_content(messages[i]['id'])
+        # Convert to numpy arrays
+        X_train = np.array(X_train)
+        X_test = np.array(X_test)
+        Y_train = np.array(Y_train)
+        Y_test = np.array(Y_test)
 
-    # Count word frequencies
-    content = conn.word_counter(content)
+        # TODO: Add checks for layer type and activation type
+        self.net = Network([ Recurrent(max_height, max_width) ])
 
-    content = [content[key] for key in sorted(content)]
+        # TODO: Add checks for training and loading network
+        self.net.load('./inc/model.json')
 
-    # print(len(content), len(X_test[0]))
+    def _default_training_data(self):
+        '''
+        Return the default training data
+        '''
 
-    res = network.predict(content)
+        # Read data from inc/kaggleDataset.csv
+        with open('./inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
+            emails = pd.read_csv(f)
 
-    print(res)
+        X = emails.drop('Prediction', axis=1).values
+        Y = emails['Prediction'].values
+
+        X = X.reshape((X.shape[0], X.shape[1], 1))
+        Y = Y.reshape((Y.shape[0], 1, 1))
+
+        return X, Y
+
+if __name__ == "__main__":
+
+    classifier = Classifier()
+
+    classifier.main()

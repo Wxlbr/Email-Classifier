@@ -63,6 +63,9 @@ class Recurrent():
         self.activation = activation
 
     def forward(self, input_value):
+        '''
+        Forward pass of the layer
+        '''
 
         # Save input value
         self.input = input_value
@@ -83,6 +86,9 @@ class Recurrent():
         return self.output
 
     def backward(self, output_gradient, learning_rate):
+        '''
+        Backward pass of the layer
+        '''
 
         # Apply activation function derivative
         output_gradient = self.activation.backward(output_gradient, learning_rate)

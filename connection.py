@@ -152,9 +152,22 @@ class Connection:
         # Return the labels
         return labels
 
-    def assign_email_labels(self, message_id, labels):
+    def _create_label(self, label_name):
         '''
-        Assign labels to an email based on its ID
+        Create a label with the given name
+        '''
+
+        self.check_connected()
+
+        # Create the label
+        label = {'name': label_name, 'messageListVisibility': 'show', 'labelListVisibility': 'labelShow'}
+
+        # Create the label
+        self.__service.users().labels().create(userId='me', body=label).execute()
+
+    def _get_label_id(self, label_name):
+        '''
+        Get the ID of a label with the given name
         '''
 
         self.check_connected()
@@ -162,8 +175,82 @@ class Connection:
         # Get the existing labels
         existing_labels = self.__service.users().labels().list(userId='me').execute()
 
+        # Get the label ID
+        label_id = None
+
+        for label in existing_labels['labels']:
+            if label['name'] == label_name:
+                label_id = label['id']
+                break
+
+        # If the label doesn't exist, create it
+        if not label_id:
+            self._create_label(label_name)
+            label_id = self._get_label_id(label_name)
+
+        # Return the label ID
+        return label_id
+
+    def _get_label_name(self, label_id):
+        '''
+        Get the name of a label with the given ID
+        '''
+
+        self.check_connected()
+
+        # Get the existing labels
+        existing_labels = self.__service.users().labels().list(userId='me').execute()
+
+        # Get the label name
+        label_name = None
+
+        for label in existing_labels['labels']:
+            if label['id'] == label_id:
+                label_name = label['name']
+                break
+
+        # Return the label name
+        return label_name
+
+    def remove_email_labels(self, message_id, labels):
+        '''
+        Remove labels from an email based on its name
+        '''
+
+        self.check_connected()
+
         # Get the label IDs
-        label_ids = [label['id'] for label in existing_labels['labels'] if label['name'] in labels]
+        label_ids = [self._get_label_id(label) for label in labels]
+
+        # Remove the labels from a request body
+        body = {'removeLabelIds': label_ids, 'addLabelIds': []}
+
+        # Modify the message
+        self.__service.users().messages().modify(userId='me', id=message_id, body=body).execute()
+
+    def assign_email_labels(self, message_id, labels):
+        '''
+        Assign labels to an email based on its name
+        '''
+
+        self.check_connected()
+
+        # Check that both safe and unsafe are not in the labels
+        assert not ('Safe' in labels and 'Unsafe' in labels)
+
+        # Check that the corresponding labels have not already been assigned
+        existing_labels = self.get_email_labels(message_id)
+
+        existing_labels = [self._get_label_name(label_id) for label_id in existing_labels]
+
+        # If the labels are already assigned, remove them
+        if 'Safe' in labels and 'Unsafe' in existing_labels:
+            self.remove_email_labels(message_id, ['Unsafe'])
+        elif 'Unsafe' in labels and 'Safe' in existing_labels:
+            self.remove_email_labels(message_id, ['Safe'])
+
+        # Get the label IDs
+        label_ids = [self._get_label_id(label) for label in labels]
 
         # Assign the labels to a request body
         body = {'removeLabelIds': [], 'addLabelIds': label_ids}
@@ -189,14 +276,12 @@ class Connection:
         words = self._hot_encode(words)
 
         # For debugging
-        with open('./inc/words.txt', 'w', encoding='utf-8') as f:
-            json.dump(words, f)
+        # with open('./inc/words.txt', 'w', encoding='utf-8') as f:
+        #     json.dump(words, f)
 
         # for word, frequency in words.items():
         #     if frequency > 0:
         #         print(f"{word}: {frequency}")
-
-        print(len(words) > 0)
 
         # Return the words
         return words
