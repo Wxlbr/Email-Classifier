@@ -1,17 +1,27 @@
+import time
+
 import pandas as pd
 import numpy as np
 
 from network import Network
 from layer import Recurrent
 from split import train_test_split
-
+from connection import Connection
 
 # Read data from inc/kaggleDataset.csv
 with open('inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
     emails = pd.read_csv(f)
 
+# print(emails.shape)
+
 X = emails.drop('Prediction', axis=1).values
+# X = X[:-1]
 Y = emails['Prediction'].values
+# Y = Y[:-1]
+
+# print(X.shape, Y.shape)
+# time.sleep(2)
+
 X = X.reshape((X.shape[0], X.shape[1], 1))
 Y = Y.reshape((Y.shape[0], 1, 1))
 # X = X.reshape((X.shape[0], 1, X.shape[1], 1))
@@ -40,15 +50,36 @@ layers = [
 
 network = Network(layers)
 
-network.save('inc/model.json')
-network.load('inc/model.json')
+# network.save('inc/model.json')
+# network.load('inc/model.json')
 
 # train
-network.train(X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
+# network.train(X_train, Y_train, 100, 0.5, validation_data=(X_test, Y_test))
 # network.train(X_train, Y_train, 100, 0.1, validation_data=(X_test, Y_test))
 # network.train(X_train, Y_train, 200, 0.05, validation_data=(X_test, Y_test))
 
-network.save('inc/model.json')
+# network.save('inc/model.json')
+network.load('inc/model.json')
 
 # accuracy
-print(f"Accuracy: {network.accuracy(X_test, Y_test):.4f}%")
+# print(f"Accuracy: {network.accuracy(X_test, Y_test):.4f}%")
+
+conn = Connection()
+
+# Get the user's emails
+messages = conn.get_user_emails()
+
+# Get the content of the first email
+for i in range(10):
+    content = conn.get_email_content(messages[i]['id'])
+
+    # Count word frequencies
+    content = conn.word_counter(content)
+
+    content = [content[key] for key in sorted(content)]
+
+    # print(len(content), len(X_test[0]))
+
+    res = network.predict(content)
+
+    print(res)

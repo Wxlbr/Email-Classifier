@@ -99,18 +99,23 @@ class Connection:
         subject = [header['value'] for header in payload['headers'] if header['name'] == 'Subject'][0]
 
         # Get email body data as base64url encoded string
-        body_data = payload['parts'][0]['body']['data']
-        body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
+        # TODO: Error handling for missing body data
+        try:
+            body_data = payload['parts'][0]['body']['data']
+            body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
-        # Parse HTML content
-        content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
+            # Parse HTML content
+            content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
+
+        except Exception:
+            content = ''
 
         # Clean the plaintext content
         content = self._clean_content(content)
 
         # For debugging
-        print(f"Subject: {subject}")
-        print(f"Plaintext Content:\n{content}")
+        # print(f"Subject: {subject}")
+        # print(f"Plaintext Content:\n{content}")
 
         # Return the plaintext content
         return content
@@ -187,9 +192,11 @@ class Connection:
         with open('./inc/words.txt', 'w', encoding='utf-8') as f:
             json.dump(words, f)
 
-        for word, frequency in words.items():
-            if frequency > 0:
-                print(f"{word}: {frequency}")
+        # for word, frequency in words.items():
+        #     if frequency > 0:
+        #         print(f"{word}: {frequency}")
+
+        print(len(words) > 0)
 
         # Return the words
         return words
