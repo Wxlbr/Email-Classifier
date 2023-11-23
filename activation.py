@@ -28,7 +28,7 @@ class Tanh(Activation):
 class Sigmoid(Activation):
     def __init__(self):
         def sigmoid(x):
-            return 1 / (1 + np.exp(-x))
+            return [[1 / (1 + np.exp(-value)) for value in row] for row in x]
 
         def sigmoid_derivative(x):
             s = sigmoid(x)

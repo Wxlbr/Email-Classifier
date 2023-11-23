@@ -52,12 +52,12 @@ class Recurrent():
         self.output_size = output_size
 
         # Initialise weights and biases to random values
-        self.weights = np.random.randn(output_size, input_size)
-        self.recurrent_weights = np.random.randn(output_size, output_size)
-        self.bias = np.random.randn(output_size, 1)
+        self.weights = np.random.randn(output_size, input_size).tolist()
+        self.recurrent_weights = np.random.randn(output_size, output_size).tolist()
+        self.bias = np.random.randn(output_size, 1).tolist()
 
         # Initialise hidden state to zero vectors
-        self.hidden_state = np.zeros((output_size, 1))
+        self.hidden_state = np.zeros((output_size, 1)).tolist()
 
         # Initialise activation function
         self.activation = activation
@@ -71,13 +71,16 @@ class Recurrent():
         self.input = input_value
 
         # Initialise output as a copy of the bias
-        self.output = np.copy(self.bias)
+        self.output = np.copy(self.bias).tolist()
 
         # Update hidden state
         self.hidden_state = dot(self.recurrent_weights, self.hidden_state)
 
         # Add weighted input and hidden state to output
-        self.output = dot(self.weights, self.input) + self.hidden_state + self.bias
+        # self.output = dot(self.weights, self.input) + self.hidden_state + self.bias
+
+        # TODO: Temporary fix for matrix multiplication
+        self.output = [[dot(self.weights, self.input)[i] + self.hidden_state[i][0] + self.bias[i][0]] for i in range(self.output_size)]
 
         # Apply activation function
         self.output = self.activation.forward(self.output)
@@ -115,9 +118,9 @@ class Recurrent():
         return {
             'input_size': self.input_size,
             'output_size': self.output_size,
-            'weights': self.weights.tolist(),
-            'recurrent_weights': self.recurrent_weights.tolist(),
-            'bias': self.bias.tolist(),
+            'weights': self.weights,
+            'recurrent_weights': self.recurrent_weights,
+            'bias': self.bias,
         }
 
     def load(self, info):
@@ -125,6 +128,6 @@ class Recurrent():
         Load the variables of the layer from a dictionary
         '''
 
-        self.weights = np.array(info.get('weights', self.weights))
-        self.recurrent_weights = np.array(info.get('recurrent_weights', self.recurrent_weights))
-        self.bias = np.array(info.get('bias', self.bias))
+        self.weights = info.get('weights', self.weights)
+        self.recurrent_weights = info.get('recurrent_weights', self.recurrent_weights)
+        self.bias = info.get('bias', self.bias)

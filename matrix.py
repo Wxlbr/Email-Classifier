@@ -2,7 +2,7 @@ import numpy as np
 
 def dot(x: list, y: list) -> list:
     # For testing purposes as numpy is faster
-    return np.dot(x, y)
+    return np.dot(np.array(x), np.array(y)).tolist()
 
     # assert len(x[0]) == len(y), f"Invalid dimensions: {len(x[0])} != {len(y)}"
 
@@ -17,6 +17,6 @@ def dot(x: list, y: list) -> list:
 
 def mul(x: list, y: float) -> list:
     # For testing purposes as numpy is faster
-    return np.multiply(x, y)
+    return np.multiply(np.array(x), y).tolist()
 
     # return [[value * y for value in row] for row in x]
