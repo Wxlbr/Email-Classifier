@@ -60,7 +60,6 @@ class Connection:
         if not self.__credentials or not self.__credentials.valid:
 
             # Use 0Auth2.0 flow to generate credentials
-            # TODO: Error handling for invalid credentials
             flow = InstalledAppFlow.from_client_secrets_file(
                 self.__app_credentials_path, self.API_SCOPES)
             self.__credentials = flow.run_local_server(port=self.OAUTH_PORT)
@@ -96,26 +95,19 @@ class Connection:
         payload = message['payload']
 
         # Get the email subject
-        subject = [header['value'] for header in payload['headers'] if header['name'] == 'Subject'][0]
+        # subject = [header['value'] for header in payload['headers'] if header['name'] == 'Subject'][0]
 
         # Get email body data as base64url encoded string
-        # TODO: Error handling for missing body data
-        try:
+        content = ''
+        if 'parts' in payload and payload['parts'][0]['body']['size'] > 0:
             body_data = payload['parts'][0]['body']['data']
             body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
             # Parse HTML content
             content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
 
-        except Exception:
-            content = ''
-
         # Clean the plaintext content
         content = self._clean_content(content)
-
-        # For debugging
-        # print(f"Subject: {subject}")
-        # print(f"Plaintext Content:\n{content}")
 
         # Return the plaintext content
         return content
@@ -297,7 +289,8 @@ if __name__ == "__main__":
     messages = conn.get_user_emails()
 
     # Get the content of the first email
-    content = conn.get_email_content(messages[1]['id'])
+    for i in range(20):
+        content = conn.get_email_content(messages[i]['id'])
 
     # Count word frequencies
-    conn.word_counter(content)
+    # conn.word_counter(content)

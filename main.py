@@ -30,6 +30,36 @@ class Classifier:
 
             self.classify_email(message['id'])
 
+    def test_network(self):
+        '''
+        Test the network
+        '''
+
+        if self.net is None:
+            self.new_network()
+
+        # Get the user's emails
+        messages = self.conn.get_user_emails()
+
+        # Classify each email
+        for i, message in enumerate(messages):
+
+            # Get the content of the first email
+            content = self.conn.get_email_content(message['id'])
+
+            # Count word frequencies
+            content = self.conn.word_counter(content)
+
+            # Convert to list of values
+            content = [content[key] for key in content]
+
+            # Predict the class label of the email
+            predicted_class = round(self.net.predict(content)[0][0])
+
+            print(predicted_class, end='')
+
+        print()
+
     def classify_email(self, message_id):
         '''
         Get the content of the email, classify it and assign the label
@@ -100,4 +130,5 @@ if __name__ == "__main__":
 
     classifier = Classifier()
 
-    classifier.main()
+    # classifier.main()
+    classifier.test_network()

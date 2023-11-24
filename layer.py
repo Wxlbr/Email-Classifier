@@ -1,7 +1,9 @@
+import random
+
 import numpy as np
 
 from activation import Sigmoid
-from matrix import dot, mul
+from matrix import dot, mul, transpose, randn, zeros
 
 class Dense():
     '''
@@ -15,8 +17,8 @@ class Dense():
     def __init__(self, input_size, output_size, activation=Sigmoid()):
         self.input = None
         self.output = None
-        self.weights = np.random.randn(output_size, input_size)
-        self.bias = np.random.randn(output_size, 1)
+        self.weights = randn(output_size, input_size)
+        self.bias = randn(output_size, 1)
         self.activation = activation
 
     def forward(self, input_value):
@@ -52,12 +54,12 @@ class Recurrent():
         self.output_size = output_size
 
         # Initialise weights and biases to random values
-        self.weights = np.random.randn(output_size, input_size).tolist()
-        self.recurrent_weights = np.random.randn(output_size, output_size).tolist()
-        self.bias = np.random.randn(output_size, 1).tolist()
+        self.weights = randn(output_size, input_size)
+        self.recurrent_weights = randn(output_size, output_size)
+        self.bias = randn(output_size, 1)
 
         # Initialise hidden state to zero vectors
-        self.hidden_state = np.zeros((output_size, 1)).tolist()
+        self.hidden_state = zeros(output_size, 1)
 
         # Initialise activation function
         self.activation = activation
@@ -71,16 +73,19 @@ class Recurrent():
         self.input = input_value
 
         # Initialise output as a copy of the bias
-        self.output = np.copy(self.bias).tolist()
+        self.output = [[x] for x in sum(self.bias, [])]
 
         # Update hidden state
         self.hidden_state = dot(self.recurrent_weights, self.hidden_state)
 
         # Add weighted input and hidden state to output
+        # TODO: Temporary fix for matrix multiplication
         # self.output = dot(self.weights, self.input) + self.hidden_state + self.bias
 
-        # TODO: Temporary fix for matrix multiplication
-        self.output = [[dot(self.weights, self.input)[i] + self.hidden_state[i][0] + self.bias[i][0]] for i in range(self.output_size)]
+        for i in range(self.output_size):
+            for j in range(self.input_size):
+                self.output[i][0] += self.weights[i][j] * self.input[j]
+            self.output[i][0] += self.hidden_state[i][0] + self.bias[i][0]
 
         # Apply activation function
         self.output = self.activation.forward(self.output)
@@ -97,19 +102,18 @@ class Recurrent():
         output_gradient = self.activation.backward(output_gradient, learning_rate)
 
         # Calculate gradients
-        weights_gradient = dot(output_gradient, self.input.T)
-        recurrent_weights_gradient = dot(output_gradient, self.hidden_state.T)
-        input_gradient = dot(self.weights.T, output_gradient)
+        weights_gradient = dot(output_gradient, transpose(self.input))
+        recurrent_weights_gradient = dot(output_gradient, transpose(self.hidden_state))
+        input_gradient = dot(transpose(self.weights), output_gradient)
 
         # Update weights and biases
         self.weights -= mul(weights_gradient, learning_rate)
         self.recurrent_weights -= mul(recurrent_weights_gradient, learning_rate)
-        self.bias -= mul(np.sum(output_gradient, axis=1, keepdims=True), learning_rate)
+        self.bias -= mul([[sum(row, keepdims=True)] for row in output_gradient], learning_rate)
 
         # Return gradient with respect to input
         return input_gradient
 
-    # TODO: Remove numpy dependency
     def info(self):
         '''
         Return a dictionary containing the variables of the layer
