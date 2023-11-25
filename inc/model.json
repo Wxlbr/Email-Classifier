@@ -1,5 +1,7 @@
 {
     "0": {
+        "type": "recurrent",
+        "activation": "sigmoid",
         "input_size": 3000,
         "output_size": 1,
         "weights": [

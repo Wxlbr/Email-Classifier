@@ -125,6 +125,8 @@ class Recurrent():
             'weights': self.weights,
             'recurrent_weights': self.recurrent_weights,
             'bias': self.bias,
+            'activation': self.activation.get_type(),
+            'type': 'recurrent'
         }
 
     def load(self, info):

@@ -103,8 +103,7 @@ class Classifier:
         Y_train = np.array(Y_train)
         Y_test = np.array(Y_test)
 
-        # TODO: Add checks for layer type and activation type
-        self.net = Network([ Recurrent(max_height, max_width) ])
+        self.net = Network()
 
         # TODO: Add checks for training and loading network
         self.net.load('./inc/model.json')

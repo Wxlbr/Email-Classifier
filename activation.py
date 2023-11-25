@@ -1,9 +1,10 @@
 import numpy as np
 
 class Activation():
-    def __init__(self, activation, activation_derivative):
+    def __init__(self, activation_type, activation, activation_derivative):
         self.input = None
         self.output = None
+        self.type = activation_type
         self.activation = activation
         self.activation_derivative = activation_derivative
 
@@ -15,6 +16,9 @@ class Activation():
         # print(output_gradient.shape, self.activation_derivative(self.input).shape)
         return np.multiply(output_gradient, self.activation_derivative(self.input))
 
+    def get_type(self):
+        return self.type
+
 class Tanh(Activation):
     def __init__(self):
         def tanh(x):
@@ -23,7 +27,7 @@ class Tanh(Activation):
         def tanh_derivative(x):
             return 1 - np.tanh(x) ** 2
 
-        super().__init__(tanh, tanh_derivative)
+        super().__init__('tanh', tanh, tanh_derivative)
 
 class Sigmoid(Activation):
     def __init__(self):
@@ -34,7 +38,7 @@ class Sigmoid(Activation):
             s = sigmoid(x)
             return s * (1 - s)
 
-        super().__init__(sigmoid, sigmoid_derivative)
+        super().__init__('sigmoid', sigmoid, sigmoid_derivative)
 
 class Softmax():
     def __init__(self):

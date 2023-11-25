@@ -3,13 +3,20 @@ import json
 
 from loss import MSE, BinaryCrossEntropy
 from layer import Recurrent
+from activation import Sigmoid, Tanh
 
 class Network:
 
-    def __init__(self, layers):
+    LAYER_TYPES = {'recurrent': Recurrent}
+    ACTIVATION_TYPES = {'sigmoid': Sigmoid, 'tanh': Tanh}
+
+    def __init__(self, layers=[]):
         self.layers = layers
 
     def predict(self, input_value):
+        if not self.layers:
+            raise Exception('Network has no layers.')
+
         output = input_value
         for layer in self.layers:
             output = layer.forward(output)
@@ -25,6 +32,9 @@ class Network:
         return correct / x_test.shape[0] * 100
 
     def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse', validation_data=None, verbose=True):
+
+        if not self.layers:
+            raise Exception('Network has no layers.')
 
         assert len(x_train) == len(y_train), "Training data and labels must be of same length."
 
@@ -65,7 +75,6 @@ class Network:
 
                 print()
 
-    # TODO: Add checks for layer type and activation type
     def save(self, path):
         data = {i: layer.info() for i, layer in enumerate(self.layers)}
 
@@ -81,6 +90,11 @@ class Network:
             data = json.load(f)
 
         for i in data:
-            layer = Recurrent(data[i]['input_size'], data[i]['output_size'])
+            if data[i]['type'] not in self.LAYER_TYPES:
+                raise Exception('Unknown layer type')
+            if data[i]['activation'] not in self.ACTIVATION_TYPES:
+                raise Exception('Unknown activation type')
+
+            layer = self.LAYER_TYPES[data[i]['type']](data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
             layer.load(data[i])
             self.layers.append(layer)
