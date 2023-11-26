@@ -1,5 +1,6 @@
+import os
+
 import pandas as pd
-import numpy as np
 
 from network import Network
 from layer import Recurrent
@@ -36,7 +37,7 @@ class Classifier:
         '''
 
         if self.net is None:
-            self.new_network()
+            self.load_network(file_path='./inc/model.json')
 
         # Get the user's emails
         messages = self.conn.get_user_emails()
@@ -83,7 +84,8 @@ class Classifier:
         # Assign the label to the email
         self.conn.assign_email_labels(message_id, [label])
 
-    def new_network(self, X=None, Y=None):
+    # TODO: Add check for network layer structure
+    def train_network(self, X=None, Y=None):
         '''
         Train the network
         '''
@@ -91,22 +93,26 @@ class Classifier:
         if X is None or Y is None:
             X, Y = self._default_training_data()
 
-        max_height = X.shape[1]
-        max_width = 1
+        # max_height = X.shape[1]
+        # max_width = 1
 
         # Split into train and test sets
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
-        # Convert to numpy arrays
-        X_train = np.array(X_train)
-        X_test = np.array(X_test)
-        Y_train = np.array(Y_train)
-        Y_test = np.array(Y_test)
+        # Train the network
+        self.net.train(X_train, Y_train, validation_data=(X_test, Y_test))
 
-        self.net = Network()
+    def load_network(self, file_path):
+        '''
+        Load the network from file
+        '''
 
-        # TODO: Add checks for training and loading network
-        self.net.load('./inc/model.json')
+        if os.path.exists(file_path):
+            self.net = Network()
+            self.net.load(file_path)
+
+        else:
+            raise Exception('File does not exist.')
 
     def _default_training_data(self):
         '''
