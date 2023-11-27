@@ -1,0 +1,136 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Designer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Neural Network Designer</h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Neural Network Layout -->
+            <div id="neuralNetworkLayout">
+                <!-- Layers will be dynamically added here -->
+            </div>
+
+            <!-- Add Layer Button -->
+            <button class="btn btn-primary mt-3" onclick="addLayer()">Add Layer</button>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Side Panel for Layer Options -->
+            <div id="sidePanel" style="display: none;">
+                <!-- Layer Options will be dynamically added here -->
+            </div>
+        </div>
+
+        <footer style="position: relative; text-align: center; padding: 1rem; left: 50%; transform: translate(-50%, 0)">
+            <h2>Cheeky ;)</h2>
+        </footer>
+    </div>
+</div>
+
+<script>
+    // Counter for unique layer IDs
+    let layerCounter = 1;
+
+    // Function to add a new layer
+    function addLayer() {
+        const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
+        const newLayer = document.createElement('div');
+        newLayer.innerHTML = `<div class="card mt-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Layer ${layerCounter}</h5>
+                                    <p class="card-text">Layer Options...</p>
+                                    <button class="btn btn-info" onclick="openSidePanel(${layerCounter})">Edit</button>
+                                </div>
+                            </div>`;
+        neuralNetworkLayout.appendChild(newLayer);
+        layerCounter++;
+    }
+
+    // Function to open the side panel for layer options
+    function openSidePanel(layerId) {
+        const sidePanel = document.getElementById('sidePanel');
+        sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
+                               <form>
+                                    <div class="form-group">
+                                        <label for="inputSize">Input Size:</label>
+                                        <input type="text" class="form-control" id="inputSize" placeholder="Enter input size">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="outputSize">Output Size:</label>
+                                        <input type="text" class="form-control" id="outputSize" placeholder="Enter output size">
+                                    </div>
+                                    <button type="button" class="btn btn-success" onclick="saveLayerOptions(${layerId})">Save</button>
+                               </form>`;
+        sidePanel.style.display = 'block';
+    }
+
+    // Function to save layer options
+    function saveLayerOptions(layerId) {
+        let removePanel = true;
+
+        const inputSize = document.getElementById('inputSize').value;
+        const outputSize = document.getElementById('outputSize').value;
+
+        // Send layer information to Flask using AJAX
+        fetch('/save_layer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                layerId: layerId,
+                inputSize: inputSize,
+                outputSize: outputSize,
+            }),
+        })
+        // console.log('Layer information sent to server')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Response from server:', data);
+
+            if (data['code'] != 200) {
+                removePanel = false;
+
+                console.log('Errrrrororr');
+
+                // const sidePanelForm = document.getElementById('sidePanel').getElementsByTagName('form')[0];
+                // if (sidePanelForm.getElementsByTagName('div').length > 1) {
+                //     sidePanelForm.removeChild(sidePanelForm.getElementsByTagName('div')[1]);
+                // }
+
+                if(document.getElementById('BingBong')) {
+                    const errorAlert = document.getElementById('BingBong');
+                }
+                else {
+                    const errorAlert = document.createElement('div');
+                    errorAlert.style.paddingTop = '1rem';
+                    errorAlert.id = "BingBong";
+                }
+                errorAlert.innerHTML = `<div class="alert alert-danger" role="alert">
+                                            ${data['code']}
+                                        </div>`;
+                sidePanelForm.appendChild(errorAlert);
+                sidePanel.style.display = 'block';
+            }
+
+        })
+        .catch(error => console.error('Error:', error));
+
+        // Close the side panel
+        if (removePanel) {
+            document.getElementById('sidePanel').style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

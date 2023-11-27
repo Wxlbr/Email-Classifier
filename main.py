@@ -13,20 +13,20 @@ class Classifier:
         self.conn = Connection()
         self.net = None
 
-    def main(self):
+    def main(self, n=1):
         '''
         Classify the emails
         '''
 
         if self.net is None:
-            self.new_network()
+            self.load_network(file_path='./inc/model.json')
 
         # Get the user's emails
         messages = self.conn.get_user_emails()
 
         # Classify each email
         for i, message in enumerate(messages):
-            if i == 1:
+            if i == n:
                 break
 
             self.classify_email(message['id'])
@@ -135,5 +135,5 @@ if __name__ == "__main__":
 
     classifier = Classifier()
 
-    # classifier.main()
-    classifier.test_network()
+    classifier.main()
+    # classifier.test_network()
