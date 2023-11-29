@@ -1,81 +1,113 @@
 <!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neural Network Designer</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/">Neural Network Designer</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/settings">Settings</a>
-            </li>
-        </ul>
-    </div>
-</nav>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Neural Network Designer</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings">Settings</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 
-<div class="container">
-    <h1>Neural Network Designer</h1>
+    <div class="container">
+        <h1>Neural Network Designer</h1>
 
-    <div class="row">
-        <div class="col-md-8">
-            <!-- Neural Network Layout -->
-            <div id="neuralNetworkLayout">
-                <!-- Layers will be dynamically added here -->
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Neural Network Layout -->
+                <div id="neuralNetworkLayout">
+                    <!-- Layers will be dynamically added here -->
+                </div>
+
+                <!-- Add Layer Button -->
+                <button class="btn btn-primary mt-3" onclick="addLayer()">Add Layer</button>
             </div>
 
-            <!-- Add Layer Button -->
-            <button class="btn btn-primary mt-3" onclick="addLayer()">Add Layer</button>
-        </div>
-
-        <div class="col-md-4">
-            <!-- Side Panel for Layer Options -->
-            <div id="sidePanel" style="display: none;">
-                <!-- Layer Options will be dynamically added here -->
+            <div class="col-md-4">
+                <!-- Side Panel for Layer Options -->
+                <div id="sidePanel" style="display: none;">
+                    <!-- Layer Options will be dynamically added here -->
+                </div>
             </div>
+
+            <footer style="position: relative; text-align: center; padding: 1rem; left: 50%; transform: translate(-50%, 0)">
+                <h2>Cheeky ;)</h2>
+            </footer>
         </div>
-
-        <footer style="position: relative; text-align: center; padding: 1rem; left: 50%; transform: translate(-50%, 0)">
-            <h2>Cheeky ;)</h2>
-        </footer>
     </div>
-</div>
 
-<script>
-    // Counter for unique layer IDs
-    let layerCounter = 1;
+    <script>
+        // Counter for unique layer IDs
+        let layerCounter = 1;
 
-    // Function to add a new layer
-    function addLayer() {
-        const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
-        const newLayer = document.createElement('div');
-        newLayer.innerHTML = `<div class="card mt-3">
+        // Function to add a new layer
+        function addLayer() {
+            const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
+            const newLayer = document.createElement('div');
+            newLayer.innerHTML = `<div class="card mt-3">
                                 <div class="card-body">
                                     <h5 class="card-title">Layer ${layerCounter}</h5>
                                     <p class="card-text">Layer Options...</p>
                                     <button class="btn btn-info" onclick="openSidePanel(${layerCounter})">Edit</button>
+                                    <button class="btn btn-danger" onclick="removeLayer(${layerCounter})">Remove</button>
                                 </div>
                             </div>`;
-        neuralNetworkLayout.appendChild(newLayer);
-        layerCounter++;
-    }
+            neuralNetworkLayout.appendChild(newLayer);
+            layerCounter++;
+        }
 
-    // Function to open the side panel for layer options
-    function openSidePanel(layerId) {
-        const sidePanel = document.getElementById('sidePanel');
-        sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
+        // Function to remove a layer
+        function removeLayer(layerId) {
+            const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
+            // const sidePanel = document.getElementById('sidePanel');
+            const layers = neuralNetworkLayout.getElementsByTagName('div');
+
+            // Check if layerId is valid
+            if (layerId < 1 || layerId > layers.length) {
+                console.error('Invalid layerId:', layerId);
+                return;
+            }
+
+            // Remove the layer
+            const layerToRemove = layers[layerId - 1];
+            neuralNetworkLayout.removeChild(layerToRemove);
+
+            // Update layer IDs
+            for (let i = layerId; i < layers.length; i++) {
+                const layer = layers[i];
+                layer = layer.getElementsByTagName('div');
+                layer.querySelector('.card-title').textContent = `Layer ${index + 1}`;
+                layer.querySelector('.btn-info').setAttribute('onclick', `openSidePanel(${index + 1})`);
+                layer.querySelector('.btn-danger').setAttribute('onclick', `removeLayer(${index + 1})`);
+            };
+
+            layerCounter--;
+        }
+
+
+        // Function to open the side panel for layer options
+        function openSidePanel(layerId) {
+            const sidePanel = document.getElementById('sidePanel');
+            sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
                                <form>
                                     <div class="form-group">
                                         <label for="inputSize">Input Size:</label>
@@ -87,80 +119,57 @@
                                     </div>
                                     <button type="button" class="btn btn-success" onclick="saveLayerOptions(${layerId})">Save</button>
                                </form>`;
-        sidePanel.style.display = 'block';
-    }
+            sidePanel.style.display = 'block';
+        }
 
-    // Function to save layer options
-    function saveLayerOptions(layerId) {
-        let removePanel = true;
+        // Function to save layer options
+        function saveLayerOptions(layerId) {
+            const inputSize = document.getElementById('inputSize').value;
+            const outputSize = document.getElementById('outputSize').value;
 
-        const inputSize = document.getElementById('inputSize').value;
-        const outputSize = document.getElementById('outputSize').value;
+            // Validate inputSize and outputSize if needed
 
-        // Send layer information to Flask using AJAX
-        fetch('/save_layer', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                layerId: layerId,
-                inputSize: inputSize,
-                outputSize: outputSize,
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Response from server:', data);
+            // Send layer information to the server using AJAX
+            fetch('/save_layer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        layerId: layerId,
+                        inputSize: inputSize,
+                        outputSize: outputSize,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Response from server:', data);
 
-            if (data['code'] != '200') {
-                removePanel = false;
+                    if (data.code !== '200') {
+                        handleServerError(data.code, data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
 
-                console.log('Errrrrororr');
-
-                const sidePanelForm = document.getElementById('sidePanel').getElementsByTagName('form')[0];
-                // if (sidePanelForm.getElementsByTagName('div').length > 1) {
-                //     sidePanelForm.removeChild(sidePanelForm.getElementsByTagName('div')[1]);
-                // }
-
-                if(document.getElementById('BingBong')) {
-                    const errorAlert = document.getElementById('BingBong');
-                    errorAlert.innerHTML = `<div class="alert alert-danger" role="alert">
-                                                ${data['code'] + ': ' + data['message']}
-                                            </div>`;
-                    sidePanelForm.appendChild(errorAlert);
-                    sidePanel.style.display = 'block';
-                }
-                else {
-                    console.log('Creating new div');
-                    const errorAlert = document.createElement('div');
-                    errorAlert.style.paddingTop = '1rem';
-                    errorAlert.id = "BingBong";
-                    errorAlert.innerHTML = `<div class="alert alert-danger" role="alert">
-                                                ${data['code']}
-                                            </div>`;
-                    sidePanelForm.appendChild(errorAlert);
-                    sidePanel.style.display = 'block';
-                }
-                // console.log('Error alert:', errorAlert);
-                // errorAlert.innerHTML = `<div class="alert alert-danger" role="alert">
-                //                             ${data['code']}
-                //                         </div>`;
-                // sidePanelForm.appendChild(errorAlert);
-                // sidePanel.style.display = 'block';
-
-                console.log('removePanel:', removePanel)
-            }
-
-        })
-        .catch(error => console.error('Error:', error));
-
-        // Close the side panel
-        if (removePanel) {
+            // Close the side panel
             document.getElementById('sidePanel').style.display = 'none';
         }
-    }
-</script>
+
+        // Function to handle server errors
+        function handleServerError(code, message) {
+            const sidePanel = document.getElementById('sidePanel');
+            const sidePanelForm = sidePanel.querySelector('form');
+
+            const errorAlert = document.createElement('div');
+            errorAlert.className = 'alert alert-danger';
+            errorAlert.role = 'alert';
+            errorAlert.innerHTML = `${code}: ${message}`;
+
+            sidePanelForm.appendChild(errorAlert);
+            sidePanel.style.display = 'block';
+        }
+    </script>
 
 </body>
+
 </html>

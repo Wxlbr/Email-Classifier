@@ -46,5 +46,19 @@ def save_layer():
 
     return jsonify({'code': '200', 'message': 'Layer saved'})
 
+@app.route('/remove_layer', methods=['POST'])
+def remove_layer():
+    data = request.get_json()
+    layer_id = data.get('layerId')
+
+    if layer_id is None:
+        return jsonify({'code': '400', 'message': 'Layer ID cannot be empty'})
+
+    if layer_id in layers:
+        del layers[layer_id]
+        return jsonify({'code': '200', 'message': 'Layer removed'})
+
+    return jsonify({'code': '400', 'message': 'Layer not found'})
+
 if __name__ == '__main__':
     app.run(debug=True)
