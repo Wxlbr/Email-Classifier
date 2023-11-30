@@ -78,8 +78,7 @@
         // Function to remove a layer
         function removeLayer(layerId) {
             const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
-            // const sidePanel = document.getElementById('sidePanel');
-            const layers = neuralNetworkLayout.getElementsByTagName('div');
+            const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
 
             // Check if layerId is valid
             if (layerId < 1 || layerId > layers.length) {
@@ -91,16 +90,29 @@
             const layerToRemove = layers[layerId - 1];
             neuralNetworkLayout.removeChild(layerToRemove);
 
+            layerCounter--;
+
+            // Assert that layerCounter is correct
+            if (layerCounter !== layers.length) {
+                console.error('layerCounter is incorrect:', layerCounter, layers.length);
+                return;
+            }
+
             // Update layer IDs
+            console.log('Layers Length:', layers.length)
             for (let i = layerId; i < layers.length; i++) {
-                const layer = layers[i];
-                layer = layer.getElementsByTagName('div');
-                layer.querySelector('.card-title').textContent = `Layer ${index + 1}`;
-                layer.querySelector('.btn-info').setAttribute('onclick', `openSidePanel(${index + 1})`);
-                layer.querySelector('.btn-danger').setAttribute('onclick', `removeLayer(${index + 1})`);
+                const cardBodyDiv = layers[i].querySelector('.card-body');
+
+                if (cardBodyDiv) {
+                    cardBodyDiv.querySelector('.card-title').textContent = `Layer ${i}`;
+                    cardBodyDiv.querySelector('.btn-info').setAttribute('onclick', `openSidePanel(${i})`);
+                    cardBodyDiv.querySelector('.btn-danger').setAttribute('onclick', `removeLayer(${i})`);
+                }
             };
 
-            layerCounter--;
+            // TODO: Close side panel if open
+
+            // TODO: Update backend with new layer information
         }
 
 
@@ -153,6 +165,8 @@
 
             // Close the side panel
             document.getElementById('sidePanel').style.display = 'none';
+
+            // TODO: Change layer description in neural network layout to reflect new layer information
         }
 
         // Function to handle server errors
