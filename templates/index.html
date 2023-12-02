@@ -23,7 +23,44 @@
     <div id="Header"></div>
 
     <div class="container mt-3">
-        <h1>All Networks</h1>
+        <h1>Active Network</h1>
+
+        <!-- Active Network Container -->
+        <div id="activeNetworkContainer" class="row">
+            <!-- Dynamic network block will be added here -->
+
+            <!-- Placeholder block -->
+            <div class="col-md-3 mt-3">
+                <div class="card h-100 rounded">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Network 0</h5>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-info btn-block">Edit</button>
+                        <button class="btn btn-danger btn-block">Replace</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network control block -->
+            <div class="col-md-6 mt-3">
+                <div class="card h-100 rounded">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Network Controls</h5>
+                        <!-- Active (Shutdown) or Inactive (Start) -->
+                        <h5 class="card-header mb-2 text-muted">Status: Active</h5>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary btn-block">Shutdown</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mt-3">
+        <h1>Saved Networks</h1>
 
         <!-- Networks Container -->
         <div id="networksContainer" class="row">
@@ -31,8 +68,10 @@
         </div>
 
         <!-- Add New Network Block Button -->
-        <div class="col-md-3 mt-3">
-            <button class="btn btn-primary btn-block" onclick="addNewNetwork()">Add New</button>
+        <div class="row">
+            <div class="col-md-3 mt-3">
+                <button class="btn btn-primary btn-block" onclick="addNewNetwork()">Add New</button>
+            </div>
         </div>
     </div>
 
