@@ -1,0 +1,251 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Sortable library  for drag-and-drop animation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+<!-- Styles for drag-and-drop animation -->
+<style>
+    .sortable-chosen {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    .sortable-ghost {
+        opacity: 0.5;
+    }
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Designer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <!-- Add jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.slim.min.js"></script>
+
+    <!-- Add Popper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+    <div id="Header"></div>
+
+    <div class="container">
+        <h1>Neural Network Designer</h1>
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Neural Network Layout -->
+                <div id="neuralNetworkInput">
+                    <!-- Input Layer -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Input Layer</h5>
+                            <p class="card-text">Layer Options...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="neuralNetworkLayout">
+                    <!-- Layers will be dynamically added here -->
+                </div>
+
+                <!-- Add Layer Button -->
+                <button class="btn btn-primary mt-3" onclick="addLayer()">Add Layer</button>
+
+                <div id="neuralNetworkOutput">
+                    <!-- Output Layer -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Output Layer</h5>
+                            <p class="card-text">Layer Options...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Side Panel for Layer Options -->
+                <div id="sidePanel" style="display: none;">
+                    <!-- Layer Options will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="Footer"></div>
+
+    <script>
+        // Counter for unique layer IDs
+        let layerCounter = 1;
+
+        // Initialize Sortable
+        const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
+        const sortable = new Sortable(neuralNetworkLayout, {
+            animation: 150,
+            onUpdate: (evt) => updateLayerOrder(evt),
+        });
+
+        // Function to add a new layer
+        function addLayer() {
+            const newLayer = document.createElement('div');
+            newLayer.innerHTML = `<div class="card mt-3", id="Layer ${layerCounter}">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Layer ${layerCounter}</h5>
+                                        <p class="card-text">Layer Options...</p>
+                                        <button class="btn btn-info" onclick="openSidePanel(${layerCounter})">Edit</button>
+                                        <button class="btn btn-danger" onclick="removeLayer(${layerCounter})">Remove</button>
+                                    </div>
+                                </div>`;
+            neuralNetworkLayout.appendChild(newLayer);
+            layerCounter++;
+        }
+
+        // Function to update layer order after drag-and-drop
+        function updateLayerOrder(event) {
+            const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
+            layers.forEach((layer, index) => {
+                const cardBodyDiv = layer.querySelector('.card-body');
+                if (cardBodyDiv) {
+                    cardBodyDiv.querySelector('.card-title').textContent = `Layer ${index + 1}`;
+                    cardBodyDiv.querySelector('.btn-info').setAttribute('onclick', `openSidePanel(${index + 1})`);
+                    cardBodyDiv.querySelector('.btn-danger').setAttribute('onclick', `removeLayer(${index + 1})`);
+                }
+            });
+
+            // Update layer Validity
+            updateLayerValidity();
+
+            // TODO: Update backend with new layer order information
+        }
+
+        function updateLayerValidity(event) {
+            // TODO: Check if layers are valid in new structure
+
+            const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
+            layers.forEach((layer, index) => {
+                const cardBodyDiv = layer.querySelector('.card-body');
+                if (cardBodyDiv)
+                    cardBodyDiv.querySelector('.card-title').innerHTML = `<span class="badge badge-success">Valid</span> Layer ${index + 1}`;
+            });
+        }
+
+        // Function to remove a layer
+        function removeLayer(layerId) {
+            // TODO: Select the layer to remove via layerId
+            const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
+            const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
+
+            // Check if layerId is valid
+            if (layerId < 1 || layerId > layers.length) {
+                console.error('Invalid layerId:', layerId);
+                return;
+            }
+
+            // Remove the layer
+            const layerToRemove = layers[layerId - 1];
+            neuralNetworkLayout.removeChild(layerToRemove);
+
+            layerCounter--;
+
+            // Assert that layerCounter is correct
+            if (layerCounter !== layers.length) {
+                console.error('layerCounter is incorrect:', layerCounter, layers.length);
+                return;
+            }
+
+            // Update layer IDs
+            console.log('Layers Length:', layers.length)
+
+            // Update layer IDs
+            updateLayerOrder();
+
+            // TODO: Close side panel if open
+
+            // TODO: Update backend with new layer information
+        }
+
+
+        // Function to open the side panel for layer options
+        function openSidePanel(layerId) {
+            const sidePanel = document.getElementById('sidePanel');
+            sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
+                               <form>
+                                    <div class="form-group">
+                                        <label for="inputSize">Input Size:</label>
+                                        <input type="text" class="form-control" id="inputSize" placeholder="Enter input size">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="outputSize">Output Size:</label>
+                                        <input type="text" class="form-control" id="outputSize" placeholder="Enter output size">
+                                    </div>
+                                    <button type="button" class="btn btn-success" onclick="saveLayerOptions(${layerId})">Save</button>
+                               </form>`;
+            sidePanel.style.display = 'block';
+        }
+
+        // Function to save layer options
+        function saveLayerOptions(layerId) {
+            const inputSize = document.getElementById('inputSize').value;
+            const outputSize = document.getElementById('outputSize').value;
+
+            // Validate inputSize and outputSize if needed
+
+            // Send layer information to the server using AJAX
+            fetch('/save_layer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        layerId: layerId,
+                        inputSize: inputSize,
+                        outputSize: outputSize,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Response from server:', data);
+
+                    if (data.code !== '200') {
+                        handleServerError(data.code, data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Close the side panel
+            document.getElementById('sidePanel').style.display = 'none';
+
+            updateLayerValidity();
+
+            // TODO: Change layer description in neural network layout to reflect new layer information
+        }
+
+        // Function to handle server errors
+        function handleServerError(code, message) {
+            const sidePanel = document.getElementById('sidePanel');
+            const sidePanelForm = sidePanel.querySelector('form');
+
+            const errorAlert = document.createElement('div');
+            errorAlert.className = 'alert alert-danger';
+            errorAlert.role = 'alert';
+            errorAlert.innerHTML = `${code}: ${message}`;
+
+            sidePanelForm.appendChild(errorAlert);
+            sidePanel.style.display = 'block';
+        }
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='jquery.resize.js')}}"></script>
+    <script src="{{url_for('static', filename='script.js')}}"></script>
+
+</body>
+
+</html>

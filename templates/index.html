@@ -7,182 +7,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neural Network Designer</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <!-- Add jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.slim.min.js"></script>
+
+    <!-- Add Popper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </head>
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="/">Neural Network Designer</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/settings">Settings</a>
-                </li>
-            </ul>
+    <div id="Header"></div>
+
+    <div class="container mt-3">
+        <h1>All Networks</h1>
+
+        <!-- Networks Container -->
+        <div id="networksContainer" class="row">
+            <!-- Dynamic network blocks will be added here -->
         </div>
-    </nav>
 
-    <div class="container">
-        <h1>Neural Network Designer</h1>
-
-        <div class="row">
-            <div class="col-md-8">
-                <!-- Neural Network Layout -->
-                <div id="neuralNetworkLayout">
-                    <!-- Layers will be dynamically added here -->
-                </div>
-
-                <!-- Add Layer Button -->
-                <button class="btn btn-primary mt-3" onclick="addLayer()">Add Layer</button>
-            </div>
-
-            <div class="col-md-4">
-                <!-- Side Panel for Layer Options -->
-                <div id="sidePanel" style="display: none;">
-                    <!-- Layer Options will be dynamically added here -->
-                </div>
-            </div>
-
-            <footer style="position: relative; text-align: center; padding: 1rem; left: 50%; transform: translate(-50%, 0)">
-                <h2>Cheeky ;)</h2>
-            </footer>
+        <!-- Add New Network Block Button -->
+        <div class="col-md-3 mt-3">
+            <button class="btn btn-primary btn-block" onclick="addNewNetwork()">Add New</button>
         </div>
     </div>
 
+    <div id="Footer"></div>
+
     <script>
-        // Counter for unique layer IDs
-        let layerCounter = 1;
+        // Counter for unique network IDs
+        let networkCounter = 1;
 
-        // Function to add a new layer
-        function addLayer() {
-            const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
-            const newLayer = document.createElement('div');
-            newLayer.innerHTML = `<div class="card mt-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">Layer ${layerCounter}</h5>
-                                    <p class="card-text">Layer Options...</p>
-                                    <button class="btn btn-info" onclick="openSidePanel(${layerCounter})">Edit</button>
-                                    <button class="btn btn-danger" onclick="removeLayer(${layerCounter})">Remove</button>
-                                </div>
-                            </div>`;
-            neuralNetworkLayout.appendChild(newLayer);
-            layerCounter++;
+        // Function to dynamically add network blocks
+        function addNetworkBlock(networkId) {
+            const networksContainer = document.getElementById('networksContainer');
+
+            const newNetworkBlock = document.createElement('div');
+            newNetworkBlock.className = 'col-md-3 mt-3';
+            newNetworkBlock.id = `networkBlock${networkId}`;
+
+            newNetworkBlock.innerHTML = `<div class="card h-100 rounded">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Network ${networkId}</h5>
+                                            </div>
+                                            <div class="card-footer">
+                                                <button class="btn btn-info btn-block" onclick="editNetwork(${networkId})">Edit</button>
+                                                <button class="btn btn-danger btn-block" onclick="removeNetwork(${networkId})">Remove</button>
+                                            </div>
+                                        </div>`;
+
+            networksContainer.insertBefore(newNetworkBlock, networksContainer.lastChild);
         }
 
-        // Function to remove a layer
-        function removeLayer(layerId) {
-            const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
-            const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
+        // Function to add a new network
+        function addNewNetwork() {
+            const newNetworkId = ++networkCounter;
+            addNetworkBlock(newNetworkId);
+        }
 
-            // Check if layerId is valid
-            if (layerId < 1 || layerId > layers.length) {
-                console.error('Invalid layerId:', layerId);
-                return;
+        // Function to edit a network
+        function editNetwork(networkId) {
+            // Redirect to the page for editing the network
+            window.location.href = '/networkDesigner';
+
+            // Change the validity indicator
+            // TODO: Get the validity of the network from the saved network
+
+            const networkBlock = document.getElementById(`networkBlock${networkId}`);
+            const cardBodyDiv = networkBlock.querySelector('.card-body');
+            if (cardBodyDiv) {
+                // Add the validity indicator
+                // TODO: Change the color of the badge based on the validity of the network
+                cardBodyDiv.querySelector('.card-text').innerHTML = `<span class="badge badge-success">Valid</span>`;
             }
 
-            // Remove the layer
-            const layerToRemove = layers[layerId - 1];
-            neuralNetworkLayout.removeChild(layerToRemove);
 
-            layerCounter--;
+            return;
+        }
 
-            // Assert that layerCounter is correct
-            if (layerCounter !== layers.length) {
-                console.error('layerCounter is incorrect:', layerCounter, layers.length);
-                return;
-            }
+        // Function to remove a network
+        function removeNetwork(networkId) {
+            console.log(`Removing network ${networkId}`);
 
-            // Update layer IDs
-            console.log('Layers Length:', layers.length)
-            for (let i = layerId; i < layers.length; i++) {
-                const cardBodyDiv = layers[i].querySelector('.card-body');
+            const networksContainer = document.getElementById('networksContainer');
+            const networks = networksContainer.querySelectorAll(':scope > div');
 
-                if (cardBodyDiv) {
-                    cardBodyDiv.querySelector('.card-title').textContent = `Layer ${i}`;
-                    cardBodyDiv.querySelector('.btn-info').setAttribute('onclick', `openSidePanel(${i})`);
-                    cardBodyDiv.querySelector('.btn-danger').setAttribute('onclick', `removeLayer(${i})`);
+            for (let i = 0; i < networks.length; i++) {
+                const network = networks[i];
+                if (network.id === `networkBlock${networkId}`) {
+                    networksContainer.removeChild(network);
+                    break;
                 }
-            };
+            }
 
-            // TODO: Close side panel if open
+            // networksContainer.removeChild(networkBlock);
 
-            // TODO: Update backend with new layer information
+
         }
 
+        // Dummy function to simulate loading existing networks
+        function loadExistingNetworks() {
+            // Simulate loading existing networks
+            const existingNetworks = [1, 2, 3];
+            existingNetworks.forEach(networkId => addNetworkBlock(networkId));
 
-        // Function to open the side panel for layer options
-        function openSidePanel(layerId) {
-            const sidePanel = document.getElementById('sidePanel');
-            sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
-                               <form>
-                                    <div class="form-group">
-                                        <label for="inputSize">Input Size:</label>
-                                        <input type="text" class="form-control" id="inputSize" placeholder="Enter input size">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="outputSize">Output Size:</label>
-                                        <input type="text" class="form-control" id="outputSize" placeholder="Enter output size">
-                                    </div>
-                                    <button type="button" class="btn btn-success" onclick="saveLayerOptions(${layerId})">Save</button>
-                               </form>`;
-            sidePanel.style.display = 'block';
+            // Update counter
+            networkCounter = existingNetworks.length;
         }
 
-        // Function to save layer options
-        function saveLayerOptions(layerId) {
-            const inputSize = document.getElementById('inputSize').value;
-            const outputSize = document.getElementById('outputSize').value;
-
-            // Validate inputSize and outputSize if needed
-
-            // Send layer information to the server using AJAX
-            fetch('/save_layer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        layerId: layerId,
-                        inputSize: inputSize,
-                        outputSize: outputSize,
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Response from server:', data);
-
-                    if (data.code !== '200') {
-                        handleServerError(data.code, data.message);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-
-            // Close the side panel
-            document.getElementById('sidePanel').style.display = 'none';
-
-            // TODO: Change layer description in neural network layout to reflect new layer information
-        }
-
-        // Function to handle server errors
-        function handleServerError(code, message) {
-            const sidePanel = document.getElementById('sidePanel');
-            const sidePanelForm = sidePanel.querySelector('form');
-
-            const errorAlert = document.createElement('div');
-            errorAlert.className = 'alert alert-danger';
-            errorAlert.role = 'alert';
-            errorAlert.innerHTML = `${code}: ${message}`;
-
-            sidePanelForm.appendChild(errorAlert);
-            sidePanel.style.display = 'block';
-        }
+        // Load existing networks when the page is loaded
+        window.onload = loadExistingNetworks;
     </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='jquery.resize.js')}}"></script>
+    <script src="{{url_for('static', filename='script.js')}}"></script>
 
 </body>
 

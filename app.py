@@ -10,10 +10,10 @@ layers = {}
 def index():
     return render_template('index.html')
 
-@app.route('/settings')
-def settings():
-    # Add your settings logic here
-    return render_template('settings.html')
+@app.route('/networkDesigner')
+def networks():
+    # Add networks logic here
+    return render_template('networkDesigner.html')
 
 @app.route('/save_layer', methods=['POST'])
 def save_layer():
@@ -59,6 +59,8 @@ def remove_layer():
         return jsonify({'code': '200', 'message': 'Layer removed'})
 
     return jsonify({'code': '400', 'message': 'Layer not found'})
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
