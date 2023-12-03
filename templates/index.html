@@ -36,22 +36,23 @@
                         <h5 class="card-title">Network 0</h5>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-info btn-block">Edit</button>
+                        <!-- TODO: Fix function arguments and active network relation to saved networks -->
+                        <button class="btn btn-info btn-block" onclick="editNetwork(0)">Edit</button>
                         <button class="btn btn-danger btn-block">Replace</button>
                     </div>
                 </div>
             </div>
 
             <!-- Network control block -->
-            <div class="col-md-6 mt-3">
+            <div id="networkControls" class="col-md-6 mt-3">
                 <div class="card h-100 rounded">
                     <div class="card-body text-center">
                         <h5 class="card-title">Network Controls</h5>
                         <!-- Active (Shutdown) or Inactive (Start) -->
-                        <h5 class="card-header mb-2 text-muted">Status: Active</h5>
+                        <h5 id="networkStatus" class="card-header mb-2 text-muted" onclick="toggleNetworkStatus()">Status: Inactive</h5>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-primary btn-block">Shutdown</button>
+                        <button id="shutdownButton" class="btn btn-success btn-block" onclick="toggleNetworkStatus()">Start</button>
                     </div>
                 </div>
             </div>
@@ -146,6 +147,38 @@
             // networksContainer.removeChild(networkBlock);
 
 
+        }
+
+        // Function to dynamically update the network status
+        function updateNetworkStatus(status) {
+            const shutdownButton = document.getElementById('shutdownButton');
+
+            if (status == 'Active') {
+                // Change the button text and color for Active status
+                shutdownButton.innerHTML = 'Shutdown';
+                shutdownButton.classList.remove('btn-success');
+                shutdownButton.classList.add('btn-danger');
+            } else {
+                // Change the button text and color for Inactive status
+                shutdownButton.innerHTML = 'Start';
+                shutdownButton.classList.remove('btn-danger');
+                shutdownButton.classList.add('btn-success');
+            }
+        }
+
+        // Function to toggle network status between Active and Inactive
+        function toggleNetworkStatus() {
+            const statusIndicator = document.getElementById('networkStatus');
+            const currentStatus = statusIndicator.innerHTML.includes('Active') ? 'Active' : 'Inactive';
+
+            // Toggle between Active and Inactive
+            const newStatus = (currentStatus == 'Active') ? 'Inactive' : 'Active';
+
+            // Update the status indicator
+            statusIndicator.innerHTML = `Status: ${newStatus}`;
+
+            // Update the shutdown/start button dynamically
+            updateNetworkStatus(newStatus);
         }
 
         // Dummy function to simulate loading existing networks
