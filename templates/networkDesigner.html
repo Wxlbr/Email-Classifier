@@ -85,6 +85,14 @@
         // Counter for unique layer IDs
         let layerCounter = 1;
 
+        // Network Shape
+        const networkShape = {};
+
+        // Default input output sizes
+        // TODO: Make customisable
+        const defaultInputSize = 40;
+        const defaultOutputSize = 1;
+
         // Initialize Sortable
         const neuralNetworkLayout = document.getElementById('neuralNetworkLayout');
         const sortable = new Sortable(neuralNetworkLayout, {
@@ -104,7 +112,18 @@
                                     </div>
                                 </div>`;
             neuralNetworkLayout.appendChild(newLayer);
+
+            // Add layer details to networkShape
+            networkShape[layerCounter - 1] = {
+                id: layerCounter,
+                input: null,
+                output: null,
+                activation: null,
+            };
+
             layerCounter++;
+
+            // TODO: Set layer to invalid
         }
 
         // Function to update layer order after drag-and-drop
@@ -125,15 +144,68 @@
             // TODO: Update backend with new layer order information
         }
 
-        function updateLayerValidity(event) {
-            // TODO: Check if layers are valid in new structure
-
+        function updateLayerValidity() {
             const layers = neuralNetworkLayout.querySelectorAll(':scope > div');
             layers.forEach((layer, index) => {
                 const cardBodyDiv = layer.querySelector('.card-body');
-                if (cardBodyDiv)
-                    cardBodyDiv.querySelector('.card-title').innerHTML = `<span class="badge badge-success">Valid</span> Layer ${index + 1}`;
+                if (cardBodyDiv) {
+                    const validationResult = validateLayer(index);
+                    const validityHeader = validationResult.valid ? 'Valid' : 'Invalid';
+                    const validityBadge = validationResult.valid ? 'badge-success' : 'badge-danger';
+                    cardBodyDiv.querySelector('.card-title').innerHTML = `<span class="badge ${validityBadge}">${validityHeader}</span> Layer ${index + 1}`;
+
+                    // TODO: Change the description of the layer to include the error message
+                }
             });
+        }
+
+        // Function to validate layer sizes
+        function validateLayer(index) {
+            const layer = networkShape[index];
+            let isValid = false;
+
+            // Check input size
+            if (index == 0) {
+                // First layer, check input size
+                isValid = layer.input === defaultInputSize;
+                console.log('CMP:', layer.input, defaultInputSize)
+            } else {
+                // Hidden layers, check input size
+                isValid = layer.input === networkShape[index - 1].output;
+                console.log('CMP:', layer.input, networkShape[index - 1].output)
+            }
+
+            if (!isValid) {
+                return {
+                    valid: isValid,
+                    message: 'Invalid input size, must match previous layer output size',
+                };
+            }
+
+            console.log('Index:', index, 'Length:', Object.keys(networkShape).length)
+            if (index == Object.keys(networkShape).length - 1) {
+                // Last layer, check output size
+                isValid = layer.output === defaultOutputSize;
+                console.log('CMP:', layer.output, defaultOutputSize)
+            } else {
+                // Hidden layers, check output size
+                isValid = layer.output === networkShape[index + 1].input;
+                console.log('CMP:', layer.output, networkShape[index + 1].input)
+            }
+
+            if (!isValid) {
+                return {
+                    valid: isValid,
+                    message: 'Invalid output size, must match next layer input size',
+                };
+            } else {
+                return {
+                    valid: true,
+                    message: 'Valid',
+                };
+            }
+
+            console.log('isValid:', isValid )
         }
 
         // Function to remove a layer
@@ -152,6 +224,9 @@
             const layerToRemove = layers[layerId - 1];
             neuralNetworkLayout.removeChild(layerToRemove);
 
+            // Remove layer details from networkShape
+            networkShape.splice(layerId - 1, 1);
+
             layerCounter--;
 
             // Assert that layerCounter is correct
@@ -161,16 +236,12 @@
             }
 
             // Update layer IDs
-            console.log('Layers Length:', layers.length)
-
-            // Update layer IDs
             updateLayerOrder();
 
             // TODO: Close side panel if open
 
             // TODO: Update backend with new layer information
         }
-
 
         // Function to open the side panel for layer options
         function openSidePanel(layerId) {
@@ -185,17 +256,54 @@
                                         <label for="outputSize">Output Size:</label>
                                         <input type="text" class="form-control" id="outputSize" placeholder="Enter output size">
                                     </div>
-                                    <button type="button" class="btn btn-success" onclick="saveLayerOptions(${layerId})">Save</button>
+                                    <div>
+                                        <label for="activation">Activation Function:</label>
+                                        <select class="form-control" id="activation">
+                                            <option value="sigmoid">Sigmoid</option>
+                                            <option value="tanh">Tanh</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-success" onclick="saveLayer(${layerId})">Save</button>
                                </form>`;
             sidePanel.style.display = 'block';
         }
 
         // Function to save layer options
-        function saveLayerOptions(layerId) {
-            const inputSize = document.getElementById('inputSize').value;
-            const outputSize = document.getElementById('outputSize').value;
+        function saveLayer(layerId) {
+            let inputSize = document.getElementById('inputSize').value;
+            let outputSize = document.getElementById('outputSize').value;
+            const activation = document.getElementById('activation').value;
 
-            // Validate inputSize and outputSize if needed
+            // Validate input and output sizes are positive integers
+            if (!isNaN(inputSize) && inputSize > 0) {
+                inputSize = parseInt(inputSize);
+            } else {
+                console.error('Invalid input size, is not a positive integer:', inputSize);
+                return;
+            }
+
+            if (!isNaN(outputSize) && outputSize > 0) {
+                outputSize = parseInt(outputSize);
+            } else {
+                console.error('Invalid output size, is not a positive integer:', outputSize);
+                return;
+            }
+
+            // Update layer details in networkShape
+            networkShape[layerId - 1] = {
+                id: layerId,
+                input: inputSize,
+                output: outputSize,
+                activation: activation,
+            };
+
+            // Validate layer sizes
+            const validationResult = validateLayer(layerId - 1);
+            if (!validationResult.valid) {
+                console.log(networkShape.length)
+                console.error('Validation failed:', validationResult.message);
+                // return;
+            }
 
             // Send layer information to the server using AJAX
             fetch('/save_layer', {
@@ -207,6 +315,7 @@
                         layerId: layerId,
                         inputSize: inputSize,
                         outputSize: outputSize,
+                        activation: activation,
                     }),
                 })
                 .then(response => response.json())
@@ -225,6 +334,7 @@
             updateLayerValidity();
 
             // TODO: Change layer description in neural network layout to reflect new layer information
+            document.getElementById(`Layer ${layerId}`).querySelector('.card-text').innerHTML = `input size (${inputSize}), output size (${outputSize}), activation (${activation})`;
         }
 
         // Function to handle server errors
