@@ -1,17 +1,22 @@
+<!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/layout.css?v=1701784944400" data-precedence="next_static/css/app/layout.css">
-    <title>Title</title>
-    <link rel="preload" href="/static/layout.css?v=1701784944400" as="style">
+    <link rel="stylesheet" href="/static/layout.css?v=1701805914992">
+    <title>This totally works</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 
-<body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="">
+<body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="" style="">
     <div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr] dark:bg-gray-900">
+
+        <!-- Sidebar -->
         <div class="hidden border-r bg-gray-800 lg:block dark:border-gray-700">
             <div class="flex flex-col gap-2">
+
+                <!-- Back Button -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
                         class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#"><svg
                             class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -20,6 +25,8 @@
                             <path d="m12 19-7-7 7-7"></path>
                             <path d="M19 12H5"></path>
                         </svg><span>Back to Network Menu</span></a></div>
+
+                <!-- Network Configuration Title -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
                         class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#"><svg
                             class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -28,94 +35,367 @@
                             <polyline points="16 18 22 12 16 6"></polyline>
                             <polyline points="8 6 2 12 8 18"></polyline>
                         </svg><span>NeuralNet Config</span></a></div>
+
+                <!-- Network Layer Overview -->
                 <div class="flex-1 overflow-auto py-2 px-4">
-                    <nav class="grid items-start text-sm font-medium">
-                        <div aria-grabbed="false"
-                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move">
+                    <nav class="grid items-start text-sm font-medium" id="layersView">
+                        <!-- TODO: Add padding between layers -->
+                        <!-- TODO: Add layer text colour changes when selected -->
+
+                        <!-- Placeholder Layer -->
+                        <div aria-grabbed="false" id="layer-1"
+                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                            onclick="selectLayer('layer-1')">
+
+                            <!-- Drag and Drop Layer Icon -->
+                            <!-- TODO: Make so only movable via the icon selection -->
                             <svg class="h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="4" x2="20" y1="12" y2="12"></line>
                                 <line x1="4" x2="20" y1="6" y2="6"></line>
                                 <line x1="4" x2="20" y1="18" y2="18"></line>
-                            </svg>Dense Layer<span
-                                class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs">Valid</span>
+                            </svg>
+
+                            <!-- Layer Name -->
+                            Dense Layer
+
+                            <!-- Layer Status -->
+                            <!-- TODO: Change dynamically after validation check of all layers -->
+                            <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                id="validationStatus">Valid</span>
                         </div>
-                        <div aria-grabbed="false"
-                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move">
+
+                        <!-- Placeholder Layer -->
+                        <div aria-grabbed="false" id="layer-2"
+                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move"
+                            onclick="selectLayer('layer-2')">
+
+                            <!-- Drag and Drop Layer Icon -->
                             <svg class="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="4" x2="20" y1="12" y2="12"></line>
                                 <line x1="4" x2="20" y1="6" y2="6"></line>
                                 <line x1="4" x2="20" y1="18" y2="18"></line>
-                            </svg>Conv2D Layer<span
-                                class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs">Valid</span>
-                        </div>
-                        <div aria-grabbed="false"
-                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move">
-                            <svg class="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" x2="20" y1="12" y2="12"></line>
-                                <line x1="4" x2="20" y1="6" y2="6"></line>
-                                <line x1="4" x2="20" y1="18" y2="18"></line>
-                            </svg>MaxPooling2D Layer<span
-                                class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs">Valid</span>
+                            </svg>
+
+                            <!-- Layer Name -->
+                            Recurrent Layer
+
+                            <!-- Layer Status -->
+                            <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                id="validationStatus">Valid</span>
                         </div>
                     </nav>
+
+                    <script>
+                        // TODO: Make input and output layer sizes configurable
+                        const inputLayerSize = "10";
+                        const outputLayerSize = "1";
+
+                        let layers = {};
+
+                        function addLayer(layerId, layerName, layerType) {
+                            // TODO: Check if layerId already exists
+                            layers[layerId] = {
+                                "layerName": layerName,
+                                "layerType": layerType,
+                                "layerConfig": {
+                                    // Default layer configuration values
+                                    "inputSize": 0,
+                                    "outputSize": 0,
+                                    "activation": "sigmoid"
+                                },
+                                "valid": false,
+                                "errors": []
+                            };
+
+                            // TODO: Add layer to layer overview
+
+                            validateLayers();
+                        }
+
+                        // TEMP for placeholder layers
+                        addLayer("layer-1", "Dense Layer", "dense");
+                        addLayer("layer-2", "Recurrent Layer", "recurrent");
+
+                        function selectLayer(layerId) {
+                            console.log("Selected layer: " + layerId);
+
+                            loadLayerConfiguration(layerId);
+                        }
+
+                        function validateLayers() {
+
+                            for (const layerId in layers) {
+                                // TODO: Validate layerId is an integer
+                                const idNum = parseInt(layerId.split("-")[1]);
+                                layers[layerId]["valid"] = true;
+                                layers[layerId]["errors"] = [];
+
+                                // TODO: Validate idNum in range and incrementing
+
+                                //Check inputSize
+                                if (layers[layerId]["layerConfig"]["inputSize"] <= 0) {
+                                    layers[layerId]["valid"] = false;
+                                    layers[layerId]["errors"].push("Input size must be a positive integer");
+                                }
+
+                                if (idNum == 1) {
+                                    // First layer
+                                    if (layers[layerId]["layerConfig"]["inputSize"] != inputLayerSize) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Input size must match network input size of " +
+                                            inputLayerSize);
+                                    }
+                                } else {
+                                    // Previous layer exists
+                                    if (layers[layerId]["layerConfig"]["inputSize"] != layers["layer-" + (idNum - 1)][
+                                        "layerConfig"]["outputSize"]) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Input size must match previous layer's output size of " +
+                                            layers["layer-" + (idNum - 1)]["layerConfig"]["outputSize"]);
+                                    }
+                                }
+
+                                // Check outputSize
+                                if (layers[layerId]["layerConfig"]["outputSize"] <= 0) {
+                                    layers[layerId]["valid"] = false;
+                                    layers[layerId]["errors"].push("Output size must be a positive integer");
+                                }
+
+                                if ("layer-" + (idNum + 1) in layers) {
+                                    // Next layer exists
+                                    if (layers[layerId]["layerConfig"]["outputSize"] != layers["layer-" + (idNum + 1)][
+                                        "layerConfig"]["inputSize"]) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Output size must match next layer's input size of " +
+                                            layers["layer-" + (idNum + 1)]["layerConfig"]["inputSize"]);
+                                    }
+                                } else {
+                                    // Next layer does not exist, must be the last layer
+                                    if (layers[layerId]["layerConfig"]["outputSize"] != outputLayerSize) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Output size must match network output size of " +
+                                            outputLayerSize);
+                                    }
+                                }
+
+                                // Update validation status
+                                const layer = document.getElementById(layerId);
+                                let validationStatus = layer.querySelector("#validationStatus");
+
+                                if (layers[layerId]["valid"]) {
+                                    validationStatus.innerHTML = "Valid";
+                                    validationStatus.classList.remove("bg-red-500");
+                                    validationStatus.classList.add("bg-green-500");
+                                } else {
+                                    validationStatus.innerHTML = "Invalid";
+                                    validationStatus.classList.remove("bg-green-500");
+                                    validationStatus.classList.add("bg-red-500");
+                                }
+                            }
+                        }
+
+                    </script>
                 </div>
-                <div class="px-4"><button
+
+                <!-- Add Layer Button -->
+                <!-- TODO: Make layer type selection toggleable -->
+                <div class="px-4">
+                    <button
                         class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 w-full font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                        type="button">Add a new layer</button></div>
+                        type="button">
+                        Add a new layer
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Layer Configuration Window -->
         <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 dark:text-gray-200">
+
+            <!-- Layer Configuration Title -->
             <div class="flex items-center">
-                <h1 class="font-semibold text-lg md:text-2xl">Dense Layer Configuration</h1>
+                <h1 class="font-semibold text-lg md:text-2xl" id="layerConfigurationTitle">
+                    Dense Layer Configuration
+                </h1>
             </div>
+
+            <!-- Layer Configuration Subwindow -->
             <div class="border shadow-sm rounded-lg bg-gray-800 dark:border-gray-700">
                 <div class="p-4">
-                    <div class="border border-red-500 mb-4 rounded-lg bg-red-500">
-                        <p class="text-white p-4">Example error message. Please check your configuration.</p>
+
+                    <!-- Error Message -->
+                    <!-- TODO: Change to dynamically appear if there is an error with the selected layer -->
+                    <div class="border border-red-500 mb-4 rounded-lg bg-red-500" id="ConfigurationErrorBox">
+                        <p class="text-white p-4" id="ConfigurationErrorBoxHeader">
+                        </p>
+                        <ul style="list-style-type: disc; margin-top:-30px;" class="text-white p-4 pl-8"
+                            id="ConfigurationErrorBoxList">
+                        </ul>
                     </div>
+
+                    <!-- Interactable Layer Option -->
                     <form>
-                        <div class="mb-4"><label class="block text-sm font-medium text-gray-300"
-                                for="units">Units</label><input
+                        <!-- Input Size-->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300" for="units">
+                                Input Size
+                            </label>
+                            <input type="number"
                                 class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
-                                id="units" type="number"></div>
-                        <div class="mb-4"><label class="block text-sm font-medium text-gray-300"
-                                for="activation">Activation Function</label><button type="button" role="combobox"
-                                aria-controls="radix-:r5:" aria-expanded="false" aria-autocomplete="none" dir="ltr"
-                                data-state="closed" data-placeholder=""
-                                class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&amp;>span]:line-clamp-1"><span
-                                    style="pointer-events: none;">Select a function</span><svg
-                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="lucide lucide-chevron-down h-4 w-4 opacity-50"
-                                    aria-hidden="true">
-                                    <path d="m6 9 6 6 6-6"></path>
-                                </svg></button><select aria-hidden="true" tabindex="-1"
-                                style="position: absolute; border: 0px; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; overflow-wrap: normal;">
-                                <option value=""></option>
-                                <option value="relu">ReLU</option>
-                                <option value="softmax">Softmax</option>
-                                <option value="sigmoid">Sigmoid</option>
-                                <option value="tanh">Tanh</option>
-                            </select></div><button
+                                id="inputSize">
+                        </div>
+
+                        <!-- Output Size -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300" for="units">
+                                Output Size
+                            </label>
+                            <input type="number"
+                                class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
+                                id="outputSize">
+                        </div>
+
+                        <!-- Activation Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300" for="activation">Activation
+                                Function</label>
+                            <div class="relative inline-block text-left">
+                                <select id="activation"
+                                    class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300">
+                                    <option value="sigmoid">Sigmoid</option>
+                                    <option value="tanh">Tanh</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Save Layer Configuration -->
+                        <button
                             class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-green-500 hover:bg-green-700"
-                            type="submit">Save Configuration</button>
+                            type="submit" onclick="saveLayerConfiguration('')" id="saveLayerConfigurationButton">
+                            Save Configuration
+                        </button>
+
+                        <script>
+                            function saveLayerConfiguration(layerId) {
+
+                                // TODO: Validate layerId
+                                if (!(layerId in layers)) {
+                                    console.log("Layer does not exist!");
+                                    return;
+                                }
+
+                                // Get Layer Configuration Values
+                                const inputSize = document.getElementById("inputSize").value;
+                                const outputSize = document.getElementById("outputSize").value;
+                                const activation = document.getElementById("activation").value;
+
+                                // console.log("Input Size: " + inputSize + "\nOutput Size: " + outputSize +
+                                //     "\nActivation: " + activation);
+
+                                // TODO: Save layer configuration if valid
+                                layers[layerId]["layerConfig"] = {
+                                    "inputSize": inputSize,
+                                    "outputSize": outputSize,
+                                    "activation": activation
+                                };
+
+                                validateLayers();
+
+                                // Change Error Box
+                                if (layers[layerId]["valid"]) {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "none";
+                                } else {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "block";
+                                    document.getElementById("ConfigurationErrorBoxHeader").innerHTML = "Invalid Layer Configuration";
+                                    document.getElementById("ConfigurationErrorBoxList").innerHTML = "";
+
+                                    for (const error of layers[layerId]["errors"]) {
+                                        document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error +
+                                            "</li>";
+                                    }
+                                }
+
+                                console.log(layers);
+
+                                alert("Layer configuration saved!");
+                            }
+
+                            function loadLayerConfiguration(layerId) {
+
+                                // TODO: Validation
+                                if (!(layerId in layers)) {
+                                    console.log("Layer does not exist!");
+                                    return;
+                                }
+
+                                // Change Configuration Title
+                                document.getElementById("layerConfigurationTitle").innerHTML = layers[layerId][
+                                    "layerName"
+                                ] + " Configuration";
+
+                                // Load Layer Configuration Values
+                                document.getElementById("inputSize").value = layers[layerId]["layerConfig"][
+                                    "inputSize"];
+                                document.getElementById("outputSize").value = layers[layerId]["layerConfig"][
+                                    "outputSize"];
+                                document.getElementById("activation").value = layers[layerId]["layerConfig"][
+                                    "activation"];
+
+                                // Change Button onclick functions
+                                document.getElementById("saveLayerConfigurationButton").onclick = function () {
+                                    saveLayerConfiguration(layerId);
+                                };
+                                document.getElementById("deleteLayerConfigurationButton").onclick = function () {
+                                    deleteLayer(layerId);
+                                };
+
+                                // Validate layers
+                                validateLayers();
+
+                                // Change Error Box
+                                if (layers[layerId]["valid"]) {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "none";
+                                } else {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "block";
+                                    document.getElementById("ConfigurationErrorBoxHeader").innerHTML = "Invalid Layer Configuration";
+                                    document.getElementById("ConfigurationErrorBoxList").innerHTML = "";
+
+                                    for (const error of layers[layerId]["errors"]) {
+                                        document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error +
+                                            "</li>";
+                                    }
+                                }
+                            }
+
+                        </script>
+
+                        <!-- Delete Layer -->
+                        <button
+                            class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
+                            type="submit" onclick="deleteLayer()" id="deleteLayerConfigurationButton">
+                            Delete Layer
+                        </button>
+
+                        <script>
+
+                            function deleteLayer(layerId) {
+
+                                // Remove layer from layer overview
+
+                                // Remove Layer from saved configurations
+
+                                alert("Feature not currently available");
+                            }
+
+                        </script>
                     </form>
                 </div>
             </div>
         </main>
     </div>
-    <script>(self.__next_f = self.__next_f || []).push([0]); self.__next_f.push([2, null])</script>
-    <script>self.__next_f.push([1, "1:HL[\"\static\layout.css?v=1701784923015\",\"style\"]\n0:\"$L2\"\n"])</script>
-    <script>self.__next_f.push([1, "2:[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"\static\layout.css?v=1701784923015\",\"precedence\":\"next_static/css/app/layout.css\",\"crossOrigin\":\"$undefined\"}]],[\"$\",\"$L3\",null,{\"buildId\":\"development\",\"assetPrefix\":\"\",\"initialCanonicalUrl\":\"/\",\"initialTree\":[\"\",{\"children\":[\"__PAGE__\",{}]},\"$undefined\",\"$undefined\",true],\"initialHead\":[false,\"$L4\"],\"globalErrorComponent\":\"$5\",\"children\":[null,[\"$\",\"html\",null,{\"lang\":\"en\",\"children\":[\"$\",\"body\",null,{\"className\":\"__className_e66fe9\",\"children\":[\"$\",\"$L6\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\"],\"loading\":\"$undefined\",\"loadingStyles\":\"$undefined\",\"loadingScripts\":\"$undefined\",\"hasLoading\":false,\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":\"404\"}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],\"notFoundStyles\":[],\"initialChildNode\":[\"$L8\",[\"$\",\"div\",null,{\"className\":\"grid min-h-screen w-full lg:grid-cols-[280px_1fr]\",\"children\":[[\"$\",\"div\",null,{\"className\":\"hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40\",\"children\":[\"$\",\"div\",null,{\"className\":\"flex flex-col gap-2\",\"children\":[[\"$\",\"div\",null,{\"className\":\"flex h-[60px] items-center border-b px-6\",\"children\":[\"$\",\"$L9\",null,{\"className\":\"flex items-center gap-2 font-semibold\",\"href\":\"#\",\"children\":[[\"$\",\"svg\",null,{\"className\":\"h-6 w-6\",\"xmlns\":\"http://www.w3.org/2000/svg\",\"width\":\"24\",\"height\":\"24\",\"viewBox\":\"0 0 24 24\",\"fill\":\"none\",\"stroke\":\"currentColor\",\"strokeWidth\":\"2\",\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"polyline\",null,{\"points\":\"16 18 22 12 16 6\"}],[\"$\",\"polyline\",null,{\"points\":\"8 6 2 12 8 18\"}]]}],[\"$\",\"span\",null,{\"className\":\"\",\"children\":\"NeuralNet Config\"}]]}]}],[\"$\",\"div\",null,{\"className\":\"flex-1 overflow-auto py-2\",\"children\":[\"$\",\"nav\",null,{\"className\":\"grid items-start px-4 text-sm font-medium\",\"children\":[[\"$\",\"div\",null,{\"aria-grabbed\":\"false\",\"className\":\"flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2 text-gray-900 transition-all hover:text-gray-900 dark:bg-gray-800 dark:text-gray-50 cursor-move\",\"children\":[[\"$\",\"svg\",null,{\"className\":\"h-4 w-4\",\"xmlns\":\"http://www.w3.org/2000/svg\",\"width\":\"24\",\"height\":\"24\",\"viewBox\":\"0 0 24 24\",\"fill\":\"none\",\"stroke\":\"currentColor\",\"strokeWidth\":\"2\",\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"12\",\"y2\":\"12\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"6\",\"y2\":\"6\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"18\",\"y2\":\"18\"}]]}],\"Dense Layer\"]}],[\"$\",\"div\",null,{\"aria-grabbed\":\"false\",\"className\":\"flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 cursor-move\",\"children\":[[\"$\",\"svg\",null,{\"className\":\"h-4 w-4\",\"xmlns\":\"http://www.w3.org/2000/svg\",\"width\":\"24\",\"height\":\"24\",\"viewBox\":\"0 0 24 24\",\"fill\":\"none\",\"stroke\":\"currentColor\",\"strokeWidth\":\"2\",\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"12\",\"y2\":\"12\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"6\",\"y2\":\"6\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"18\",\"y2\":\"18\"}]]}],\"Conv2D Layer\"]}],[\"$\",\"div\",null,{\"aria-grabbed\":\"false\",\"className\":\"flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 cursor-move\",\"children\":[[\"$\",\"svg\",null,{\"className\":\"h-4 w-4\",\"xmlns\":\"http://www.w3.org/2000/svg\",\"width\":\"24\",\"height\":\"24\",\"viewBox\":\"0 0 24 24\",\"fill\":\"none\",\"stroke\":\"currentColor\",\"strokeWidth\":\"2\",\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"12\",\"y2\":\"12\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"6\",\"y2\":\"6\"}],[\"$\",\"line\",null,{\"x1\":\"4\",\"x2\":\"20\",\"y1\":\"18\",\"y2\":\"18\"}]]}],\"MaxPooling2D Layer\"]}]]}]}],[\"$\",\"div\",null,{\"className\":\"px-4\",\"children\":[\"$\",\"button\",null,{\"className\":\"inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 w-full font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700\",\"type\":\"button\",\"children\":\"Add a new layer\"}]}]]}]}],[\"$\",\"main\",null,{\"className\":\"flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6\",\"children\":[[\"$\",\"div\",null,{\"className\":\"flex items-center\",\"children\":[\"$\",\"h1\",null,{\"className\":\"font-semibold text-lg md:text-2xl\",\"children\":\"Dense Layer Configuration\"}]}],[\"$\",\"div\",null,{\"className\":\"border shadow-sm rounded-lg\",\"children\":[\"$\",\"div\",null,{\"className\":\"p-4\",\"children\":[\"$\",\"form\",null,{\"children\":[[\"$\",\"div\",null,{\"className\":\"mb-4\",\"children\":[[\"$\",\"label\",null,{\"className\":\"block text-sm font-medium text-gray-700\",\"htmlFor\":\"units\",\"children\":\"Units\"}],[\"$\",\"input\",null,{\"type\":\"number\",\"className\":\"h-10 border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm\",\"id\":\"units\"}]]}],[\"$\",\"div\",null,{\"className\":\"mb-4\",\"children\":[[\"$\",\"label\",null,{\"className\":\"block text-sm font-medium text-gray-700\",\"htmlFor\":\"activation\",\"children\":\"Activation Function\"}],[\"$\",\"$La\",null,{\"children\":[[\"$\",\"$Lb\",null,{\"children\":[\"$\",\"$Lc\",null,{\"placeholder\":\"Select a function\"}]}],[\"$\",\"$Ld\",null,{\"children\":[\"$\",\"$Le\",null,{\"children\":[[\"$\",\"$Lf\",null,{\"value\":\"relu\",\"children\":\"ReLU\"}],[\"$\",\"$Lf\",null,{\"value\":\"softmax\",\"children\":\"Softmax\"}],[\"$\",\"$Lf\",null,{\"value\":\"sigmoid\",\"children\":\"Sigmoid\"}],[\"$\",\"$Lf\",null,{\"value\":\"tanh\",\"children\":\"Tanh\"}]]}]}]]}]]}],[\"$\",\"button\",null,{\"className\":\"inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-green-500 hover:bg-green-700\",\"type\":\"submit\",\"children\":\"Save Configuration\"}]]}]}]}]]}]]}],null],\"childPropSegment\":\"__PAGE__\",\"styles\":null}]}]}],null]}]]\n"])</script>
-    <script>self.__next_f.push([1, "4:[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}],[\"$\",\"meta\",\"1\",{\"charSet\":\"utf-8\"}],[\"$\",\"title\",\"2\",{\"children\":\"Create Next App\"}],[\"$\",\"meta\",\"3\",{\"name\":\"description\",\"content\":\"Generated by create next app\"}],[\"$\",\"link\",\"4\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\",\"type\":\"image/x-icon\",\"sizes\":\"16x16\"}]]\n8:null\n"])</script>
-    <script>self.__next_f.push([1, ""])</script><next-route-announcer
-        style="position: absolute;"></next-route-announcer>
-</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration>
 
 </html>
