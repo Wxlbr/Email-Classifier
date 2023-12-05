@@ -1,0 +1,211 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Designer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <!-- Add jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.slim.min.js"></script>
+
+    <!-- Add Popper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+    <div id="Header"></div>
+
+    <div class="container mt-3">
+        <h1>Active Network</h1>
+
+        <!-- Active Network Container -->
+        <div id="activeNetworkContainer" class="row">
+            <!-- Dynamic network block will be added here -->
+
+            <!-- Placeholder block -->
+            <div class="col-md-3 mt-3">
+                <div class="card h-100 rounded">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Network 0</h5>
+                    </div>
+                    <div class="card-footer">
+                        <!-- TODO: Fix function arguments and active network relation to saved networks -->
+                        <button class="btn btn-info btn-block" onclick="editNetwork(0)">Edit</button>
+                        <button class="btn btn-danger btn-block">Replace</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network control block -->
+            <div id="networkControls" class="col-md-6 mt-3">
+                <div class="card h-100 rounded">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Network Controls</h5>
+                        <!-- Active (Shutdown) or Inactive (Start) -->
+                        <h5 id="networkStatus" class="card-header mb-2 text-muted" onclick="toggleNetworkStatus()">Status: Inactive</h5>
+                    </div>
+                    <div class="card-footer">
+                        <button id="shutdownButton" class="btn btn-success btn-block" onclick="toggleNetworkStatus()">Start</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mt-3">
+        <h1>Saved Networks</h1>
+
+        <!-- Networks Container -->
+        <div id="networksContainer" class="row">
+            <!-- Dynamic network blocks will be added here -->
+        </div>
+
+        <!-- Add New Network Block Button -->
+        <div class="row">
+            <div class="col-md-3 mt-3">
+                <button class="btn btn-primary btn-block" onclick="addNewNetwork()">Add New</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="Footer"></div>
+
+    <script>
+        // Counter for unique network IDs
+        let networkCounter = 1;
+
+        // Function to dynamically add network blocks
+        function addNetworkBlock(networkId) {
+            const networksContainer = document.getElementById('networksContainer');
+
+            const newNetworkBlock = document.createElement('div');
+            newNetworkBlock.className = 'col-md-3 mt-3';
+            newNetworkBlock.id = `networkBlock${networkId}`;
+
+            newNetworkBlock.innerHTML = `<div class="card h-100 rounded">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Network ${networkId}</h5>
+                                            </div>
+                                            <div class="card-footer">
+                                                <button class="btn btn-info btn-block" onclick="editNetwork(${networkId})">Edit</button>
+                                                <button class="btn btn-danger btn-block" onclick="removeNetwork(${networkId})">Remove</button>
+                                            </div>
+                                        </div>`;
+
+            networksContainer.insertBefore(newNetworkBlock, networksContainer.lastChild);
+        }
+
+        // Function to add a new network
+        function addNewNetwork() {
+            const newNetworkId = ++networkCounter;
+            addNetworkBlock(newNetworkId);
+        }
+
+        // Function to edit a network
+        function editNetwork(networkId) {
+            // Redirect to the page for editing the network
+            window.location.href = '/networkDesigner';
+
+            // Change the validity indicator
+            // TODO: Get the validity of the network from the saved network
+
+            const networkBlock = document.getElementById(`networkBlock${networkId}`);
+            const cardBodyDiv = networkBlock.querySelector('.card-body');
+            if (cardBodyDiv) {
+                // Add the validity indicator
+                // TODO: Change the color of the badge based on the validity of the network
+                cardBodyDiv.querySelector('.card-text').innerHTML = `<span class="badge badge-success">Valid</span>`;
+            }
+
+
+            return;
+        }
+
+        // Function to remove a network
+        function removeNetwork(networkId) {
+            console.log(`Removing network ${networkId}`);
+
+            const networksContainer = document.getElementById('networksContainer');
+            const networks = networksContainer.querySelectorAll(':scope > div');
+
+            for (let i = 0; i < networks.length; i++) {
+                const network = networks[i];
+                if (network.id === `networkBlock${networkId}`) {
+                    networksContainer.removeChild(network);
+                    break;
+                }
+            }
+
+            // networksContainer.removeChild(networkBlock);
+
+
+        }
+
+        // Function to dynamically update the network status
+        function updateNetworkStatus(status) {
+            const shutdownButton = document.getElementById('shutdownButton');
+
+            if (status == 'Active') {
+                // Change the button text and color for Active status
+                shutdownButton.innerHTML = 'Shutdown';
+                shutdownButton.classList.remove('btn-success');
+                shutdownButton.classList.add('btn-danger');
+            } else {
+                // Change the button text and color for Inactive status
+                shutdownButton.innerHTML = 'Start';
+                shutdownButton.classList.remove('btn-danger');
+                shutdownButton.classList.add('btn-success');
+            }
+        }
+
+        // Function to toggle network status between Active and Inactive
+        function toggleNetworkStatus() {
+            const statusIndicator = document.getElementById('networkStatus');
+            const currentStatus = statusIndicator.innerHTML.includes('Active') ? 'Active' : 'Inactive';
+
+            // Toggle between Active and Inactive
+            const newStatus = (currentStatus == 'Active') ? 'Inactive' : 'Active';
+
+            if (newStatus == 'Active') {
+                // TODO: Check if the network is valid
+            }
+
+            // Update the status indicator
+            statusIndicator.innerHTML = `Status: ${newStatus}`;
+
+            // Update the shutdown/start button dynamically
+            updateNetworkStatus(newStatus);
+        }
+
+        // Dummy function to simulate loading existing networks
+        function loadExistingNetworks() {
+
+            // TODO: Fetch saved network IDs from the save files
+
+            // Simulate loading existing networks
+            const existingNetworks = [1, 2, 3];
+            existingNetworks.forEach(networkId => addNetworkBlock(networkId));
+
+            // Update counter
+            networkCounter = existingNetworks.length;
+        }
+
+        // Load existing networks when the page is loaded
+        window.onload = loadExistingNetworks;
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='jquery.resize.js')}}"></script>
+    <script src="{{url_for('static', filename='script.js')}}"></script>
+
+</body>
+
+</html>

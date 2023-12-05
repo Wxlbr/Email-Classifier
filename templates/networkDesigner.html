@@ -105,8 +105,8 @@
             const newLayer = document.createElement('div');
             newLayer.innerHTML = `<div class="card mt-3", id="Layer ${layerCounter}">
                                     <div class="card-body">
-                                        <h5 class="card-title">Layer ${layerCounter}</h5>
-                                        <p class="card-text">Layer Options...</p>
+                                        <h5 class="card-title"><span class="badge badge-danger">Invalid</span> Layer ${layerCounter}</h5>
+                                        <p class="card-text">No layer options selected</p>
                                         <button class="btn btn-info" onclick="openSidePanel(${layerCounter})">Edit</button>
                                         <button class="btn btn-danger" onclick="removeLayer(${layerCounter})">Remove</button>
                                     </div>
@@ -122,8 +122,6 @@
             };
 
             layerCounter++;
-
-            // TODO: Set layer to invalid
         }
 
         // Function to update layer order after drag-and-drop
@@ -155,6 +153,8 @@
                     cardBodyDiv.querySelector('.card-title').innerHTML = `<span class="badge ${validityBadge}">${validityHeader}</span> Layer ${index + 1}`;
 
                     // TODO: Change the description of the layer to include the error message
+                    // Show error message on hover of badge
+                    cardBodyDiv.querySelector('.card-title').setAttribute('title', validationResult.message);
                 }
             });
         }
@@ -245,6 +245,7 @@
 
         // Function to open the side panel for layer options
         function openSidePanel(layerId) {
+            // TODO: Add layer type option
             const sidePanel = document.getElementById('sidePanel');
             sidePanel.innerHTML = `<h4>Layer ${layerId} Options</h4>
                                <form>
