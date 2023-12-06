@@ -27,14 +27,17 @@
                         </svg><span>Back to Network Menu</span></a></div>
 
                 <!-- Network Configuration Title -->
-                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
-                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#"><svg
-                            class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700">
+                    <a class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
+                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="16 18 22 12 16 6"></polyline>
                             <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg><span>NeuralNet Config</span></a></div>
+                        </svg>
+                        <span>NeuralNet Config</span>
+                    </a>
+                </div>
 
                 <!-- Network Layer Overview -->
                 <div class="flex-1 overflow-auto py-2 px-4">
@@ -44,7 +47,7 @@
 
                         <!-- Placeholder Layer -->
                         <div aria-grabbed="false" id="layer-1"
-                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                            class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
                             onclick="selectLayer('layer-1')">
 
                             <!-- Drag and Drop Layer Icon -->
@@ -68,7 +71,7 @@
 
                         <!-- Placeholder Layer -->
                         <div aria-grabbed="false" id="layer-2"
-                            class="flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move"
+                            class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move"
                             onclick="selectLayer('layer-2')">
 
                             <!-- Drag and Drop Layer Icon -->
@@ -214,18 +217,18 @@
         </div>
 
         <!-- Layer Configuration Window -->
-        <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 dark:text-gray-200">
+        <div class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 dark:text-gray-200">
 
             <!-- Layer Configuration Title -->
             <div class="flex items-center">
                 <h1 class="font-semibold text-lg md:text-2xl" id="layerConfigurationTitle">
-                    Dense Layer Configuration
+                    Layer Configuration
                 </h1>
             </div>
 
-            <!-- Layer Configuration Subwindow -->
+            <!-- Layer Configuration Options Subwindow -->
             <div class="border shadow-sm rounded-lg bg-gray-800 dark:border-gray-700">
-                <div class="p-4">
+                <div class="p-4" id="layerConfigurationOptionsWindow" hidden>
 
                     <!-- Error Message -->
                     <!-- TODO: Change to dynamically appear if there is an error with the selected layer -->
@@ -281,6 +284,9 @@
 
                         <script>
                             function saveLayerConfiguration(layerId) {
+                                // Prevent the default form submission behavior
+                                // To stop the page from reloading when the form is submitted
+                                event.preventDefault();
 
                                 // TODO: Validate layerId
                                 if (!(layerId in layers)) {
@@ -324,7 +330,17 @@
                                 alert("Layer configuration saved!");
                             }
 
+                            function resolvePlaceholder() {
+                                // Hide Placeholder
+                                document.getElementById("layerConfigurationPlaceholder").style.display = "none";
+
+                                // Show Layer Configuration Options
+                                document.getElementById("layerConfigurationOptionsWindow").hidden = false;
+                            }
+
                             function loadLayerConfiguration(layerId) {
+
+                                resolvePlaceholder();
 
                                 // TODO: Validation
                                 if (!(layerId in layers)) {
@@ -394,8 +410,17 @@
                         </script>
                     </form>
                 </div>
+
+                <!-- Layer Configuration Placeholder -->
+                <div class="flex items-center justify-center h-96" id="layerConfigurationPlaceholder">
+                    <!-- TODO: Format the text -->
+                    <p class="text-3xl text-gray-300 p-4 text-center">
+                        Select a layer to configure it
+                    </p>
+                </div>
+
             </div>
-        </main>
+        </div>
     </div>
 
 </html>
