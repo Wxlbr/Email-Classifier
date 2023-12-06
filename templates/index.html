@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="en">
 
+<!-- Sortable library  for drag-and-drop animation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
 <!-- TODO: Clean up formating of classes and styles -->
 
 <head>
@@ -20,8 +23,8 @@
 
                 <!-- Back Button -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
-                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#"><svg
-                            class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
+                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="m12 19-7-7 7-7"></path>
@@ -57,8 +60,17 @@
 
                         let layers = {};
 
+                        // Enable Sortable.js
+                        const layersView = document.getElementById("layersView");
+
+                        // Initialize Sortable on the layersView container
+                        const sortable = new Sortable(layersView, {
+                            animation: 150,
+                            handle: ".handle",
+                            onUpdate: (evt) => updateLayerOrder(evt),
+                        });
+
                         function addLayer(layerId, layerName, layerType) {
-                            // TODO: Check if layerId already exists
                             layers[layerId] = {
                                 "layerName": layerName,
                                 "layerType": layerType,
@@ -81,7 +93,7 @@
 
                                 <!-- Drag and Drop Layer Icon -->
                                 <!-- TODO: Make so only movable via the icon selection -->
-                                <svg class="h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -120,12 +132,9 @@
                         function validateLayers() {
 
                             for (const layerId in layers) {
-                                // TODO: Validate layerId is an integer
                                 const idNum = parseInt(layerId.split("-")[1]);
                                 layers[layerId]["valid"] = true;
                                 layers[layerId]["errors"] = [];
-
-                                // TODO: Validate idNum in range and incrementing
 
                                 //Check inputSize
                                 if (layers[layerId]["layerConfig"]["inputSize"] <= 0) {
@@ -189,6 +198,32 @@
                             }
                         }
 
+                        function updateLayerOrder(event) {
+                            // Get order of layers
+                            const layersView = document.getElementById("layersView");
+                            const newLayers = {};
+
+                            let count = 1;
+                            for (const layer of layersView.children) {
+                                const newId = 'layer-' + count;
+                                const prevId = layer.id;
+
+                                newLayers[newId] = layers[prevId];
+                                layer.id = newId;
+                                layer.onclick = function () {
+                                    selectLayer(newId);
+                                };
+                                count++;
+                            }
+
+                            layers = newLayers;
+
+                            // Validate layers
+                            validateLayers();
+
+                            console.log(layers);
+                        }
+
                     </script>
                 </div>
 
@@ -220,7 +255,6 @@
                                 Layer</button>
                         </div>
                         <div class="flex justify-between mt-4" style="margin-top: 1rem;">
-                            <!-- TODO: Make add button a different colour and non responsive when no layer is selected -->
                             <button
                                 class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-gray-700"
                                 type="submit" style="margin-right: 0.5rem;" id="newLayerPopupAddButton">
@@ -262,9 +296,7 @@
                         /* margin: 4px 0; */
                         width: 80%;
                     }
-                </style>
 
-                <style>
                     /* Centre the popUp window and bring in front */
                     .popup {
                         display: none;
@@ -307,7 +339,6 @@
                         let num = 1;
                         while (true) {
                             if (!("layer-" + num in layers)) {
-
                                 break;
                             }
                             num++;
@@ -544,6 +575,9 @@
                                         layer.remove();
                                     } else if (parseInt(layer.id.split("-")[1]) > parseInt(layerId.split("-")[1])) {
                                         layer.id = "layer-" + (parseInt(layer.id.split("-")[1]) - 1);
+                                        layer.onclick = function () {
+                                            selectLayer("layer-" + (parseInt(layer.id.split("-")[1]) - 1));
+                                        };
                                     }
                                 }
 
