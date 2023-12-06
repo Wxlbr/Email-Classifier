@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
 
+<!-- TODO: Clean up formating of classes and styles -->
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,7 +26,10 @@
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="m12 19-7-7 7-7"></path>
                             <path d="M19 12H5"></path>
-                        </svg><span>Back to Network Menu</span></a></div>
+                        </svg>
+                        <span>Back to Network Menu</span>
+                    </a>
+                </div>
 
                 <!-- Network Configuration Title -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700">
@@ -42,54 +47,7 @@
                 <!-- Network Layer Overview -->
                 <div class="flex-1 overflow-auto py-2 px-4">
                     <nav class="grid items-start text-sm font-medium" id="layersView">
-                        <!-- TODO: Add padding between layers -->
                         <!-- TODO: Add layer text colour changes when selected -->
-
-                        <!-- Placeholder Layer -->
-                        <div aria-grabbed="false" id="layer-1"
-                            class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
-                            onclick="selectLayer('layer-1')">
-
-                            <!-- Drag and Drop Layer Icon -->
-                            <!-- TODO: Make so only movable via the icon selection -->
-                            <svg class="h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" x2="20" y1="12" y2="12"></line>
-                                <line x1="4" x2="20" y1="6" y2="6"></line>
-                                <line x1="4" x2="20" y1="18" y2="18"></line>
-                            </svg>
-
-                            <!-- Layer Name -->
-                            Dense Layer
-
-                            <!-- Layer Status -->
-                            <!-- TODO: Change dynamically after validation check of all layers -->
-                            <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
-                                id="validationStatus">Valid</span>
-                        </div>
-
-                        <!-- Placeholder Layer -->
-                        <div aria-grabbed="false" id="layer-2"
-                            class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-500 transition-all hover:text-white cursor-move"
-                            onclick="selectLayer('layer-2')">
-
-                            <!-- Drag and Drop Layer Icon -->
-                            <svg class="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" x2="20" y1="12" y2="12"></line>
-                                <line x1="4" x2="20" y1="6" y2="6"></line>
-                                <line x1="4" x2="20" y1="18" y2="18"></line>
-                            </svg>
-
-                            <!-- Layer Name -->
-                            Recurrent Layer
-
-                            <!-- Layer Status -->
-                            <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
-                                id="validationStatus">Valid</span>
-                        </div>
                     </nav>
 
                     <script>
@@ -114,9 +72,39 @@
                                 "errors": []
                             };
 
-                            // TODO: Add layer to layer overview
+                            // Add layer to layer overview
+                            const layersView = document.getElementById("layersView");
 
+                            layer = `<div aria-grabbed="false" id="${layerId}"
+                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                onclick="selectLayer('${layerId}')">
+
+                                <!-- Drag and Drop Layer Icon -->
+                                <!-- TODO: Make so only movable via the icon selection -->
+                                <svg class="h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                </svg>
+
+                                <!-- Layer Name -->
+                                ${layerName}
+
+                                <!-- Layer Status -->
+                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
+                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                    id="validationStatus">Valid</span>
+                            </div>`;
+
+                            layersView.innerHTML += layer;
+
+                            // Validate layers
                             validateLayers();
+
+                            console.log("Adding layer: " + layerId + "\nLayer Name: " + layerName + "\nLayer Type: " +
+                                layerType);
                         }
 
                         // TEMP for placeholder layers
@@ -205,14 +193,162 @@
                 </div>
 
                 <!-- Add Layer Button -->
-                <!-- TODO: Make layer type selection toggleable -->
                 <div class="px-4">
                     <button
                         class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 w-full font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                        type="button">
+                        type="button" onclick="togglePopup('newLayerPopup')">
                         Add a new layer
                     </button>
                 </div>
+
+                <!-- TODO: Redesign popup -->
+                <div id="newLayerPopup" class="popup" style="display: none;">
+                    <div class="popup-content border-gray-700 bg-gray-800 p-4 flex flex-col items-center">
+                        <h1 class="text-2xl font-bold mb-4 text-gray-300">
+                            Pop-up Window</h1>
+                        <!-- TODO: Dynamically assign layer types -->
+                        <div class="flex flex-col items-center space-y-2" style="width: 100%;">
+                            <button class="layer-button" onclick="selectLayerType('Dense Layer', 'dense')"
+                                id="newLayerSelection-dense">Dense
+                                Layer</button>
+                            <hr class="button-divider">
+                            <button class="layer-button" onclick="selectLayerType('Recurrent Layer', 'recurrent')"
+                                id="newLayerSelection-recurrent">Recurrent Layer</button>
+                            <hr class="button-divider">
+                            <button class="layer-button" onclick="selectLayerType('LSTM Layer', 'lstm')"
+                                id="newLayerSelection-lstm">LSTM
+                                Layer</button>
+                        </div>
+                        <div class="flex justify-between mt-4" style="margin-top: 1rem;">
+                            <!-- TODO: Make add button a different colour and non responsive when no layer is selected -->
+                            <button
+                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-gray-700"
+                                type="submit" style="margin-right: 0.5rem;" id="newLayerPopupAddButton">
+                                Add
+                            </button>
+                            <button
+                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
+                                type="submit" onclick="togglePopup('newLayerPopup')">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .layer-button {
+                        padding: 8px 16px;
+                        background-color: rgb(31 41 55);
+                        color: #cbd5e0;
+                        /* border: 1px solid #2d3748; */
+                        /* border-radius: 4px; */
+                        cursor: pointer;
+                        transition: background-color 0.3s, color 0.3s;
+                        width: 80%;
+                    }
+
+                    .layer-button:hover {
+                        background-color: #2d3748;
+                        color: #ffffff;
+                    }
+
+                    .layer-button.selected {
+                        background-color: #48bb78;
+                        color: #1a202c;
+                    }
+
+                    .button-divider {
+                        border: 0.1rem solid #ffffff;
+                        /* margin: 4px 0; */
+                        width: 80%;
+                    }
+                </style>
+
+                <style>
+                    /* Centre the popUp window and bring in front */
+                    .popup {
+                        display: none;
+                        position: fixed;
+                        z-index: 1;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        overflow: auto;
+                    }
+
+                    /* Style the popUp content */
+                    .popup-content {
+                        margin: 15% auto;
+                        padding: 2rem;
+                        width: 50%;
+                    }
+                </style>
+
+                <script>
+                    function togglePopup(elementId) {
+                        const popup = document.getElementById(elementId);
+                        popup.style.display = popup.style.display === "none" ? "block" : "none";
+                    }
+
+                    function selectLayerType(layerName, layerType) {
+                        // Change the colour of the selected button
+                        const layerButton = document.getElementById("newLayerSelection-" + layerType);
+                        layerButton.classList.add("selected");
+
+                        // Change the colour of the other buttons
+                        for (const button of document.getElementsByClassName("layer-button")) {
+                            if (button.id != layerButton.id) {
+                                button.classList.remove("selected");
+                            }
+                        }
+
+                        // Determine the layerId
+                        let num = 1;
+                        while (true) {
+                            if (!("layer-" + num in layers)) {
+
+                                break;
+                            }
+                            num++;
+                        }
+
+                        const layerId = "layer-" + num;
+
+                        // Change the onclick function of the add button to add the selected layer type
+                        const addButton = document.getElementById("newLayerPopupAddButton");
+                        addButton.onclick = function () {
+                            addLayerPopup(layerId, layerName, layerType);
+                        };
+
+                        // Change the colour of the add button to green
+                        addButton.classList.remove("bg-green-700");
+                        addButton.classList.add("bg-green-500");
+                        addButton.classList.add("hover:bg-green-700");
+                    }
+
+                    function addLayerPopup(layerId, layerName, layerType) {
+                        togglePopup("newLayerPopup");
+
+                        // Change the colour of the add button back to grey
+                        for (const button of document.getElementsByClassName("layer-button")) {
+                            button.classList.remove("selected");
+                        }
+
+                        // Remove the onclick function of the add button
+                        const addButton = document.getElementById("newLayerPopupAddButton");
+                        addButton.onclick = function () { };
+
+                        // Change the colour of the add button to grey
+                        addButton.classList.remove("bg-green-500");
+                        addButton.classList.remove("hover:bg-green-700");
+                        addButton.classList.add("bg-green-700");
+
+                        // Add the layer
+                        addLayer(layerId, layerName, layerType);
+                    }
+                </script>
+
             </div>
         </div>
 
@@ -244,7 +380,7 @@
                     <form>
                         <!-- Input Size-->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300" for="units">
+                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
                                 Input Size
                             </label>
                             <input type="number"
@@ -254,7 +390,7 @@
 
                         <!-- Output Size -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300" for="units">
+                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
                                 Output Size
                             </label>
                             <input type="number"
@@ -327,7 +463,7 @@
 
                                 console.log(layers);
 
-                                alert("Layer configuration saved!");
+                                // alert("Layer configuration saved!");
                             }
 
                             function resolvePlaceholder() {
@@ -400,11 +536,38 @@
 
                             function deleteLayer(layerId) {
 
-                                // Remove layer from layer overview
+                                event.preventDefault();
 
-                                // Remove Layer from saved configurations
+                                // Remove layer from layer overview and increment layer numbers
+                                for (const layer of document.getElementById("layersView").children) {
+                                    if (layer.id == layerId) {
+                                        layer.remove();
+                                    } else if (parseInt(layer.id.split("-")[1]) > parseInt(layerId.split("-")[1])) {
+                                        layer.id = "layer-" + (parseInt(layer.id.split("-")[1]) - 1);
+                                    }
+                                }
 
-                                alert("Feature not currently available");
+                                // Remove layer from layers object and increment layer numbers
+                                for (const layer in layers) {
+                                    if (layer == layerId) {
+                                        delete layers[layer];
+                                    } else if (parseInt(layer.split("-")[1]) > parseInt(layerId.split("-")[1])) {
+                                        layers["layer-" + (parseInt(layer.split("-")[1]) - 1)] = layers[layer];
+                                        delete layers[layer];
+                                    }
+                                }
+
+                                // Change layer configuration placeholder
+                                document.getElementById("layerConfigurationTitle").innerHTML =
+                                    "Layer Configuration";
+
+                                // Change layer configuration options window
+                                document.getElementById("layerConfigurationOptionsWindow").hidden = true;
+
+                                // Show layer configuration placeholder
+                                document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
+
+                                // TODO: Confirmation popup
                             }
 
                         </script>
