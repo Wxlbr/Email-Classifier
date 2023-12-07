@@ -1,211 +1,623 @@
-<!-- templates/index.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
+<!-- Sortable library  for drag-and-drop animation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+<!-- TODO: Clean up formating of classes and styles -->
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Network Designer</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-
-    <!-- Add jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.4.slim.min.js"></script>
-
-    <!-- Add Popper.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-
-    <!-- Add Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/layout2.css?v=1701805914992">
+    <title>This totally works</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 
-<body>
+<body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="" style="">
+    <div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr] dark:bg-gray-900">
 
-    <div id="Header"></div>
+        <!-- Sidebar -->
+        <div class="hidden border-r bg-gray-800 lg:block dark:border-gray-700">
+            <div class="flex flex-col gap-2">
 
-    <div class="container mt-3">
-        <h1>Active Network</h1>
+                <!-- Back Button -->
+                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
+                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
+                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 19-7-7 7-7"></path>
+                            <path d="M19 12H5"></path>
+                        </svg>
+                        <span>Back to Network Menu</span>
+                    </a>
+                </div>
 
-        <!-- Active Network Container -->
-        <div id="activeNetworkContainer" class="row">
-            <!-- Dynamic network block will be added here -->
+                <!-- Network Configuration Title -->
+                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700">
+                    <a class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
+                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        <span>NeuralNet Config</span>
+                    </a>
+                </div>
 
-            <!-- Placeholder block -->
-            <div class="col-md-3 mt-3">
-                <div class="card h-100 rounded">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Network 0</h5>
-                    </div>
-                    <div class="card-footer">
-                        <!-- TODO: Fix function arguments and active network relation to saved networks -->
-                        <button class="btn btn-info btn-block" onclick="editNetwork(0)">Edit</button>
-                        <button class="btn btn-danger btn-block">Replace</button>
+                <!-- Network Layer Overview -->
+                <div class="flex-1 overflow-auto py-2 px-4">
+                    <nav class="grid items-start text-sm font-medium" id="layersView">
+                        <!-- TODO: Add layer text colour changes when selected -->
+                    </nav>
+
+                    <script>
+                        // TODO: Make input and output layer sizes configurable
+                        const inputLayerSize = "10";
+                        const outputLayerSize = "1";
+
+                        let layers = {};
+
+                        // Enable Sortable.js
+                        const layersView = document.getElementById("layersView");
+
+                        // Initialize Sortable on the layersView container
+                        const sortable = new Sortable(layersView, {
+                            animation: 150,
+                            handle: ".handle",
+                            onUpdate: (evt) => updateLayerOrder(evt),
+                        });
+
+                        function addLayer(layerId, layerName, layerType) {
+                            layers[layerId] = {
+                                "layerName": layerName,
+                                "layerType": layerType,
+                                "layerConfig": {
+                                    // Default layer configuration values
+                                    "inputSize": 0,
+                                    "outputSize": 0,
+                                    "activation": "sigmoid"
+                                },
+                                "valid": false,
+                                "errors": []
+                            };
+
+                            // Add layer to layer overview
+                            const layersView = document.getElementById("layersView");
+
+                            layer = `<div aria-grabbed="false" id="${layerId}"
+                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                onclick="selectLayer('${layerId}')">
+
+                                <!-- Drag and Drop Layer Icon -->
+                                <!-- TODO: Make so only movable via the icon selection -->
+                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                </svg>
+
+                                <!-- Layer Name -->
+                                ${layerName}
+
+                                <!-- Layer Status -->
+                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
+                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                    id="validationStatus">Valid</span>
+                            </div>`;
+
+                            layersView.innerHTML += layer;
+
+                            // Validate layers
+                            validateLayers();
+
+                            console.log("Adding layer: " + layerId + "\nLayer Name: " + layerName + "\nLayer Type: " +
+                                layerType);
+                        }
+
+                        // TEMP for placeholder layers
+                        addLayer("layer-1", "Dense Layer", "dense");
+                        addLayer("layer-2", "Recurrent Layer", "recurrent");
+
+                        function selectLayer(layerId) {
+                            console.log("Selected layer: " + layerId);
+
+                            loadLayerConfiguration(layerId);
+                        }
+
+                        function validateLayers() {
+
+                            for (const layerId in layers) {
+                                const idNum = parseInt(layerId.split("-")[1]);
+                                layers[layerId]["valid"] = true;
+                                layers[layerId]["errors"] = [];
+
+                                //Check inputSize
+                                if (layers[layerId]["layerConfig"]["inputSize"] <= 0) {
+                                    layers[layerId]["valid"] = false;
+                                    layers[layerId]["errors"].push("Input size must be a positive integer");
+                                }
+
+                                if (idNum == 1) {
+                                    // First layer
+                                    if (layers[layerId]["layerConfig"]["inputSize"] != inputLayerSize) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Input size must match network input size of " +
+                                            inputLayerSize);
+                                    }
+                                } else {
+                                    // Previous layer exists
+                                    if (layers[layerId]["layerConfig"]["inputSize"] != layers["layer-" + (idNum - 1)][
+                                        "layerConfig"]["outputSize"]) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Input size must match previous layer's output size of " +
+                                            layers["layer-" + (idNum - 1)]["layerConfig"]["outputSize"]);
+                                    }
+                                }
+
+                                // Check outputSize
+                                if (layers[layerId]["layerConfig"]["outputSize"] <= 0) {
+                                    layers[layerId]["valid"] = false;
+                                    layers[layerId]["errors"].push("Output size must be a positive integer");
+                                }
+
+                                if ("layer-" + (idNum + 1) in layers) {
+                                    // Next layer exists
+                                    if (layers[layerId]["layerConfig"]["outputSize"] != layers["layer-" + (idNum + 1)][
+                                        "layerConfig"]["inputSize"]) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Output size must match next layer's input size of " +
+                                            layers["layer-" + (idNum + 1)]["layerConfig"]["inputSize"]);
+                                    }
+                                } else {
+                                    // Next layer does not exist, must be the last layer
+                                    if (layers[layerId]["layerConfig"]["outputSize"] != outputLayerSize) {
+                                        layers[layerId]["valid"] = false;
+                                        layers[layerId]["errors"].push("Output size must match network output size of " +
+                                            outputLayerSize);
+                                    }
+                                }
+
+                                // Update validation status
+                                const layer = document.getElementById(layerId);
+                                let validationStatus = layer.querySelector("#validationStatus");
+
+                                if (layers[layerId]["valid"]) {
+                                    validationStatus.innerHTML = "Valid";
+                                    validationStatus.classList.remove("bg-red-500");
+                                    validationStatus.classList.add("bg-green-500");
+                                } else {
+                                    validationStatus.innerHTML = "Invalid";
+                                    validationStatus.classList.remove("bg-green-500");
+                                    validationStatus.classList.add("bg-red-500");
+                                }
+                            }
+                        }
+
+                        function updateLayerOrder(event) {
+                            // Get order of layers
+                            const layersView = document.getElementById("layersView");
+                            const newLayers = {};
+
+                            let count = 1;
+                            for (const layer of layersView.children) {
+                                const newId = 'layer-' + count;
+                                const prevId = layer.id;
+
+                                newLayers[newId] = layers[prevId];
+                                layer.id = newId;
+                                layer.onclick = function () {
+                                    selectLayer(newId);
+                                };
+                                count++;
+                            }
+
+                            layers = newLayers;
+
+                            // Validate layers
+                            validateLayers();
+
+                            console.log(layers);
+                        }
+
+                    </script>
+                </div>
+
+                <!-- Add Layer Button -->
+                <div class="px-4">
+                    <button
+                        class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 w-full font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
+                        type="button" onclick="togglePopup('newLayerPopup')">
+                        Add a new layer
+                    </button>
+                </div>
+
+                <!-- TODO: Redesign popup -->
+                <div id="newLayerPopup" class="popup" style="display: none;">
+                    <div class="popup-content border-gray-700 bg-gray-800 p-4 flex flex-col items-center">
+                        <h1 class="text-2xl font-bold mb-4 text-gray-300">
+                            Pop-up Window</h1>
+                        <!-- TODO: Dynamically assign layer types -->
+                        <div class="flex flex-col items-center space-y-2" style="width: 100%;">
+                            <button class="layer-button" onclick="selectLayerType('Dense Layer', 'dense')"
+                                id="newLayerSelection-dense">Dense
+                                Layer</button>
+                            <hr class="button-divider">
+                            <button class="layer-button" onclick="selectLayerType('Recurrent Layer', 'recurrent')"
+                                id="newLayerSelection-recurrent">Recurrent Layer</button>
+                            <hr class="button-divider">
+                            <button class="layer-button" onclick="selectLayerType('LSTM Layer', 'lstm')"
+                                id="newLayerSelection-lstm">LSTM
+                                Layer</button>
+                        </div>
+                        <div class="flex justify-between mt-4" style="margin-top: 1rem;">
+                            <button
+                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-gray-700"
+                                type="submit" style="margin-right: 0.5rem;" id="newLayerPopupAddButton">
+                                Add
+                            </button>
+                            <button
+                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
+                                type="submit" onclick="togglePopup('newLayerPopup')">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                <style>
+                    .layer-button {
+                        padding: 8px 16px;
+                        background-color: rgb(31 41 55);
+                        color: #cbd5e0;
+                        /* border: 1px solid #2d3748; */
+                        /* border-radius: 4px; */
+                        cursor: pointer;
+                        transition: background-color 0.3s, color 0.3s;
+                        width: 80%;
+                    }
+
+                    .layer-button:hover {
+                        background-color: #2d3748;
+                        color: #ffffff;
+                    }
+
+                    .layer-button.selected {
+                        background-color: #48bb78;
+                        color: #1a202c;
+                    }
+
+                    .button-divider {
+                        border: 0.1rem solid #ffffff;
+                        /* margin: 4px 0; */
+                        width: 80%;
+                    }
+
+                    /* Centre the popUp window and bring in front */
+                    .popup {
+                        display: none;
+                        position: fixed;
+                        z-index: 1;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        overflow: auto;
+                    }
+
+                    /* Style the popUp content */
+                    .popup-content {
+                        margin: 15% auto;
+                        padding: 2rem;
+                        width: 50%;
+                    }
+                </style>
+
+                <script>
+                    function togglePopup(elementId) {
+                        const popup = document.getElementById(elementId);
+                        popup.style.display = popup.style.display === "none" ? "block" : "none";
+                    }
+
+                    function selectLayerType(layerName, layerType) {
+                        // Change the colour of the selected button
+                        const layerButton = document.getElementById("newLayerSelection-" + layerType);
+                        layerButton.classList.add("selected");
+
+                        // Change the colour of the other buttons
+                        for (const button of document.getElementsByClassName("layer-button")) {
+                            if (button.id != layerButton.id) {
+                                button.classList.remove("selected");
+                            }
+                        }
+
+                        // Determine the layerId
+                        let num = 1;
+                        while (true) {
+                            if (!("layer-" + num in layers)) {
+                                break;
+                            }
+                            num++;
+                        }
+
+                        const layerId = "layer-" + num;
+
+                        // Change the onclick function of the add button to add the selected layer type
+                        const addButton = document.getElementById("newLayerPopupAddButton");
+                        addButton.onclick = function () {
+                            addLayerPopup(layerId, layerName, layerType);
+                        };
+
+                        // Change the colour of the add button to green
+                        addButton.classList.remove("bg-green-700");
+                        addButton.classList.add("bg-green-500");
+                        addButton.classList.add("hover:bg-green-700");
+                    }
+
+                    function addLayerPopup(layerId, layerName, layerType) {
+                        togglePopup("newLayerPopup");
+
+                        // Change the colour of the add button back to grey
+                        for (const button of document.getElementsByClassName("layer-button")) {
+                            button.classList.remove("selected");
+                        }
+
+                        // Remove the onclick function of the add button
+                        const addButton = document.getElementById("newLayerPopupAddButton");
+                        addButton.onclick = function () { };
+
+                        // Change the colour of the add button to grey
+                        addButton.classList.remove("bg-green-500");
+                        addButton.classList.remove("hover:bg-green-700");
+                        addButton.classList.add("bg-green-700");
+
+                        // Add the layer
+                        addLayer(layerId, layerName, layerType);
+                    }
+                </script>
+
+            </div>
+        </div>
+
+        <!-- Layer Configuration Window -->
+        <div class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 dark:text-gray-200">
+
+            <!-- Layer Configuration Title -->
+            <div class="flex items-center">
+                <h1 class="font-semibold text-lg md:text-2xl" id="layerConfigurationTitle">
+                    Layer Configuration
+                </h1>
             </div>
 
-            <!-- Network control block -->
-            <div id="networkControls" class="col-md-6 mt-3">
-                <div class="card h-100 rounded">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Network Controls</h5>
-                        <!-- Active (Shutdown) or Inactive (Start) -->
-                        <h5 id="networkStatus" class="card-header mb-2 text-muted" onclick="toggleNetworkStatus()">Status: Inactive</h5>
+            <!-- Layer Configuration Options Subwindow -->
+            <div class="border shadow-sm rounded-lg bg-gray-800 dark:border-gray-700">
+                <div class="p-4" id="layerConfigurationOptionsWindow" hidden>
+
+                    <!-- Error Message -->
+                    <!-- TODO: Change to dynamically appear if there is an error with the selected layer -->
+                    <div class="border border-red-500 mb-4 rounded-lg bg-red-500" id="ConfigurationErrorBox">
+                        <p class="text-white p-4" id="ConfigurationErrorBoxHeader">
+                        </p>
+                        <ul style="list-style-type: disc; margin-top:-30px;" class="text-white p-4 pl-8"
+                            id="ConfigurationErrorBoxList">
+                        </ul>
                     </div>
-                    <div class="card-footer">
-                        <button id="shutdownButton" class="btn btn-success btn-block" onclick="toggleNetworkStatus()">Start</button>
-                    </div>
+
+                    <!-- Interactable Layer Option -->
+                    <form>
+                        <!-- Input Size-->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
+                                Input Size
+                            </label>
+                            <input type="number"
+                                class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
+                                id="inputSize">
+                        </div>
+
+                        <!-- Output Size -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
+                                Output Size
+                            </label>
+                            <input type="number"
+                                class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
+                                id="outputSize">
+                        </div>
+
+                        <!-- Activation Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300" for="activation">Activation
+                                Function</label>
+                            <div class="relative inline-block text-left">
+                                <select id="activation"
+                                    class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300">
+                                    <option value="sigmoid">Sigmoid</option>
+                                    <option value="tanh">Tanh</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Save Layer Configuration -->
+                        <button
+                            class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-green-500 hover:bg-green-700"
+                            type="submit" onclick="saveLayerConfiguration('')" id="saveLayerConfigurationButton">
+                            Save Configuration
+                        </button>
+
+                        <script>
+                            function saveLayerConfiguration(layerId) {
+                                // Prevent the default form submission behavior
+                                // To stop the page from reloading when the form is submitted
+                                event.preventDefault();
+
+                                // TODO: Validate layerId
+                                if (!(layerId in layers)) {
+                                    console.log("Layer does not exist!");
+                                    return;
+                                }
+
+                                // Get Layer Configuration Values
+                                const inputSize = document.getElementById("inputSize").value;
+                                const outputSize = document.getElementById("outputSize").value;
+                                const activation = document.getElementById("activation").value;
+
+                                // console.log("Input Size: " + inputSize + "\nOutput Size: " + outputSize +
+                                //     "\nActivation: " + activation);
+
+                                // TODO: Save layer configuration if valid
+                                layers[layerId]["layerConfig"] = {
+                                    "inputSize": inputSize,
+                                    "outputSize": outputSize,
+                                    "activation": activation
+                                };
+
+                                validateLayers();
+
+                                // Change Error Box
+                                if (layers[layerId]["valid"]) {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "none";
+                                } else {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "block";
+                                    document.getElementById("ConfigurationErrorBoxHeader").innerHTML = "Invalid Layer Configuration";
+                                    document.getElementById("ConfigurationErrorBoxList").innerHTML = "";
+
+                                    for (const error of layers[layerId]["errors"]) {
+                                        document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error +
+                                            "</li>";
+                                    }
+                                }
+
+                                console.log(layers);
+
+                                // alert("Layer configuration saved!");
+                            }
+
+                            function resolvePlaceholder() {
+                                // Hide Placeholder
+                                document.getElementById("layerConfigurationPlaceholder").style.display = "none";
+
+                                // Show Layer Configuration Options
+                                document.getElementById("layerConfigurationOptionsWindow").hidden = false;
+                            }
+
+                            function loadLayerConfiguration(layerId) {
+
+                                resolvePlaceholder();
+
+                                // TODO: Validation
+                                if (!(layerId in layers)) {
+                                    console.log("Layer does not exist!");
+                                    return;
+                                }
+
+                                // Change Configuration Title
+                                document.getElementById("layerConfigurationTitle").innerHTML = layers[layerId][
+                                    "layerName"
+                                ] + " Configuration";
+
+                                // Load Layer Configuration Values
+                                document.getElementById("inputSize").value = layers[layerId]["layerConfig"][
+                                    "inputSize"];
+                                document.getElementById("outputSize").value = layers[layerId]["layerConfig"][
+                                    "outputSize"];
+                                document.getElementById("activation").value = layers[layerId]["layerConfig"][
+                                    "activation"];
+
+                                // Change Button onclick functions
+                                document.getElementById("saveLayerConfigurationButton").onclick = function () {
+                                    saveLayerConfiguration(layerId);
+                                };
+                                document.getElementById("deleteLayerConfigurationButton").onclick = function () {
+                                    deleteLayer(layerId);
+                                };
+
+                                // Validate layers
+                                validateLayers();
+
+                                // Change Error Box
+                                if (layers[layerId]["valid"]) {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "none";
+                                } else {
+                                    document.getElementById("ConfigurationErrorBox").style.display = "block";
+                                    document.getElementById("ConfigurationErrorBoxHeader").innerHTML = "Invalid Layer Configuration";
+                                    document.getElementById("ConfigurationErrorBoxList").innerHTML = "";
+
+                                    for (const error of layers[layerId]["errors"]) {
+                                        document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error +
+                                            "</li>";
+                                    }
+                                }
+                            }
+
+                        </script>
+
+                        <!-- Delete Layer -->
+                        <button
+                            class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
+                            type="submit" onclick="deleteLayer()" id="deleteLayerConfigurationButton">
+                            Delete Layer
+                        </button>
+
+                        <script>
+
+                            function deleteLayer(layerId) {
+
+                                event.preventDefault();
+
+                                // Remove layer from layer overview and increment layer numbers
+                                for (const layer of document.getElementById("layersView").children) {
+                                    if (layer.id == layerId) {
+                                        layer.remove();
+                                    } else if (parseInt(layer.id.split("-")[1]) > parseInt(layerId.split("-")[1])) {
+                                        layer.id = "layer-" + (parseInt(layer.id.split("-")[1]) - 1);
+                                        layer.onclick = function () {
+                                            selectLayer("layer-" + (parseInt(layer.id.split("-")[1]) - 1));
+                                        };
+                                    }
+                                }
+
+                                // Remove layer from layers object and increment layer numbers
+                                for (const layer in layers) {
+                                    if (layer == layerId) {
+                                        delete layers[layer];
+                                    } else if (parseInt(layer.split("-")[1]) > parseInt(layerId.split("-")[1])) {
+                                        layers["layer-" + (parseInt(layer.split("-")[1]) - 1)] = layers[layer];
+                                        delete layers[layer];
+                                    }
+                                }
+
+                                // Change layer configuration placeholder
+                                document.getElementById("layerConfigurationTitle").innerHTML =
+                                    "Layer Configuration";
+
+                                // Change layer configuration options window
+                                document.getElementById("layerConfigurationOptionsWindow").hidden = true;
+
+                                // Show layer configuration placeholder
+                                document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
+
+                                // TODO: Confirmation popup
+                            }
+
+                        </script>
+                    </form>
                 </div>
+
+                <!-- Layer Configuration Placeholder -->
+                <div class="flex items-center justify-center h-96" id="layerConfigurationPlaceholder">
+                    <!-- TODO: Format the text -->
+                    <p class="text-3xl text-gray-300 p-4 text-center">
+                        Select a layer to configure it
+                    </p>
+                </div>
+
             </div>
         </div>
     </div>
-
-
-    <div class="container mt-3">
-        <h1>Saved Networks</h1>
-
-        <!-- Networks Container -->
-        <div id="networksContainer" class="row">
-            <!-- Dynamic network blocks will be added here -->
-        </div>
-
-        <!-- Add New Network Block Button -->
-        <div class="row">
-            <div class="col-md-3 mt-3">
-                <button class="btn btn-primary btn-block" onclick="addNewNetwork()">Add New</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="Footer"></div>
-
-    <script>
-        // Counter for unique network IDs
-        let networkCounter = 1;
-
-        // Function to dynamically add network blocks
-        function addNetworkBlock(networkId) {
-            const networksContainer = document.getElementById('networksContainer');
-
-            const newNetworkBlock = document.createElement('div');
-            newNetworkBlock.className = 'col-md-3 mt-3';
-            newNetworkBlock.id = `networkBlock${networkId}`;
-
-            newNetworkBlock.innerHTML = `<div class="card h-100 rounded">
-                                            <div class="card-body text-center">
-                                                <h5 class="card-title">Network ${networkId}</h5>
-                                            </div>
-                                            <div class="card-footer">
-                                                <button class="btn btn-info btn-block" onclick="editNetwork(${networkId})">Edit</button>
-                                                <button class="btn btn-danger btn-block" onclick="removeNetwork(${networkId})">Remove</button>
-                                            </div>
-                                        </div>`;
-
-            networksContainer.insertBefore(newNetworkBlock, networksContainer.lastChild);
-        }
-
-        // Function to add a new network
-        function addNewNetwork() {
-            const newNetworkId = ++networkCounter;
-            addNetworkBlock(newNetworkId);
-        }
-
-        // Function to edit a network
-        function editNetwork(networkId) {
-            // Redirect to the page for editing the network
-            window.location.href = '/networkDesigner';
-
-            // Change the validity indicator
-            // TODO: Get the validity of the network from the saved network
-
-            const networkBlock = document.getElementById(`networkBlock${networkId}`);
-            const cardBodyDiv = networkBlock.querySelector('.card-body');
-            if (cardBodyDiv) {
-                // Add the validity indicator
-                // TODO: Change the color of the badge based on the validity of the network
-                cardBodyDiv.querySelector('.card-text').innerHTML = `<span class="badge badge-success">Valid</span>`;
-            }
-
-
-            return;
-        }
-
-        // Function to remove a network
-        function removeNetwork(networkId) {
-            console.log(`Removing network ${networkId}`);
-
-            const networksContainer = document.getElementById('networksContainer');
-            const networks = networksContainer.querySelectorAll(':scope > div');
-
-            for (let i = 0; i < networks.length; i++) {
-                const network = networks[i];
-                if (network.id === `networkBlock${networkId}`) {
-                    networksContainer.removeChild(network);
-                    break;
-                }
-            }
-
-            // networksContainer.removeChild(networkBlock);
-
-
-        }
-
-        // Function to dynamically update the network status
-        function updateNetworkStatus(status) {
-            const shutdownButton = document.getElementById('shutdownButton');
-
-            if (status == 'Active') {
-                // Change the button text and color for Active status
-                shutdownButton.innerHTML = 'Shutdown';
-                shutdownButton.classList.remove('btn-success');
-                shutdownButton.classList.add('btn-danger');
-            } else {
-                // Change the button text and color for Inactive status
-                shutdownButton.innerHTML = 'Start';
-                shutdownButton.classList.remove('btn-danger');
-                shutdownButton.classList.add('btn-success');
-            }
-        }
-
-        // Function to toggle network status between Active and Inactive
-        function toggleNetworkStatus() {
-            const statusIndicator = document.getElementById('networkStatus');
-            const currentStatus = statusIndicator.innerHTML.includes('Active') ? 'Active' : 'Inactive';
-
-            // Toggle between Active and Inactive
-            const newStatus = (currentStatus == 'Active') ? 'Inactive' : 'Active';
-
-            if (newStatus == 'Active') {
-                // TODO: Check if the network is valid
-            }
-
-            // Update the status indicator
-            statusIndicator.innerHTML = `Status: ${newStatus}`;
-
-            // Update the shutdown/start button dynamically
-            updateNetworkStatus(newStatus);
-        }
-
-        // Dummy function to simulate loading existing networks
-        function loadExistingNetworks() {
-
-            // TODO: Fetch saved network IDs from the save files
-
-            // Simulate loading existing networks
-            const existingNetworks = [1, 2, 3];
-            existingNetworks.forEach(networkId => addNetworkBlock(networkId));
-
-            // Update counter
-            networkCounter = existingNetworks.length;
-        }
-
-        // Load existing networks when the page is loaded
-        window.onload = loadExistingNetworks;
-    </script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="{{url_for('static', filename='jquery.resize.js')}}"></script>
-    <script src="{{url_for('static', filename='script.js')}}"></script>
-
-</body>
 
 </html>
