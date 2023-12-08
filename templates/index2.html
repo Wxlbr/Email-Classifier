@@ -6,6 +6,8 @@
 
 <!-- TODO: Clean up formating of classes and styles -->
 
+<!-- TODO: Input for network name -->
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,6 +15,31 @@
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
+
+<script type="text/javascript">
+    var flaskData = JSON.parse('{{ data| tojson }}');
+
+    console.log(flaskData);
+
+    // Output value at key item in flaskData
+    console.log(flaskData.item);
+
+    fetch('/save-network', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(flaskData),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
+</script>
 
 <body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="" style="">
     <div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr] dark:bg-gray-900">
@@ -23,7 +50,7 @@
 
                 <!-- Back Button -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
-                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
+                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="/">
                         <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
@@ -411,7 +438,7 @@
                     <form>
                         <!-- Input Size-->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
+                            <label class="block text-sm font-medium text-gray-300">
                                 Input Size
                             </label>
                             <input type="number"
@@ -421,7 +448,7 @@
 
                         <!-- Output Size -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300"> <!--for="units"-->
+                            <label class="block text-sm font-medium text-gray-300">
                                 Output Size
                             </label>
                             <input type="number"
