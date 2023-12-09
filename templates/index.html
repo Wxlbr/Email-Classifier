@@ -4,63 +4,65 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/layout.css?v=1701940597262">
-    <!-- <link rel="stylesheet" href="/static/layout2.css?v=1701940597262"> -->
+    <link rel="stylesheet" href="/static/layout.css">
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 
 <body>
-    <div class="bg-gray-800 text-white min-h-screen">
+    <div class="bg-grey-800 full-view">
 
         <!-- Header -->
-        <header class="flex h-20 w-full shrink-0 items-center px-4 md:px-6">
-            <div class="w-[50px]"><a class="mr-6 flex" href="#">
-                    <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        <header class="h-20 w-full items-center padx-6">
+
+            <!-- Logo -->
+            <div>
+                <a class="flex pad-4" href="#">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" x2="4" y1="22" y2="15"></line>
                     </svg>
                 </a>
             </div>
-            <div class="ml-2 font-bold text-xl">Neural Networks</div>
-            <nav class="ml-auto flex-grow"></nav>
-            <div class="w-[50px]">
-                <button
-                    class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10"><span
-                        class="relative flex shrink-0 overflow-hidden rounded-full w-6 h-6" alt="User Profile"
-                        src="/user-profile.jpg"></span>
+
+            <!-- Title -->
+            <div class="nav-title ml-2">Neural Networks</div>
+            <nav class="nav-flex"></nav>
+
+            <!-- User Profile -->
+            <div>
+                <button class="button button-square border">
+                    <span class="relative flex shrink-0 overflow-hidden rounded-full w-6 h-6" alt="User Profile"></span>
                 </button>
             </div>
         </header>
 
         <!-- Main Window -->
-        <main class="container mx-auto px-4 md:px-6 py-12 md:py-24 lg:py-32">
-            <h1 class="text-4xl font-bold mb-6">Welcome to Neural Networks Homepage</h1>
-            <h2 class="text-2xl font-bold mb-4">Active Network</h2>
-            <div class="flex justify-between">
+        <main class="container mx-auto padx-6 pady-12">
+
+            <!-- Title -->
+            <h1 class="title">Welcome to Neural Networks Homepage</h1>
+
+            <!-- Active Network -->
+            <h2 class="subtitle">Active Network</h2>
+            <div>
 
                 <!-- Active Layer Card -->
-                <div class="grid grid-cols-3 gap-6" style="width: 100%;">
-                    <div class=" border bg-card text-card-foreground shadow-sm flex-1 mr-1 rounded-lg" id="network-1">
-                        <div class="flex flex-col space-y-1.5 h-2/3 bg-gray-600 p-6 rounded-lg-top">
-                            <h2 class="text-xl font-bold">Network 1</h2>
+                <div class="grid grid-cols-3 grid-gap-6 w-full">
+                    <div class="card" id="network-1">
+
+                        <div class="h-65 bg-grey-600 pad-4 rounded-top">
+                            <h2 class="card-title">Network 1</h2>
                             <span id="activeNetworkStatus">Status: Inactive</span>
                         </div>
-                        <div class="h-1/3 bg-gray-500 p-6 flex items-center rounded-lg-bottom">
-                            <button
-                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                                type="submit">
-                                Edit
-                            </button>
-                            <button style="margin-left: 1rem;"
-                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                                type="submit">
-                                Replace
-                            </button>
-                            <button onclick="toggleActiveLayer()" id="activateNetworkButton" style="margin-left: 1rem;"
-                                class="bg-green-500 hover:bg-green-700 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10">
+
+                        <div class="h-35 pad-4 items-center rounded-bottom">
+                            <button class="button button-blue" type="submit">Edit</button>
+                            <button class="button button-blue ml-4" type="submit">Replace</button>
+                            <button class="button button-square button-green border ml-4" id="activateNetworkButton"
+                                onclick="toggleActiveLayer()">
                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -68,8 +70,9 @@
                                     <line x1="12" x2="12" y1="2" y2="12"></line>
                                 </svg>
                             </button>
-                            <span style="margin-left: 1rem;" id="activateNetworkLabel">Activate</span>
+                            <span class="ml-4" id="activateNetworkLabel">Activate</span>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -83,32 +86,26 @@
                     if (activeNetworkStatus.innerHTML == "Status: Inactive") {
                         activeNetworkStatus.innerHTML = "Status: Active";
                         activateNetworkLabel.innerHTML = "Deactivate";
-                        activateNetworkButton.classList.remove("bg-green-500");
-                        activateNetworkButton.classList.add("bg-red-500");
-                        activateNetworkButton.classList.remove("hover:bg-green-700");
-                        activateNetworkButton.classList.add("hover:bg-red-700");
+                        activateNetworkButton.classList.remove("button-green");
+                        activateNetworkButton.classList.add("button-red");
                     } else {
                         activeNetworkStatus.innerHTML = "Status: Inactive";
                         activateNetworkLabel.innerHTML = "Activate";
-                        activateNetworkButton.classList.remove("bg-red-500");
-                        activateNetworkButton.classList.add("bg-green-500");
-                        activateNetworkButton.classList.remove("hover:bg-red-700");
-                        activateNetworkButton.classList.add("hover:bg-green-700");
+                        activateNetworkButton.classList.remove("button-red");
+                        activateNetworkButton.classList.add("button-green");
                     }
                 }
             </script>
 
             <!-- Saved Networks -->
-            <h2 class="text-2xl font-bold mb-4 mt-8">Saved Networks</h2>
-            <div class="grid grid-cols-3 gap-6" id="savedNetworks">
+            <h2 class="subtitle mt-8">Saved Networks</h2>
+            <div class="grid grid-cols-3 grid-gap-6" id="savedNetworks">
 
                 <!-- Add Newtork Card -->
-                <div class="rounded-lg border bg-card text-card-foreground shadow-sm" id="addNetworkCard">
-                    <div class="flex-col space-y-1.5 h-2/3 bg-gray-600 p-6 flex items-center justify-center">
-                        <button
-                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10"
-                            onclick="addNetwork()">
-                            <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                <div class="card" id="addNetworkCard">
+                    <div class="h-65 bg-grey-600 pad-4 items-center justify-center rounded-top">
+                        <button class="button button-square border" onclick="addNetwork()">
+                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M5 12h14"></path>
@@ -141,19 +138,16 @@
 
                         savedNetworks.removeChild(addNetworkCard);
 
-                        card = `<div class="border bg-card text-card-foreground shadow-sm flex-1 mr-1 rounded-lg" id="network-${networkId}">
-                                <div class="flex flex-col space-y-1.5 h-2/3 bg-gray-600 p-6 rounded-lg-top">
-                                    <h2 class="text-xl font-bold">Network ${networkId}</h2>
+                        card = `<div class="card" id="network-${networkId}">
+                                <div class="h-65 bg-grey-600 pad-4 rounded-top">
+                                    <h2 class="card-title">Network ${networkId}</h2>
                                 </div>
-                                <div class="h-1/3 bg-gray-500 p-6 flex items-center rounded-lg-bottom">
+                                <div class="h-35 pad-4 items-center rounded-bottom">
                                     <button onclick="redirectEditNetwork('${networkId}')"
-                                        class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                                        type="submit">
+                                        class="button button-blue" type="submit">
                                         Edit
                                     </button>
-                                    <button style="margin-left: 1rem;"
-                                        class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
-                                        type="submit">
+                                    <button class="button button-red ml-4" type="submit">
                                         Delete
                                     </button>
                                 </div>
