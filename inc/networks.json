@@ -1,0 +1,28 @@
+{
+    "network-2": {
+        "layers": {
+            "layer-1": {
+                "layerName": "Recurrent Layer",
+                "layerType": "recurrent",
+                "layerConfig": {
+                    "inputSize": "10",
+                    "outputSize": "5",
+                    "activation": "sigmoid"
+                },
+                "valid": true,
+                "errors": []
+            },
+            "layer-2": {
+                "layerName": "LSTM Layer",
+                "layerType": "lstm",
+                "layerConfig": {
+                    "inputSize": "5",
+                    "outputSize": "1",
+                    "activation": "sigmoid"
+                },
+                "valid": true,
+                "errors": []
+            }
+        }
+    }
+}

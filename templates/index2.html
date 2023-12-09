@@ -17,31 +17,28 @@
 </head>
 
 <script type="text/javascript">
+    // TODO: Make input and output layer sizes configurable
+    const inputLayerSize = "10";
+    const outputLayerSize = "1";
+
+    let layers = {};
+
+
     var flaskData = JSON.parse('{{ data| tojson }}');
 
     console.log(flaskData);
 
-    // Output value at key item in flaskData
-    console.log(flaskData.item);
+    networkId = flaskData.networkId;
 
-    fetch('/save-network', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(flaskData),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            console.log('Success:', data);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    if (flaskData.layers) {
+        layers = flaskData.layers;
+    }
+
+    console.log(layers)
 
 </script>
 
-<body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="" style="">
+<body>
     <div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr] dark:bg-gray-900">
 
         <!-- Sidebar -->
@@ -50,7 +47,8 @@
 
                 <!-- Back Button -->
                 <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
-                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="/">
+                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white"
+                        onclick="redirectIndex()">
                         <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
@@ -81,11 +79,6 @@
                     </nav>
 
                     <script>
-                        // TODO: Make input and output layer sizes configurable
-                        const inputLayerSize = "10";
-                        const outputLayerSize = "1";
-
-                        let layers = {};
 
                         // Enable Sortable.js
                         const layersView = document.getElementById("layersView");
@@ -97,7 +90,40 @@
                             onUpdate: (evt) => updateLayerOrder(evt),
                         });
 
+                        function addExisitngLayer(layerId, layerName, layerType) {
+                            // Add layer to layer overview
+                            const layersView = document.getElementById("layersView");
+
+                            layer = `<div aria-grabbed="false" id="${layerId}"
+                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                onclick="selectLayer('${layerId}')">
+
+                                <!-- Drag and Drop Layer Icon -->
+                                <!-- TODO: Make so only movable via the icon selection -->
+                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                </svg>
+
+                                <!-- Layer Name -->
+                                ${layerName}
+
+                                <!-- Layer Status -->
+                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
+                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                    id="validationStatus">Valid</span>
+                            </div>`;
+
+                            layersView.innerHTML += layer;
+
+                            validateLayers();
+                        }
+
                         function addLayer(layerId, layerName, layerType) {
+
                             layers[layerId] = {
                                 "layerName": layerName,
                                 "layerType": layerType,
@@ -142,13 +168,8 @@
                             // Validate layers
                             validateLayers();
 
-                            console.log("Adding layer: " + layerId + "\nLayer Name: " + layerName + "\nLayer Type: " +
-                                layerType);
+                            saveNetwork();
                         }
-
-                        // TEMP for placeholder layers
-                        addLayer("layer-1", "Dense Layer", "dense");
-                        addLayer("layer-2", "Recurrent Layer", "recurrent");
 
                         function selectLayer(layerId) {
                             console.log("Selected layer: " + layerId);
@@ -247,6 +268,8 @@
 
                             // Validate layers
                             validateLayers();
+
+                            saveNetwork();
 
                             console.log(layers);
                         }
@@ -522,6 +545,8 @@
                                 console.log(layers);
 
                                 // alert("Layer configuration saved!");
+
+                                saveNetwork();
                             }
 
                             function resolvePlaceholder() {
@@ -646,5 +671,68 @@
             </div>
         </div>
     </div>
+
+    <script>
+
+        function loadNetwork() {
+            for (const layerId in layers) {
+                const layerName = layers[layerId]["layerName"];
+                const layersView = document.getElementById("layersView");
+
+                layer = `<div aria-grabbed="false" id="${layerId}"
+                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                onclick="selectLayer('${layerId}')">
+
+                                <!-- Drag and Drop Layer Icon -->
+                                <!-- TODO: Make so only movable via the icon selection -->
+                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                </svg>
+
+                                <!-- Layer Name -->
+                                ${layerName}
+
+                                <!-- Layer Status -->
+                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
+                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                    id="validationStatus">Valid</span>
+                            </div>`;
+
+                layersView.innerHTML += layer;
+            }
+
+            // Validate layers
+            validateLayers();
+        }
+
+        // Load new network configuration
+        loadNetwork();
+
+        function saveNetwork() {
+            fetch('/save-network', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 'networkId': networkId, 'layers': layers }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function redirectIndex() {
+            window.location.href = "/";
+        }
+
+    </script>
 
 </html>

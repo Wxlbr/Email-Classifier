@@ -5,12 +5,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/layout.css?v=1701940597262">
-    <link rel="stylesheet" href="/static/layout2.css?v=1701940597262">
+    <!-- <link rel="stylesheet" href="/static/layout2.css?v=1701940597262"> -->
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 
-<body class="__className_e66fe9" data-new-gr-c-s-check-loaded="8.909.0" data-gr-ext-installed="">
+<body>
     <div class="bg-gray-800 text-white min-h-screen">
 
         <!-- Header -->
@@ -167,7 +167,7 @@
                     addNetwork();
 
                     function redirectEditNetwork(networkId) {
-                        window.location.href = `/edit-network`;
+                        window.location.href = `/edit-network?networkId=network-${networkId}`;
                     }
                 </script>
 
