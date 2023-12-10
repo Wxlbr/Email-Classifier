@@ -4,19 +4,17 @@
 <!-- Sortable library  for drag-and-drop animation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
-<!-- TODO: Clean up formating of classes and styles -->
-
 <!-- TODO: Input for network name -->
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/layout2.css?v=1701805914992">
+    <link rel="stylesheet" href="/static/layout.css">
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
 </head>
 
-<script type="text/javascript">
+<script>
     // TODO: Make input and output layer sizes configurable
     const inputLayerSize = "10";
     const outputLayerSize = "1";
@@ -39,17 +37,16 @@
 </script>
 
 <body>
-    <div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr] dark:bg-gray-900">
+    <div class="sidebar-grid full-view bg-grey-900">
 
         <!-- Sidebar -->
-        <div class="hidden border-r bg-gray-800 lg:block dark:border-gray-700">
-            <div class="flex flex-col gap-2">
+        <div class="border-right bg-grey-800">
+            <div class="flex-col gap-2">
 
                 <!-- Back Button -->
-                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700"><a
-                        class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white"
-                        onclick="redirectIndex()">
-                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                <div class="h-15 items-center border-bottom padx-6 button-text">
+                    <a class="items-center gap-2" onclick="redirectIndex()">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="m12 19-7-7 7-7"></path>
@@ -60,9 +57,9 @@
                 </div>
 
                 <!-- Network Configuration Title -->
-                <div class="flex h-[60px] items-center border-b px-6 dark:border-gray-700">
-                    <a class="flex items-center gap-2 font-semibold text-gray-300 hover:text-white" href="#">
-                        <svg class="h-6 w-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                <div class="h-15 items-center border-bottom padx-6 button-text">
+                    <a class="items-center gap-2" href="#">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="16 18 22 12 16 6"></polyline>
@@ -73,8 +70,8 @@
                 </div>
 
                 <!-- Network Layer Overview -->
-                <div class="flex-1 overflow-auto py-2 px-4">
-                    <nav class="grid items-start text-sm font-medium" id="layersView">
+                <div class="pady-2 padx-4">
+                    <nav class="grid text-sm gap-2" id="layersView">
                         <!-- TODO: Add layer text colour changes when selected -->
                     </nav>
 
@@ -89,38 +86,6 @@
                             handle: ".handle",
                             onUpdate: (evt) => updateLayerOrder(evt),
                         });
-
-                        function addExisitngLayer(layerId, layerName, layerType) {
-                            // Add layer to layer overview
-                            const layersView = document.getElementById("layersView");
-
-                            layer = `<div aria-grabbed="false" id="${layerId}"
-                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
-                                onclick="selectLayer('${layerId}')">
-
-                                <!-- Drag and Drop Layer Icon -->
-                                <!-- TODO: Make so only movable via the icon selection -->
-                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="4" x2="20" y1="12" y2="12"></line>
-                                    <line x1="4" x2="20" y1="6" y2="6"></line>
-                                    <line x1="4" x2="20" y1="18" y2="18"></line>
-                                </svg>
-
-                                <!-- Layer Name -->
-                                ${layerName}
-
-                                <!-- Layer Status -->
-                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
-                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
-                                    id="validationStatus">Valid</span>
-                            </div>`;
-
-                            layersView.innerHTML += layer;
-
-                            validateLayers();
-                        }
 
                         function addLayer(layerId, layerName, layerType) {
 
@@ -141,12 +106,12 @@
                             const layersView = document.getElementById("layersView");
 
                             layer = `<div aria-grabbed="false" id="${layerId}"
-                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                class="navMargin flex items-center gap-3 rounded bg-grey-700 padx-3 pady-2 text-grey transition-all hover:text-white cursor-move"
                                 onclick="selectLayer('${layerId}')">
 
                                 <!-- Drag and Drop Layer Icon -->
                                 <!-- TODO: Make so only movable via the icon selection -->
-                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                <svg class="handle h-4 w-4 text-grey" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -159,7 +124,7 @@
 
                                 <!-- Layer Status -->
                                 <!-- TODO: Automatically set to invalid as layer not yet configured -->
-                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
                                     id="validationStatus">Valid</span>
                             </div>`;
 
@@ -278,21 +243,20 @@
                 </div>
 
                 <!-- Add Layer Button -->
-                <div class="px-4">
-                    <button
-                        class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 w-full font-semibold rounded-lg shadow-md text-white bg-blue-500 hover:bg-blue-700"
-                        type="button" onclick="togglePopup('newLayerPopup')">
+                <div class="padx-4">
+                    <button class="button button-blue w-full bg-blue-500" type="button"
+                        onclick="togglePopup('newLayerPopup')">
                         Add a new layer
                     </button>
                 </div>
 
                 <!-- TODO: Redesign popup -->
                 <div id="newLayerPopup" class="popup" style="display: none;">
-                    <div class="popup-content border-gray-700 bg-gray-800 p-4 flex flex-col items-center">
-                        <h1 class="text-2xl font-bold mb-4 text-gray-300">
+                    <div class="popup-content card pad-4 flex-col items-center">
+                        <h1 class="subtitle mb-4">
                             Pop-up Window</h1>
                         <!-- TODO: Dynamically assign layer types -->
-                        <div class="flex flex-col items-center space-y-2" style="width: 100%;">
+                        <div class="flex-col items-center w-full">
                             <button class="layer-button" onclick="selectLayerType('Dense Layer', 'dense')"
                                 id="newLayerSelection-dense">Dense
                                 Layer</button>
@@ -304,68 +268,17 @@
                                 id="newLayerSelection-lstm">LSTM
                                 Layer</button>
                         </div>
-                        <div class="flex justify-between mt-4" style="margin-top: 1rem;">
-                            <button
-                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-gray-700"
-                                type="submit" style="margin-right: 0.5rem;" id="newLayerPopupAddButton">
+                        <div class="flex justify-between mt-4">
+                            <button class="button bg-grey-700 mr-2" type="submit" id="newLayerPopupAddButton">
                                 Add
                             </button>
-                            <button
-                                class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
-                                type="submit" onclick="togglePopup('newLayerPopup')">
+                            <button class="button button-red bg-red-500" type="submit"
+                                onclick="togglePopup('newLayerPopup')">
                                 Cancel
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <style>
-                    .layer-button {
-                        padding: 8px 16px;
-                        background-color: rgb(31 41 55);
-                        color: #cbd5e0;
-                        /* border: 1px solid #2d3748; */
-                        /* border-radius: 4px; */
-                        cursor: pointer;
-                        transition: background-color 0.3s, color 0.3s;
-                        width: 80%;
-                    }
-
-                    .layer-button:hover {
-                        background-color: #2d3748;
-                        color: #ffffff;
-                    }
-
-                    .layer-button.selected {
-                        background-color: #48bb78;
-                        color: #1a202c;
-                    }
-
-                    .button-divider {
-                        border: 0.1rem solid #ffffff;
-                        /* margin: 4px 0; */
-                        width: 80%;
-                    }
-
-                    /* Centre the popUp window and bring in front */
-                    .popup {
-                        display: none;
-                        position: fixed;
-                        z-index: 1;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        height: 100%;
-                        overflow: auto;
-                    }
-
-                    /* Style the popUp content */
-                    .popup-content {
-                        margin: 15% auto;
-                        padding: 2rem;
-                        width: 50%;
-                    }
-                </style>
 
                 <script>
                     function togglePopup(elementId) {
@@ -434,22 +347,22 @@
         </div>
 
         <!-- Layer Configuration Window -->
-        <div class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6 dark:text-gray-200">
+        <div class="flex-col gap-8 pad-6 text-grey">
 
             <!-- Layer Configuration Title -->
             <div class="flex items-center">
-                <h1 class="font-semibold text-lg md:text-2xl" id="layerConfigurationTitle">
+                <h1 class="subtitle" id="layerConfigurationTitle">
                     Layer Configuration
                 </h1>
             </div>
 
             <!-- Layer Configuration Options Subwindow -->
-            <div class="border shadow-sm rounded-lg bg-gray-800 dark:border-gray-700">
-                <div class="p-4" id="layerConfigurationOptionsWindow" hidden>
+            <div class="card bg-grey-800 border-grey">
+                <div class="pad-4" id="layerConfigurationOptionsWindow" hidden>
 
                     <!-- Error Message -->
                     <!-- TODO: Change to dynamically appear if there is an error with the selected layer -->
-                    <div class="border border-red-500 mb-4 rounded-lg bg-red-500" id="ConfigurationErrorBox">
+                    <div class="border border-red mb-4 rounded bg-red-500" id="ConfigurationErrorBox">
                         <p class="text-white p-4" id="ConfigurationErrorBoxHeader">
                         </p>
                         <ul style="list-style-type: disc; margin-top:-30px;" class="text-white p-4 pl-8"
@@ -461,31 +374,25 @@
                     <form>
                         <!-- Input Size-->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300">
+                            <label class="text-sm text-grey">
                                 Input Size
                             </label>
-                            <input type="number"
-                                class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
-                                id="inputSize">
+                            <input type="number" class="button border bg-grey-700 text-gray-300 w-full" id="inputSize">
                         </div>
 
                         <!-- Output Size -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300">
+                            <label class="text-sm text-grey">
                                 Output Size
                             </label>
-                            <input type="number"
-                                class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300"
-                                id="outputSize">
+                            <input type="number" class="button border bg-grey-700 text-gray-300 w-full" id="outputSize">
                         </div>
 
                         <!-- Activation Selection -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300" for="activation">Activation
-                                Function</label>
-                            <div class="relative inline-block text-left">
-                                <select id="activation"
-                                    class="h-10 border border-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 block w-full rounded-md shadow-sm sm:text-sm bg-gray-700 text-gray-300">
+                            <label class="text-sm text-grey">Activation Function</label>
+                            <div>
+                                <select class="button border bg-grey-700 text-gray-300 w-full" id="activation">
                                     <option value="sigmoid">Sigmoid</option>
                                     <option value="tanh">Tanh</option>
                                 </select>
@@ -493,9 +400,8 @@
                         </div>
 
                         <!-- Save Layer Configuration -->
-                        <button
-                            class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-green-500 hover:bg-green-700"
-                            type="submit" onclick="saveLayerConfiguration('')" id="saveLayerConfigurationButton">
+                        <button class="button button-green bg-green-500 mr-4" type="submit"
+                            onclick="saveLayerConfiguration('')" id="saveLayerConfigurationButton">
                             Save Configuration
                         </button>
 
@@ -609,9 +515,8 @@
                         </script>
 
                         <!-- Delete Layer -->
-                        <button
-                            class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 py-2 px-4 font-semibold rounded-lg shadow-md text-white bg-red-500 hover:bg-red-700"
-                            type="submit" onclick="deleteLayer()" id="deleteLayerConfigurationButton">
+                        <button class="button button-red bg-red-500" type="submit" onclick="deleteLayer()"
+                            id="deleteLayerConfigurationButton">
                             Delete Layer
                         </button>
 
@@ -661,9 +566,9 @@
                 </div>
 
                 <!-- Layer Configuration Placeholder -->
-                <div class="flex items-center justify-center h-96" id="layerConfigurationPlaceholder">
+                <div class="justify-flex h-96" id="layerConfigurationPlaceholder">
                     <!-- TODO: Format the text -->
-                    <p class="text-3xl text-gray-300 p-4 text-center">
+                    <p class="text text-grey pad-4">
                         Select a layer to configure it
                     </p>
                 </div>
@@ -680,12 +585,12 @@
                 const layersView = document.getElementById("layersView");
 
                 layer = `<div aria-grabbed="false" id="${layerId}"
-                                class="navMargin flex items-center gap-3 rounded-lg bg-gray-700 px-3 py-2 text-gray-300 transition-all hover:text-white cursor-move"
+                                class="navMargin flex items-center gap-3 rounded bg-grey-700 padx-3 pady-2 text-grey transition-all hover:text-white cursor-move"
                                 onclick="selectLayer('${layerId}')">
 
                                 <!-- Drag and Drop Layer Icon -->
                                 <!-- TODO: Make so only movable via the icon selection -->
-                                <svg class="handle h-4 w-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                <svg class="handle h-4 w-4 text-grey" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -698,7 +603,7 @@
 
                                 <!-- Layer Status -->
                                 <!-- TODO: Automatically set to invalid as layer not yet configured -->
-                                <span class="ml-auto bg-green-500 text-gray-900 px-2 py-1 rounded-full text-xs"
+                                <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
                                     id="validationStatus">Valid</span>
                             </div>`;
 
