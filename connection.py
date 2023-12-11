@@ -8,6 +8,7 @@ import pickle
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+
 class Connection:
     OAUTH_PORT = 8080
     API_VERSION = 'v1'
@@ -33,13 +34,15 @@ class Connection:
         '''
 
         # Check for valid credentials and service or reconnect flag
-        if (not self.__credentials or not self.__credentials.valid) or (not self.__service) or (reconnect):
+        if (not self.__credentials or not self.__credentials.valid) or (
+                not self.__service) or (reconnect):
 
             # Refresh credentials
             self.update_credentials()
 
             # Rebuild service
-            self.__service = build('gmail', self.API_VERSION, credentials=self.__credentials)
+            self.__service = build(
+                'gmail', self.API_VERSION, credentials=self.__credentials)
 
     def update_credentials(self):
         '''
@@ -91,7 +94,8 @@ class Connection:
 
         self.check_connected()
 
-        message = self.__service.users().messages().get(userId='me', id=message_id).execute()
+        message = self.__service.users().messages().get(
+            userId='me', id=message_id).execute()
         payload = message['payload']
 
         # Get the email subject
@@ -104,7 +108,8 @@ class Connection:
             body_text = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
             # Parse HTML content
-            content = ' '.join(html.unescape(word) for word in re.findall(r'<.*?>|\b\w+\b|[.,;!?]', body_text))
+            content = ' '.join(html.unescape(word) for word in re.findall(
+                r'<.*?>|\b\w+\b|[.,;!?]', body_text))
 
         # Clean the plaintext content
         content = self._clean_content(content)
@@ -136,7 +141,8 @@ class Connection:
         self.check_connected()
 
         # Get the message
-        result = self.__service.users().messages().get(userId='me', id=message_id).execute()
+        result = self.__service.users().messages().get(
+            userId='me', id=message_id).execute()
 
         # Get the labels
         labels = result.get('labelIds', [])
@@ -152,7 +158,8 @@ class Connection:
         self.check_connected()
 
         # Create the label
-        label = {'name': label_name, 'messageListVisibility': 'show', 'labelListVisibility': 'labelShow'}
+        label = {'name': label_name, 'messageListVisibility': 'show',
+                 'labelListVisibility': 'labelShow'}
 
         # Create the label
         self.__service.users().labels().create(userId='me', body=label).execute()
@@ -218,7 +225,8 @@ class Connection:
         body = {'removeLabelIds': label_ids, 'addLabelIds': []}
 
         # Modify the message
-        self.__service.users().messages().modify(userId='me', id=message_id, body=body).execute()
+        self.__service.users().messages().modify(
+            userId='me', id=message_id, body=body).execute()
 
     def assign_email_labels(self, message_id, labels):
         '''
@@ -233,7 +241,8 @@ class Connection:
         # Check that the corresponding labels have not already been assigned
         existing_labels = self.get_email_labels(message_id)
 
-        existing_labels = [self._get_label_name(label_id) for label_id in existing_labels]
+        existing_labels = [self._get_label_name(
+            label_id) for label_id in existing_labels]
 
         # If the labels are already assigned, remove them
         if 'Safe' in labels and 'Unsafe' in existing_labels:
@@ -248,7 +257,8 @@ class Connection:
         body = {'removeLabelIds': [], 'addLabelIds': label_ids}
 
         # Modify the message
-        self.__service.users().messages().modify(userId='me', id=message_id, body=body).execute()
+        self.__service.users().messages().modify(
+            userId='me', id=message_id, body=body).execute()
 
     def word_counter(self, plaintext):
         '''
@@ -280,6 +290,7 @@ class Connection:
 
     def _hot_encode(self, dictionary):
         return {key: 1 if value > 0 else value for key, value in dictionary.items()}
+
 
 # Main execution
 if __name__ == "__main__":

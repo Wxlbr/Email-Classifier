@@ -1,5 +1,5 @@
 from activation import Sigmoid
-from matrix import dot, mul, transpose, randn, zeros
+from calc import dot, multiply, transpose, randn, zeros, add_matrices, sub_matrices
 
 
 class Dense():
@@ -29,8 +29,8 @@ class Dense():
             output_gradient, learning_rate)
         weights_gradient = dot(output_gradient, self.input.T)
         input_gradient = dot(self.weights.T, output_gradient)
-        self.weights -= mul(weights_gradient, learning_rate)
-        self.bias -= mul(output_gradient, learning_rate)
+        self.weights -= multiply(weights_gradient, learning_rate)
+        self.bias -= multiply(output_gradient, learning_rate)
         return input_gradient
 
 
@@ -71,23 +71,21 @@ class Recurrent():
         # Save input value
         self.input = input_value
 
-        # Initialise output as a copy of the bias
-        self.output = [[x] for x in sum(self.bias, [])]
-
         # Update hidden state
         self.hidden_state = dot(self.recurrent_weights, self.hidden_state)
 
-        # Add weighted input and hidden state to output
-        # TODO: Temporary fix for matrix multiplication
-        # self.output = dot(self.weights, self.input) + self.hidden_state + self.bias
+        # Calculate the weighted input and hidden state
+        weighted_input = dot(self.weights, self.input)
+        weighted_hidden = self.hidden_state
 
-        for i in range(self.output_size):
-            for j in range(self.input_size):
-                self.output[i][0] += self.weights[i][j] * self.input[j]
-            self.output[i][0] += self.hidden_state[i][0] + self.bias[i][0]
+        # Update output by adding weighted input and hidden state
+        self.output = add_matrices(weighted_input, weighted_hidden)
 
         # Apply activation function
         self.output = self.activation.forward(self.output)
+
+        # Update hidden state for the next iteration
+        self.hidden_state = self.output
 
         # Return output
         return self.output
@@ -97,9 +95,11 @@ class Recurrent():
         Backward pass of the layer
         '''
 
+        # print(output_gradient, type(output_gradient))
+
         # Apply activation function derivative
         output_gradient = self.activation.backward(
-            output_gradient, learning_rate)
+            output_gradient)
 
         # Calculate gradients
         weights_gradient = dot(output_gradient, transpose(self.input))
@@ -108,11 +108,14 @@ class Recurrent():
         input_gradient = dot(transpose(self.weights), output_gradient)
 
         # Update weights and biases
-        self.weights -= mul(weights_gradient, learning_rate)
-        self.recurrent_weights -= mul(recurrent_weights_gradient,
-                                      learning_rate)
-        self.bias -= mul([[sum(row, keepdims=True)]
-                         for row in output_gradient], learning_rate)
+        self.weights = sub_matrices(self.weights, multiply(
+            weights_gradient, learning_rate))
+
+        self.recurrent_weights = sub_matrices(self.recurrent_weights, multiply(
+            recurrent_weights_gradient, learning_rate))
+
+        self.bias = sub_matrices(self.bias, multiply(
+            output_gradient, learning_rate))
 
         # Return gradient with respect to input
         return input_gradient

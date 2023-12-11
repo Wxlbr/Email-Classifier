@@ -1,17 +1,17 @@
-import numpy as np
+from calc import mean, log
 
 
 class MSE():
-    def calc(self, actual, pred):
-        return np.mean(np.power(actual - pred, 2))
+    def calc(self, actual: int, pred: list) -> float:
+        return mean([[(actual - p[0]) ** 2] for p in pred])
 
     def derivative(self, actual, pred):
-        return 2 * (pred - actual) / np.size(actual)
+        return [[2 * (p[0] - actual)] for p in pred]
 
 
 class BinaryCrossEntropy():
     def calc(self, actual, pred):
-        return np.mean(-actual * np.log(pred) - (1 - actual) * np.log(1 - pred))
+        return mean([[-actual * log(p[0]) - (1 - actual) * log(1 - p[0])] for p in pred])
 
     def derivative(self, actual, pred):
-        return ((1 - actual) / (1 - pred) - actual / pred) / np.size(actual)
+        return ([[(1 - actual) / (1 - p[0]) - actual / p[0]] for p in pred])

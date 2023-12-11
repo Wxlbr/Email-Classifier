@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 from network import Network
-from split import train_test_split
+from layer import Recurrent
 from connection import Connection
 
 
@@ -29,7 +29,7 @@ class Classifier:
             if i == n:
                 break
 
-            self.classify_email(message['id'])
+            self.classify_email(message['id'], assign_label=False)
 
     def test_network(self):
         '''
@@ -43,7 +43,7 @@ class Classifier:
         messages = self.conn.get_user_emails()
 
         # Classify each email
-        for i, message in enumerate(messages):
+        for _, message in enumerate(messages):
 
             # Get the content of the first email
             content = self.conn.get_email_content(message['id'])
@@ -61,7 +61,7 @@ class Classifier:
 
         print()
 
-    def classify_email(self, message_id):
+    def classify_email(self, message_id, assign_label=True):
         '''
         Get the content of the email, classify it and assign the label
         '''
@@ -73,7 +73,7 @@ class Classifier:
         content = self.conn.word_counter(content)
 
         # Convert to list of values
-        content = [content[key] for key in content]
+        content = [[content[key]] for key in content]
 
         # Predict the class label of the email
         predicted_class = round(self.net.predict(content)[0][0])
@@ -82,7 +82,8 @@ class Classifier:
         label = 'Safe' if predicted_class == 0 else 'Unsafe'
 
         # Assign the label to the email
-        self.conn.assign_email_labels(message_id, [label])
+        if assign_label:
+            self.conn.assign_email_labels(message_id, [label])
 
     # TODO: Add check for network layer structure
     def train_network(self, X=None, Y=None):
@@ -97,23 +98,42 @@ class Classifier:
         # max_width = 1
 
         # Split into train and test sets
-        X_train, X_test, Y_train, Y_test = train_test_split(
+        X_train, X_test, Y_train, Y_test = self._train_test_split(
             X, Y, test_size=0.2)
+
+        self.net = Network(layers=[Recurrent(3000, 1)])
 
         # Train the network
         self.net.train(X_train, Y_train, validation_data=(X_test, Y_test))
+
+    def _train_test_split(self, X, Y, test_size=0.2):
+        '''
+        Split the data into train and test sets
+        '''
+
+        assert len(X) == len(Y) and len(X) > 0
+
+        train_size = int(len(X) * (1 - test_size))
+        test_size = len(X) - train_size
+
+        assert train_size > 0 and test_size > 0
+
+        X_train, Y_train = X[:train_size], Y[:train_size]
+        X_test, Y_test = X[train_size:], Y[train_size:]
+
+        print(type(X_train), type(Y_train), type(X_test), type(Y_test))
+
+        return X_train, X_test, Y_train, Y_test
 
     def load_network(self, file_path):
         '''
         Load the network from file
         '''
 
-        if os.path.exists(file_path):
-            self.net = Network()
-            self.net.load(file_path)
+        assert os.path.exists(file_path), 'File does not exist.'
 
-        else:
-            raise Exception('File does not exist.')
+        self.net = Network()
+        self.net.load(file_path)
 
     def _default_training_data(self):
         '''
@@ -128,7 +148,11 @@ class Classifier:
         Y = emails['Prediction'].values
 
         X = X.reshape((X.shape[0], X.shape[1], 1))
-        Y = Y.reshape((Y.shape[0], 1, 1))
+        # Y = Y.reshape((Y.shape[0], 1, 1))
+
+        # X = [list((value,) for value in row) for row in X]
+        X = X.tolist()
+        Y = Y.tolist()
 
         return X, Y
 
@@ -138,4 +162,6 @@ if __name__ == "__main__":
     classifier = Classifier()
 
     classifier.main()
+
+    classifier.train_network()
     # classifier.test_network()

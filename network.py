@@ -16,8 +16,7 @@ class Network:
         self.layers = layers
 
     def predict(self, input_value):
-        if not self.layers:
-            raise Exception('Network has no layers.')
+        assert self.layers, 'Network has no layers.'
 
         output = input_value
         for layer in self.layers:
@@ -28,15 +27,14 @@ class Network:
         correct = 0
         for x, y in zip(x_test, y_test):
             pred = self.predict(x)[0][0] > 0.5
-            if y[0][0] == pred:
+            if y == pred:
                 correct += 1
 
-        return correct / x_test.shape[0] * 100
+        return correct / len(x_test) * 100
 
-    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='mse', validation_data=None, verbose=True):
+    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True):
 
-        if not self.layers:
-            raise Exception('Network has no layers.')
+        assert self.layers, 'Network has no layers.'
 
         assert len(x_train) == len(
             y_train), "Training data and labels must be of same length."
@@ -54,6 +52,7 @@ class Network:
                 output = self.predict(x)
 
                 # error
+                # print(y, output)
                 error += loss.calc(y, output)
 
                 # backward

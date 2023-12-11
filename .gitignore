@@ -1,6 +1,9 @@
 # Ignore build directories
-vscode/
+.vscode/
 __pycache__/
+
+# Venv
+venv/
 
 # Ignore private files
 credentials.json
