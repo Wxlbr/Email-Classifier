@@ -3,9 +3,9 @@ import os
 import pandas as pd
 
 from network import Network
-from layer import Recurrent
 from split import train_test_split
 from connection import Connection
+
 
 class Classifier:
 
@@ -97,7 +97,8 @@ class Classifier:
         # max_width = 1
 
         # Split into train and test sets
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        X_train, X_test, Y_train, Y_test = train_test_split(
+            X, Y, test_size=0.2)
 
         # Train the network
         self.net.train(X_train, Y_train, validation_data=(X_test, Y_test))
@@ -130,6 +131,7 @@ class Classifier:
         Y = Y.reshape((Y.shape[0], 1, 1))
 
         return X, Y
+
 
 if __name__ == "__main__":
 

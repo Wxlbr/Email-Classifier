@@ -1,7 +1,3 @@
-import random
-
-import numpy as np
-
 from activation import Sigmoid
 from matrix import dot, mul, transpose, randn, zeros
 

@@ -5,10 +5,12 @@ from loss import MSE, BinaryCrossEntropy
 from layer import Recurrent
 from activation import Sigmoid, Tanh
 
+
 class Network:
 
     LAYER_TYPES = {'recurrent': Recurrent}
     ACTIVATION_TYPES = {'sigmoid': Sigmoid, 'tanh': Tanh}
+    LOSS_TYPES = {'mse': MSE, 'binary_crossentropy': BinaryCrossEntropy}
 
     def __init__(self, layers=[]):
         self.layers = layers
@@ -36,15 +38,12 @@ class Network:
         if not self.layers:
             raise Exception('Network has no layers.')
 
-        assert len(x_train) == len(y_train), "Training data and labels must be of same length."
+        assert len(x_train) == len(
+            y_train), "Training data and labels must be of same length."
 
         # select loss function
-        if loss == 'mse':
-            loss = MSE()
-        elif loss == 'binary_crossentropy':
-            loss = BinaryCrossEntropy()
-        else:
-            raise Exception('Unknown loss function.')
+        assert loss in self.LOSS_TYPES, "Unknown loss function."
+        loss = self.LOSS_TYPES[loss]()
 
         # training loop
         for e in range(epochs):
@@ -69,7 +68,8 @@ class Network:
 
                 if validation_data:
                     x_val, y_val = validation_data
-                    print(f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
+                    print(
+                        f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
 
                 print(f", duration={time.time() - start:.2f}s", end="")
 
@@ -78,7 +78,7 @@ class Network:
     def save(self, path):
         data = {i: layer.info() for i, layer in enumerate(self.layers)}
 
-        print(data)
+        # print(data)
 
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4)
@@ -90,11 +90,10 @@ class Network:
             data = json.load(f)
 
         for i in data:
-            if data[i]['type'] not in self.LAYER_TYPES:
-                raise Exception('Unknown layer type')
-            if data[i]['activation'] not in self.ACTIVATION_TYPES:
-                raise Exception('Unknown activation type')
+            assert data[i]['type'] in self.LAYER_TYPES, "Unknown layer type"
+            assert data[i]['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
 
-            layer = self.LAYER_TYPES[data[i]['type']](data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
+            layer = self.LAYER_TYPES[data[i]['type']](
+                data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
             layer.load(data[i])
             self.layers.append(layer)
