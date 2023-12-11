@@ -110,7 +110,6 @@
                                 onclick="selectLayer('${layerId}')">
 
                                 <!-- Drag and Drop Layer Icon -->
-                                <!-- TODO: Make so only movable via the icon selection -->
                                 <svg class="handle h-4 w-4 text-grey" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -123,7 +122,6 @@
                                 ${layerName}
 
                                 <!-- Layer Status -->
-                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
                                 <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
                                     id="validationStatus">Valid</span>
                             </div>`;
@@ -250,12 +248,10 @@
                     </button>
                 </div>
 
-                <!-- TODO: Redesign popup -->
                 <div id="newLayerPopup" class="popup" style="display: none;">
                     <div class="popup-content card pad-4 flex-col items-center">
                         <h1 class="subtitle mb-4">
                             Pop-up Window</h1>
-                        <!-- TODO: Dynamically assign layer types -->
                         <div class="flex-col items-center w-full">
                             <button class="layer-button" onclick="selectLayerType('Dense Layer', 'dense')"
                                 id="newLayerSelection-dense">Dense
@@ -361,7 +357,6 @@
                 <div class="pad-4" id="layerConfigurationOptionsWindow" hidden>
 
                     <!-- Error Message -->
-                    <!-- TODO: Change to dynamically appear if there is an error with the selected layer -->
                     <div class="border border-red mb-4 rounded bg-red-500" id="ConfigurationErrorBox">
                         <p class="text-white p-4" id="ConfigurationErrorBoxHeader">
                         </p>
@@ -407,11 +402,8 @@
 
                         <script>
                             function saveLayerConfiguration(layerId) {
-                                // Prevent the default form submission behavior
-                                // To stop the page from reloading when the form is submitted
                                 event.preventDefault();
 
-                                // TODO: Validate layerId
                                 if (!(layerId in layers)) {
                                     console.log("Layer does not exist!");
                                     return;
@@ -425,7 +417,6 @@
                                 // console.log("Input Size: " + inputSize + "\nOutput Size: " + outputSize +
                                 //     "\nActivation: " + activation);
 
-                                // TODO: Save layer configuration if valid
                                 layers[layerId]["layerConfig"] = {
                                     "inputSize": inputSize,
                                     "outputSize": outputSize,
@@ -467,7 +458,6 @@
 
                                 resolvePlaceholder();
 
-                                // TODO: Validation
                                 if (!(layerId in layers)) {
                                     console.log("Layer does not exist!");
                                     return;
@@ -589,7 +579,6 @@
                                 onclick="selectLayer('${layerId}')">
 
                                 <!-- Drag and Drop Layer Icon -->
-                                <!-- TODO: Make so only movable via the icon selection -->
                                 <svg class="handle h-4 w-4 text-grey" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -602,7 +591,6 @@
                                 ${layerName}
 
                                 <!-- Layer Status -->
-                                <!-- TODO: Automatically set to invalid as layer not yet configured -->
                                 <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
                                     id="validationStatus">Valid</span>
                             </div>`;

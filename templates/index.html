@@ -59,8 +59,11 @@
                         </div>
 
                         <div class="h-35 pad-4 items-center rounded-bottom">
-                            <button class="button button-blue" type="submit">Edit</button>
-                            <button class="button button-blue ml-4" type="submit">Replace</button>
+                            <!-- Disable (grey) whilst network is active -->
+                            <button class="button button-blue" type="submit" onclick="redirectEditNetwork('network-1')"
+                                disabled>Edit</button>
+                            <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
+                                disabled>Replace</button>
                             <button class="button button-square button-green border ml-4" id="activateNetworkButton"
                                 onclick="toggleActiveLayer()">
                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
