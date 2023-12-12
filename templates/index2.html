@@ -87,25 +87,20 @@
                             onUpdate: (evt) => updateLayerOrder(evt),
                         });
 
-                        function addLayer(layerId, layerName, layerType) {
-
-                            layers[layerId] = {
-                                "layerName": layerName,
-                                "layerType": layerType,
-                                "layerConfig": {
-                                    // Default layer configuration values
-                                    "inputSize": 0,
-                                    "outputSize": 0,
-                                    "activation": "sigmoid"
-                                },
-                                "valid": false,
-                                "errors": []
-                            };
-
-                            // Add layer to layer overview
+                        function clearNetworkSidebar() {
                             const layersView = document.getElementById("layersView");
+                            layersView.innerHTML = "";
+                        }
 
-                            layer = `<div aria-grabbed="false" id="${layerId}"
+                        function loadNetwork(layers) {
+                            // Clear network sidebar
+                            clearNetworkSidebar();
+
+                            for (const layerId in layers) {
+                                const layerName = layers[layerId]["layerName"];
+                                const layersView = document.getElementById("layersView");
+
+                                layersView.innerHTML += `<div aria-grabbed="false" id="${layerId}"
                                 class="navMargin flex items-center gap-3 rounded bg-grey-700 padx-3 pady-2 text-grey transition-all hover:text-white cursor-move"
                                 onclick="selectLayer('${layerId}')">
 
@@ -125,13 +120,31 @@
                                 <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
                                     id="validationStatus">Valid</span>
                             </div>`;
-
-                            layersView.innerHTML += layer;
+                            }
 
                             // Validate layers
                             validateLayers();
 
+                            // Save network
                             saveNetwork();
+                        }
+
+                        function addLayer(layerId, layerName, layerType) {
+                            layers[layerId] = {
+                                "layerName": layerName,
+                                "layerType": layerType,
+                                "layerConfig": {
+                                    // Default layer configuration values
+                                    "inputSize": 0,
+                                    "outputSize": 0,
+                                    "activation": "sigmoid"
+                                },
+                                "valid": false,
+                                "errors": []
+                            };
+
+                            // Load layer configuration
+                            loadNetwork(layers);
                         }
 
                         function selectLayer(layerId) {
@@ -210,29 +223,37 @@
                         }
 
                         function updateLayerOrder(event) {
-                            // Get order of layers
-                            const layersView = document.getElementById("layersView");
-                            const newLayers = {};
 
+                            // Move layer in layers object
+                            const oldIndex = event.oldIndex + 1;
+                            const newIndex = event.newIndex + 1;
+
+                            const oldLayerId = "layer-" + oldIndex;
+                            const newLayerId = "layer-" + newIndex;
+
+                            const layer = layers[oldLayerId];
+                            delete layers[oldLayerId];
+
+                            // Rename keys to be sequential
                             let count = 1;
-                            for (const layer of layersView.children) {
-                                const newId = 'layer-' + count;
-                                const prevId = layer.id;
+                            const newLayers = {};
+                            for (const id in layers) {
+                                if (('layer-' + count) == newLayerId) {
+                                    newLayers['layer-' + count++] = layer;
+                                    newLayers['layer-' + count++] = layers[id];
+                                } else {
+                                    newLayers['layer-' + count++] = layers[id];
+                                }
+                            }
 
-                                newLayers[newId] = layers[prevId];
-                                layer.id = newId;
-                                layer.onclick = function () {
-                                    selectLayer(newId);
-                                };
-                                count++;
+                            if (!(newLayerId in newLayers)) {
+                                newLayers[newLayerId] = layer;
                             }
 
                             layers = newLayers;
 
-                            // Validate layers
-                            validateLayers();
-
-                            saveNetwork();
+                            // Reload network sidebar
+                            loadNetwork(layers);
 
                             console.log(layers);
                         }
@@ -265,7 +286,7 @@
                                 Layer</button>
                         </div>
                         <div class="flex justify-between mt-4">
-                            <button class="button bg-grey-700 mr-2" type="submit" id="newLayerPopupAddButton">
+                            <button class="button button-green mr-2" type="submit" id="newLayerPopupAddButton" disabled>
                                 Add
                             </button>
                             <button class="button button-red bg-red-500" type="submit"
@@ -279,7 +300,20 @@
                 <script>
                     function togglePopup(elementId) {
                         const popup = document.getElementById(elementId);
-                        popup.style.display = popup.style.display === "none" ? "block" : "none";
+                        if (popup.style.display === "none") {
+                            // Reset the popup
+                            popup.style.display = "block";
+
+                            // Disable the add button
+                            document.getElementById("newLayerPopupAddButton").disabled = true;
+                        } else {
+                            popup.style.display = "none";
+
+                            // Remove any selected buttons
+                            for (const button of document.getElementsByClassName("layer-button")) {
+                                button.classList.remove("selected");
+                            }
+                        }
                     }
 
                     function selectLayerType(layerName, layerType) {
@@ -295,47 +329,20 @@
                         }
 
                         // Determine the layerId
-                        let num = 1;
-                        while (true) {
-                            if (!("layer-" + num in layers)) {
-                                break;
-                            }
-                            num++;
-                        }
-
-                        const layerId = "layer-" + num;
+                        const layerId = "layer-" + (Object.keys(layers).length + 1);
 
                         // Change the onclick function of the add button to add the selected layer type
                         const addButton = document.getElementById("newLayerPopupAddButton");
                         addButton.onclick = function () {
-                            addLayerPopup(layerId, layerName, layerType);
+                            // Close and reset the popup
+                            togglePopup("newLayerPopup");
+
+                            // Add the layer
+                            addLayer(layerId, layerName, layerType);
                         };
 
-                        // Change the colour of the add button to green
-                        addButton.classList.remove("bg-green-700");
-                        addButton.classList.add("bg-green-500");
-                        addButton.classList.add("hover:bg-green-700");
-                    }
-
-                    function addLayerPopup(layerId, layerName, layerType) {
-                        togglePopup("newLayerPopup");
-
-                        // Change the colour of the add button back to grey
-                        for (const button of document.getElementsByClassName("layer-button")) {
-                            button.classList.remove("selected");
-                        }
-
-                        // Remove the onclick function of the add button
-                        const addButton = document.getElementById("newLayerPopupAddButton");
-                        addButton.onclick = function () { };
-
-                        // Change the colour of the add button to grey
-                        addButton.classList.remove("bg-green-500");
-                        addButton.classList.remove("hover:bg-green-700");
-                        addButton.classList.add("bg-green-700");
-
-                        // Add the layer
-                        addLayer(layerId, layerName, layerType);
+                        // Activate the add button
+                        addButton.disabled = false;
                     }
                 </script>
 
@@ -410,17 +417,10 @@
                                 }
 
                                 // Get Layer Configuration Values
-                                const inputSize = document.getElementById("inputSize").value;
-                                const outputSize = document.getElementById("outputSize").value;
-                                const activation = document.getElementById("activation").value;
-
-                                // console.log("Input Size: " + inputSize + "\nOutput Size: " + outputSize +
-                                //     "\nActivation: " + activation);
-
                                 layers[layerId]["layerConfig"] = {
-                                    "inputSize": inputSize,
-                                    "outputSize": outputSize,
-                                    "activation": activation
+                                    "inputSize": document.getElementById("inputSize").value,
+                                    "outputSize": document.getElementById("outputSize").value,
+                                    "activation": document.getElementById("activation").value
                                 };
 
                                 validateLayers();
@@ -441,17 +441,22 @@
 
                                 console.log(layers);
 
-                                // alert("Layer configuration saved!");
-
                                 saveNetwork();
                             }
 
-                            function resolvePlaceholder() {
-                                // Hide Placeholder
-                                document.getElementById("layerConfigurationPlaceholder").style.display = "none";
+                            function resolvePlaceholder(remove = true) {
 
-                                // Show Layer Configuration Options
-                                document.getElementById("layerConfigurationOptionsWindow").hidden = false;
+                                if (remove) {
+                                    // Hide Placeholder
+                                    document.getElementById("layerConfigurationPlaceholder").style.display = "none";
+                                    document.getElementById("layerConfigurationOptionsWindow").hidden = false;
+                                } else {
+                                    // Show Placeholder
+                                    document.getElementById("layerConfigurationTitle").innerHTML =
+                                        "Layer Configuration";
+                                    document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
+                                    document.getElementById("layerConfigurationOptionsWindow").hidden = true;
+                                }
                             }
 
                             function loadLayerConfiguration(layerId) {
@@ -484,9 +489,6 @@
                                     deleteLayer(layerId);
                                 };
 
-                                // Validate layers
-                                validateLayers();
-
                                 // Change Error Box
                                 if (layers[layerId]["valid"]) {
                                     document.getElementById("ConfigurationErrorBox").style.display = "none";
@@ -516,39 +518,23 @@
 
                                 event.preventDefault();
 
-                                // Remove layer from layer overview and increment layer numbers
-                                for (const layer of document.getElementById("layersView").children) {
-                                    if (layer.id == layerId) {
-                                        layer.remove();
-                                    } else if (parseInt(layer.id.split("-")[1]) > parseInt(layerId.split("-")[1])) {
-                                        layer.id = "layer-" + (parseInt(layer.id.split("-")[1]) - 1);
-                                        layer.onclick = function () {
-                                            selectLayer("layer-" + (parseInt(layer.id.split("-")[1]) - 1));
-                                        };
+                                // Rename layers and keys to be sequential
+                                let count = 1;
+                                const newLayers = {};
+                                for (const id in layers) {
+                                    const newId = 'layer-' + count;
+                                    if (id != layerId) {
+                                        newLayers[newId] = layers[id];
+                                        count++;
                                     }
                                 }
 
-                                // Remove layer from layers object and increment layer numbers
-                                for (const layer in layers) {
-                                    if (layer == layerId) {
-                                        delete layers[layer];
-                                    } else if (parseInt(layer.split("-")[1]) > parseInt(layerId.split("-")[1])) {
-                                        layers["layer-" + (parseInt(layer.split("-")[1]) - 1)] = layers[layer];
-                                        delete layers[layer];
-                                    }
-                                }
+                                layers = newLayers;
 
-                                // Change layer configuration placeholder
-                                document.getElementById("layerConfigurationTitle").innerHTML =
-                                    "Layer Configuration";
+                                // Reload network sidebar
+                                loadNetwork(layers);
 
-                                // Change layer configuration options window
-                                document.getElementById("layerConfigurationOptionsWindow").hidden = true;
-
-                                // Show layer configuration placeholder
-                                document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
-
-                                // TODO: Confirmation popup
+                                resolvePlaceholder(remove = false);
                             }
 
                         </script>
@@ -568,42 +554,8 @@
     </div>
 
     <script>
-
-        function loadNetwork() {
-            for (const layerId in layers) {
-                const layerName = layers[layerId]["layerName"];
-                const layersView = document.getElementById("layersView");
-
-                layer = `<div aria-grabbed="false" id="${layerId}"
-                                class="navMargin flex items-center gap-3 rounded bg-grey-700 padx-3 pady-2 text-grey transition-all hover:text-white cursor-move"
-                                onclick="selectLayer('${layerId}')">
-
-                                <!-- Drag and Drop Layer Icon -->
-                                <svg class="handle h-4 w-4 text-grey" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="4" x2="20" y1="12" y2="12"></line>
-                                    <line x1="4" x2="20" y1="6" y2="6"></line>
-                                    <line x1="4" x2="20" y1="18" y2="18"></line>
-                                </svg>
-
-                                <!-- Layer Name -->
-                                ${layerName}
-
-                                <!-- Layer Status -->
-                                <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
-                                    id="validationStatus">Valid</span>
-                            </div>`;
-
-                layersView.innerHTML += layer;
-            }
-
-            // Validate layers
-            validateLayers();
-        }
-
         // Load new network configuration
-        loadNetwork();
+        loadNetwork(layers);
 
         function saveNetwork() {
             fetch('/save-network', {

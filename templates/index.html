@@ -61,9 +61,9 @@
                         <div class="h-35 pad-4 items-center rounded-bottom">
                             <!-- Disable (grey) whilst network is active -->
                             <button class="button button-blue" type="submit" onclick="redirectEditNetwork('network-1')"
-                                disabled>Edit</button>
+                                id="activeEditButton">Edit</button>
                             <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
-                                disabled>Replace</button>
+                            id="activeReplaceButton">Replace</button>
                             <button class="button button-square button-green border ml-4" id="activateNetworkButton"
                                 onclick="toggleActiveLayer()">
                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -85,17 +85,23 @@
                     activeNetworkStatus = document.getElementById("activeNetworkStatus");
                     activateNetworkLabel = document.getElementById("activateNetworkLabel");
                     activateNetworkButton = document.getElementById("activateNetworkButton");
+                    activeEditButton = document.getElementById("activeEditButton");
+                    activeReplaceButton = document.getElementById("activeReplaceButton");
 
                     if (activeNetworkStatus.innerHTML == "Status: Inactive") {
                         activeNetworkStatus.innerHTML = "Status: Active";
                         activateNetworkLabel.innerHTML = "Deactivate";
                         activateNetworkButton.classList.remove("button-green");
                         activateNetworkButton.classList.add("button-red");
+                        activeEditButton.disabled = true;
+                        activeReplaceButton.disabled = true;
                     } else {
                         activeNetworkStatus.innerHTML = "Status: Inactive";
                         activateNetworkLabel.innerHTML = "Activate";
                         activateNetworkButton.classList.remove("button-red");
                         activateNetworkButton.classList.add("button-green");
+                        activeEditButton.disabled = false;
+                        activeReplaceButton.disabled = false;
                     }
                 }
             </script>

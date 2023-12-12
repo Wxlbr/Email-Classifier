@@ -3,20 +3,50 @@
         "layers": {
             "layer-1": {
                 "errors": [
-                    "Output size must match next layer's input size of 0"
+                    "Input size must be a positive integer",
+                    "Input size must match network input size of 10",
+                    "Output size must be a positive integer"
                 ],
                 "layerConfig": {
                     "activation": "sigmoid",
-                    "inputSize": "10",
-                    "outputSize": "8"
+                    "inputSize": 0,
+                    "outputSize": 0
                 },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
                 "valid": false
             },
             "layer-2": {
+                "errors": [
+                    "Input size must be a positive integer",
+                    "Output size must be a positive integer"
+                ],
+                "layerConfig": {
+                    "activation": "sigmoid",
+                    "inputSize": 0,
+                    "outputSize": 0
+                },
+                "layerName": "Dense Layer",
+                "layerType": "dense",
+                "valid": false
+            },
+            "layer-3": {
+                "errors": [
+                    "Input size must be a positive integer",
+                    "Output size must be a positive integer"
+                ],
+                "layerConfig": {
+                    "activation": "sigmoid",
+                    "inputSize": 0,
+                    "outputSize": 0
+                },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
+                "valid": false
+            },
+            "layer-4": {
+                "layerName": "LSTM Layer",
+                "layerType": "lstm",
                 "layerConfig": {
                     "inputSize": 0,
                     "outputSize": 0,
@@ -25,55 +55,14 @@
                 "valid": false,
                 "errors": [
                     "Input size must be a positive integer",
-                    "Input size must match previous layer's output size of 8",
                     "Output size must be a positive integer",
-                    "Output size must match next layer's input size of 8"
-                ]
-            },
-            "layer-3": {
-                "errors": [
-                    "Input size must match previous layer's output size of 0",
-                    "Output size must match next layer's input size of 5"
-                ],
-                "layerConfig": {
-                    "inputSize": "8",
-                    "outputSize": "1",
-                    "activation": "sigmoid"
-                },
-                "layerName": "LSTM Layer",
-                "layerType": "lstm",
-                "valid": false
-            },
-            "layer-4": {
-                "errors": [
-                    "Input size must match previous layer's output size of 1",
-                    "Output size must match next layer's input size of 8"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": "5",
-                    "outputSize": "1"
-                },
-                "layerName": "Recurrent Layer",
-                "layerType": "recurrent",
-                "valid": false
-            },
-            "layer-5": {
-                "errors": [
-                    "Input size must match previous layer's output size of 1",
                     "Output size must match network output size of 1"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": "8",
-                    "outputSize": "8"
-                },
-                "layerName": "LSTM Layer",
-                "layerType": "lstm",
-                "valid": false
+                ]
             }
         },
         "valid": false,
-        "status": "inactive"
+        "status": "inactive",
+        "network": {},
+        "trained": false
     }
 }
