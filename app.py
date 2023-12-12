@@ -72,5 +72,11 @@ def save_network():
     return jsonify(data)
 
 
+@app.route('/get-networks', methods=['GET'])
+def get_networks():
+    networks = load_networks_from_file()
+    return jsonify(networks)
+
+
 if __name__ == '__main__':
     app.run(debug=True)

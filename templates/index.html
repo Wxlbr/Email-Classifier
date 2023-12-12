@@ -63,7 +63,7 @@
                             <button class="button button-blue" type="submit" onclick="redirectEditNetwork('network-1')"
                                 id="activeEditButton">Edit</button>
                             <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
-                            id="activeReplaceButton">Replace</button>
+                                id="activeReplaceButton">Replace</button>
                             <button class="button button-square button-green border ml-4" id="activateNetworkButton"
                                 onclick="toggleActiveLayer()">
                                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -127,29 +127,50 @@
                 <script>
                     let networks = {};
 
-                    // Define current active layer
-                    networks['network-1'] = {
-                        "name": "Network 1",
-                        "status": "active"
-                    };
+                    function getNetworks() {
 
-                    function addNetwork() {
-                        // NetworkId
-                        networkId = Object.keys(networks).length + 1;
+                        // Temporary function to get networks from server 
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', '/get-networks', false);  // Third parameter is set to false for synchronous request
+                        xhr.send();
 
-                        networks[`network-${networkId}`] = {
-                            "name": `Network ${networkId}`,
-                            "status": "inactive"
-                        };
+                        if (xhr.status === 200) {
+                            const data = JSON.parse(xhr.responseText);
+                            console.log('Data from server:', data);
+                            return data;
+                        } else {
+                            console.error('Error fetching data from server:', xhr.statusText);
+                            return null;
+                        }
+                    }
+
+
+                    function loadNetworks(networksToLoad = {}) {
+
+                        if (Object.keys(networksToLoad).length == 0) {
+                            networksToLoad = getNetworks();
+                            console.log(networksToLoad);
+                        }
 
                         savedNetworks = document.getElementById("savedNetworks");
                         addNetworkCard = document.getElementById("addNetworkCard");
 
-                        savedNetworks.removeChild(addNetworkCard);
+                        savedNetworks.innerHTML = "";
 
-                        card = `<div class="card" id="network-${networkId}">
+                        for (networkId in networksToLoad) {
+                            if (networksToLoad[networkId].status == "active") {
+                                // Will be replaced by active network card
+                                continue;
+                            } else {
+                                console.log(networkId);
+                                savedNetworks.innerHTML += `<div class="card" id="${networkId}">
                                 <div class="h-65 bg-grey-600 pad-4 rounded-top">
-                                    <h2 class="card-title">Network ${networkId}</h2>
+                                    <div style="display: flex; align-items: center;">
+                                        <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
+                                        <!-- Network Status -->
+                                        <span class="ml-2 bg-red-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="validationStatus">Invalid</span>
+                                    </div>
+
                                 </div>
                                 <div class="h-35 pad-4 items-center rounded-bottom">
                                     <button onclick="redirectEditNetwork('${networkId}')"
@@ -161,16 +182,36 @@
                                     </button>
                                 </div>
                             </div>`;
-
-                        savedNetworks.innerHTML += card
+                            }
+                        }
 
                         savedNetworks.innerHTML += addNetworkCard.outerHTML;
+
+                        networks = networksToLoad;
                     }
 
-                    addNetwork();
+                    function addNetwork() {
+                        // NetworkId
+                        IdNum = Object.keys(networks).length + 1;
+
+                        console.log(IdNum);
+
+                        networks[`network-${IdNum}`] = {
+                            "name": `Network ${IdNum}`,
+                            "layers": {},
+                            "valid": false,
+                            "status": "inactive",
+                            "network": {},
+                            "trained": false
+                        };
+
+                        loadNetworks(networks);
+                    }
+
+                    loadNetworks(networks);
 
                     function redirectEditNetwork(networkId) {
-                        window.location.href = `/edit-network?networkId=network-${networkId}`;
+                        window.location.href = `/edit-network?networkId=${networkId}`;
                     }
                 </script>
 

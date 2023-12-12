@@ -1,4 +1,11 @@
 {
+    "network-1": {
+        "layers": {},
+        "valid": true,
+        "status": "active",
+        "network": {},
+        "trained": true
+    },
     "network-2": {
         "layers": {
             "layer-1": {
@@ -45,24 +52,51 @@
                 "valid": false
             },
             "layer-4": {
-                "layerName": "LSTM Layer",
-                "layerType": "lstm",
-                "layerConfig": {
-                    "inputSize": 0,
-                    "outputSize": 0,
-                    "activation": "sigmoid"
-                },
-                "valid": false,
                 "errors": [
                     "Input size must be a positive integer",
                     "Output size must be a positive integer",
                     "Output size must match network output size of 1"
-                ]
+                ],
+                "layerConfig": {
+                    "activation": "sigmoid",
+                    "inputSize": 0,
+                    "outputSize": 0
+                },
+                "layerName": "LSTM Layer",
+                "layerType": "lstm",
+                "valid": false
             }
         },
         "valid": false,
         "status": "inactive",
         "network": {},
         "trained": false
+    },
+    "network-3": {
+        "layers": {
+            "layer-1": {
+                "layerName": "Recurrent Layer",
+                "layerType": "recurrent",
+                "layerConfig": {
+                    "inputSize": "10",
+                    "outputSize": "5",
+                    "activation": "sigmoid"
+                },
+                "valid": true,
+                "errors": []
+            },
+            "layer-2": {
+                "layerName": "Dense Layer",
+                "layerType": "dense",
+                "layerConfig": {
+                    "inputSize": "5",
+                    "outputSize": "1",
+                    "activation": "sigmoid"
+                },
+                "valid": true,
+                "errors": []
+            }
+        },
+        "valid": true
     }
 }
