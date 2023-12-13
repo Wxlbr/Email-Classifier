@@ -75,28 +75,31 @@
     "network-3": {
         "layers": {
             "layer-1": {
+                "errors": [],
+                "layerConfig": {
+                    "activation": "sigmoid",
+                    "inputSize": "10",
+                    "outputSize": "5"
+                },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
-                "layerConfig": {
-                    "inputSize": "10",
-                    "outputSize": "5",
-                    "activation": "sigmoid"
-                },
-                "valid": true,
-                "errors": []
+                "valid": true
             },
             "layer-2": {
-                "layerName": "Dense Layer",
-                "layerType": "dense",
+                "errors": [
+                    "Output size must be a positive integer",
+                    "Output size must match network output size of 1"
+                ],
                 "layerConfig": {
                     "inputSize": "5",
-                    "outputSize": "1",
+                    "outputSize": "0",
                     "activation": "sigmoid"
                 },
-                "valid": true,
-                "errors": []
+                "layerName": "Dense Layer",
+                "layerType": "dense",
+                "valid": false
             }
         },
-        "valid": true
+        "valid": false
     }
 }

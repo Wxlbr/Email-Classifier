@@ -189,6 +189,8 @@
                         savedNetworks.innerHTML += addNetworkCard.outerHTML;
 
                         networks = networksToLoad;
+
+                        validateNetworks();
                     }
 
                     function addNetwork() {
@@ -209,10 +211,31 @@
                         loadNetworks(networks);
                     }
 
-                    loadNetworks(networks);
+                    loadNetworks();
+
+                    console.log('outer', networks)
 
                     function redirectEditNetwork(networkId) {
                         window.location.href = `/edit-network?networkId=${networkId}`;
+                    }
+
+                    function validateNetworks() {
+                        for (networkId in networks) {
+                            network = networks[networkId];
+                            if (network.status == "active") {
+                                continue;
+                            }
+                            validationStatus = document.getElementById(networkId).querySelector("#validationStatus");
+                            if (network.valid == false) {
+                                validationStatus.innerHTML = "Invalid";
+                                validationStatus.classList.remove("bg-green-500");
+                                validationStatus.classList.add("bg-red-500");
+                            } else {
+                                validationStatus.innerHTML = "Valid";
+                                validationStatus.classList.remove("bg-red-500");
+                                validationStatus.classList.add("bg-green-500");
+                            }
+                        }
                     }
                 </script>
 
