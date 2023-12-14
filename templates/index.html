@@ -178,6 +178,10 @@
                                         class="button button-blue" type="submit">
                                         Edit
                                     </button>
+                                    <button onclick="trainNetwork('${networkId}')"
+                                        class="button button-blue ml-4" type="submit">
+                                        Train
+                                    </button>
                                     <button class="button button-red ml-4" type="submit">
                                         Delete
                                     </button>
@@ -236,6 +240,45 @@
                                 validationStatus.classList.add("bg-green-500");
                             }
                         }
+                    }
+
+                    function trainNetwork(networkId) {
+
+                        network = networks[networkId];
+
+                        if (network.valid == false) {
+                            alert("Network is invalid, please edit and validate before training");
+                            return;
+                        }
+
+                        if (network.status == "active") {
+                            alert("Network is already active, please replace before training");
+                            return;
+                        }
+
+                        fetch("/train-network", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                "networkId": networkId,
+                                "network": network
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data);
+                                if (data.status == "success") {
+                                    alert("Network trained successfully");
+                                    networks[networkId].trained = true;
+                                } else {
+                                    alert("Network training failed");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error training network:", error);
+                            });
                     }
                 </script>
 

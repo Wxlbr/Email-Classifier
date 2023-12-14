@@ -74,13 +74,12 @@ class Network:
 
                 print()
 
+    def info(self):
+        return {i: layer.info() for i, layer in enumerate(self.layers)}
+
     def save(self, path):
-        data = {i: layer.info() for i, layer in enumerate(self.layers)}
-
-        # print(data)
-
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
+            json.dump(self.info(), f, indent=4)
 
     def load(self, path):
         self.layers.clear()
@@ -96,3 +95,21 @@ class Network:
                 data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
             layer.load(data[i])
             self.layers.append(layer)
+
+    def add_layer(self, layer):
+        '''
+        Add a layer to the network
+        '''
+
+        assert layer['type'] in self.LAYER_TYPES, "Unknown layer type"
+        assert layer['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
+
+        # TODO: Key checks
+        input_size = int(layer['inputSize'])
+        output_size = int(layer['outputSize'])
+
+        if not self.layers:
+            self.layers = []
+
+        self.layers.append(self.LAYER_TYPES[layer['type']](
+            input_size, output_size, activation=self.ACTIVATION_TYPES[layer['activation']]()))

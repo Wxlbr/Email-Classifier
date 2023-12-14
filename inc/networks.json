@@ -17,7 +17,8 @@
                 "layerConfig": {
                     "activation": "sigmoid",
                     "inputSize": 0,
-                    "outputSize": 0
+                    "outputSize": 0,
+                    "type": "recurrent"
                 },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
@@ -31,7 +32,8 @@
                 "layerConfig": {
                     "activation": "sigmoid",
                     "inputSize": 0,
-                    "outputSize": 0
+                    "outputSize": 0,
+                    "type": "recurrent"
                 },
                 "layerName": "Dense Layer",
                 "layerType": "dense",
@@ -45,7 +47,8 @@
                 "layerConfig": {
                     "activation": "sigmoid",
                     "inputSize": 0,
-                    "outputSize": 0
+                    "outputSize": 0,
+                    "type": "recurrent"
                 },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
@@ -60,7 +63,8 @@
                 "layerConfig": {
                     "activation": "sigmoid",
                     "inputSize": 0,
-                    "outputSize": 0
+                    "outputSize": 0,
+                    "type": "recurrent"
                 },
                 "layerName": "LSTM Layer",
                 "layerType": "lstm",
@@ -79,27 +83,26 @@
                 "layerConfig": {
                     "activation": "sigmoid",
                     "inputSize": "10",
-                    "outputSize": "5"
+                    "outputSize": "5",
+                    "type": "recurrent"
                 },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
                 "valid": true
             },
             "layer-2": {
-                "errors": [
-                    "Output size must be a positive integer",
-                    "Output size must match network output size of 1"
-                ],
+                "layerName": "Recurrent Layer",
+                "layerType": "recurrent",
                 "layerConfig": {
                     "inputSize": "5",
-                    "outputSize": "0",
-                    "activation": "sigmoid"
+                    "outputSize": "1",
+                    "activation": "sigmoid",
+                    "type": "recurrent"
                 },
-                "layerName": "Dense Layer",
-                "layerType": "dense",
-                "valid": false
+                "valid": true,
+                "errors": []
             }
         },
-        "valid": false
+        "valid": true
     }
 }

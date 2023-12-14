@@ -292,7 +292,6 @@ class Connection:
         return {key: 1 if value > 0 else value for key, value in dictionary.items()}
 
 
-# Main execution
 if __name__ == "__main__":
     conn = Connection()
 

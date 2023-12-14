@@ -3,6 +3,8 @@ import json
 
 from flask import Flask, render_template, request, jsonify
 
+from main import Classifier
+
 
 def save_networks_to_file(networks):
     with open('./inc/networks.json', 'w', encoding='utf-8') as f:
@@ -76,6 +78,40 @@ def save_network():
 def get_networks():
     networks = load_networks_from_file()
     return jsonify(networks)
+
+
+@app.route('/train-network', methods=['POST'])
+def train_network():
+    # TODO: Threading
+
+    # Get data from request
+    data = request.get_json()
+
+    network_id = data.get('networkId')
+    network = data.get('network')
+    layers = network.get('layers')
+
+    classifier = Classifier()
+
+    for layer in layers.values():
+        classifier.add_layer(
+            layer['layerConfig'])
+
+    classifier.train_network()
+
+    # Get networks from file
+    networks = load_networks_from_file()
+
+    # Save network to list
+    if network_id not in networks:
+        networks[network_id] = {}
+    networks[network_id]['network'] = classifier.net.info()
+    networks[network_id]['trained'] = True
+
+    # Save network to file
+    save_networks_to_file(networks)
+
+    return jsonify(data)
 
 
 if __name__ == '__main__':

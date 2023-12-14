@@ -135,6 +135,15 @@ class Classifier:
         self.net = Network()
         self.net.load(file_path)
 
+    def add_layer(self, layer):
+        '''
+        Add a layer to the network
+        '''
+        if not self.net:
+            self.net = Network()
+
+        self.net.add_layer(layer)
+
     def _default_training_data(self):
         '''
         Return the default training data
