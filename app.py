@@ -1,5 +1,6 @@
 import os
 import json
+import threading
 
 from flask import Flask, render_template, request, jsonify
 
@@ -16,6 +17,26 @@ def load_networks_from_file():
         return {}
     with open('./inc/networks.json', 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+class Queue:
+    def __init__(self, max_size=10):
+        self.max_size = max_size
+        self.queue = []
+
+    def enqueue(self, item):
+        while len(self.queue) == self.max_size:
+            pass  # Busy-wait until there is space in the queue
+        self.queue.append(item)
+
+    def dequeue(self):
+        while not self.queue:
+            pass  # Busy-wait until there is an item in the queue
+        item = self.queue.pop(0)
+        return item
+
+    def size(self):
+        return len(self.queue)
 
 
 app = Flask(__name__)
@@ -89,11 +110,18 @@ def train_network():
 
     network_id = data.get('networkId')
     network = data.get('network')
-    layers = network.get('layers')
 
+    thread = threading.Thread(
+        target=train_network_thread, args=(network_id, network))
+    thread.start()
+
+    return jsonify(data)
+
+
+def train_network_thread(network_id, network):
     classifier = Classifier()
 
-    for layer in layers.values():
+    for layer in network['layers'].values():
         classifier.add_layer(
             layer['layerConfig'])
 
@@ -110,8 +138,6 @@ def train_network():
 
     # Save network to file
     save_networks_to_file(networks)
-
-    return jsonify(data)
 
 
 if __name__ == '__main__':
