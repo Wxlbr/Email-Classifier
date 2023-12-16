@@ -32,7 +32,7 @@ class Network:
 
         return correct / len(x_test) * 100
 
-    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True):
+    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None):
 
         assert self.layers, 'Network has no layers.'
 
@@ -43,11 +43,25 @@ class Network:
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
 
+        if validation_data:
+            x_val, y_val = validation_data
+
+        if queue:
+            queue.put({'data': {
+                'epoch': 0,
+                'epochs': epochs,
+                'error': 0,
+                'accuracy': 0,
+                'eta': 0,
+            }})
+
         # training loop
         for e in range(epochs):
             error = 0
             start = time.time()
+            count = 0
             for x, y in zip(x_train, y_train):
+                count += 1
                 # forward
                 output = self.predict(x)
 
@@ -62,11 +76,30 @@ class Network:
                     gradient = layer.backward(gradient, learning_rate)
                     # print(gradient)
 
+                # if queue and count % (int(len(x_train) * 0.1)) == 0:
+                #     queue.put({'data': {
+                #         'epoch': e + 1,
+                #         'epochs': epochs,
+                #         'error': error / count,
+                #         'accuracy': self.accuracy(x_val, y_val),
+                #         'step': count,
+                #         'steps': len(x_train)
+                #     }})
+
+            if queue:
+                queue.put({'data': {
+                    'epoch': e + 1,
+                    'epochs': epochs,
+                    'error': error / count,
+                    'accuracy': self.accuracy(x_val, y_val),
+                    'step': count,
+                    'steps': len(x_train)
+                }})
+
             if verbose:
                 print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")
 
                 if validation_data:
-                    x_val, y_val = validation_data
                     print(
                         f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
 

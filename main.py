@@ -86,13 +86,21 @@ class Classifier:
             self.conn.assign_email_labels(message_id, [label])
 
     # TODO: Add check for network layer structure
-    def train_network(self, X=None, Y=None):
+    def train_network(self, X=None, Y=None, queue=None):
         '''
         Train the network
         '''
 
+        if queue:
+            queue.put({'data': 'It worked 2!'})
+            print('It worked 2!')
+
         if X is None or Y is None:
             X, Y = self._default_training_data()
+
+        if queue:
+            queue.put({'data': 'It worked 3!'})
+            print('It worked 3!')
 
         # max_height = X.shape[1]
         # max_width = 1
@@ -104,7 +112,8 @@ class Classifier:
         self.net = Network(layers=[Recurrent(3000, 1)])
 
         # Train the network
-        self.net.train(X_train, Y_train, validation_data=(X_test, Y_test))
+        self.net.train(X_train, Y_train, validation_data=(
+            X_test, Y_test), queue=queue)
 
     def _train_test_split(self, X, Y, test_size=0.2):
         '''

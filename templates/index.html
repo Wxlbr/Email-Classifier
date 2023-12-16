@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/layout.css">
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
 
 <body>
@@ -256,6 +257,17 @@
                             return;
                         }
 
+                        const eventSource = new EventSource('/sse');
+
+                        eventSource.onmessage = function (event) {
+                            console.log(event.data);
+                        };
+
+                        eventSource.onerror = function (error) {
+                            console.error('EventSource failed:', error);
+                            eventSource.close();
+                        };
+
                         fetch("/train-network", {
                             method: "POST",
                             headers: {
@@ -269,12 +281,6 @@
                             .then(response => response.json())
                             .then(data => {
                                 console.log(data);
-                                if (data.status == "success") {
-                                    alert("Network trained successfully");
-                                    networks[networkId].trained = true;
-                                } else {
-                                    alert("Network training failed");
-                                }
                             })
                             .catch(error => {
                                 console.error("Error training network:", error);

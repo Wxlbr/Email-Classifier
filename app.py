@@ -1,8 +1,9 @@
 import os
 import json
 import threading
+from queue import Queue
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 
 from main import Classifier
 
@@ -19,27 +20,8 @@ def load_networks_from_file():
         return json.load(f)
 
 
-class Queue:
-    def __init__(self, max_size=10):
-        self.max_size = max_size
-        self.queue = []
-
-    def enqueue(self, item):
-        while len(self.queue) == self.max_size:
-            pass  # Busy-wait until there is space in the queue
-        self.queue.append(item)
-
-    def dequeue(self):
-        while not self.queue:
-            pass  # Busy-wait until there is an item in the queue
-        item = self.queue.pop(0)
-        return item
-
-    def size(self):
-        return len(self.queue)
-
-
 app = Flask(__name__)
+queue = Queue()
 
 
 @app.route('/')
@@ -101,31 +83,42 @@ def get_networks():
     return jsonify(networks)
 
 
+@app.route('/sse')
+def sse():
+    def event_stream():
+        while True:
+            result = queue.get()
+            yield f'data: {result}\n\n'
+
+    return Response(event_stream(), mimetype="text/event-stream")
+
+
 @app.route('/train-network', methods=['POST'])
 def train_network():
-    # TODO: Threading
 
-    # Get data from request
     data = request.get_json()
 
     network_id = data.get('networkId')
     network = data.get('network')
 
-    thread = threading.Thread(
-        target=train_network_thread, args=(network_id, network))
+    thread = threading.Thread(target=train_network_thread, args=(
+        network_id, network, queue))
     thread.start()
 
     return jsonify(data)
 
 
-def train_network_thread(network_id, network):
+def train_network_thread(network_id, network, queue):
     classifier = Classifier()
+
+    queue.put({'data': 'It worked 1!'})
+    print('It worked 1!')
 
     for layer in network['layers'].values():
         classifier.add_layer(
             layer['layerConfig'])
 
-    classifier.train_network()
+    classifier.train_network(queue=queue)
 
     # Get networks from file
     networks = load_networks_from_file()
