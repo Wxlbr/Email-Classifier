@@ -91,16 +91,8 @@ class Classifier:
         Train the network
         '''
 
-        if queue:
-            queue.put({'data': 'It worked 2!'})
-            print('It worked 2!')
-
         if X is None or Y is None:
             X, Y = self._default_training_data()
-
-        if queue:
-            queue.put({'data': 'It worked 3!'})
-            print('It worked 3!')
 
         # max_height = X.shape[1]
         # max_width = 1

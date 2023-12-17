@@ -32,7 +32,7 @@ class Network:
 
         return correct / len(x_test) * 100
 
-    def train(self, x_train, y_train, epochs=1000, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None):
+    def train(self, x_train, y_train, epochs=100, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None):
 
         assert self.layers, 'Network has no layers.'
 
@@ -47,12 +47,12 @@ class Network:
             x_val, y_val = validation_data
 
         if queue:
-            queue.put({'data': {
-                'epoch': 0,
-                'epochs': epochs,
-                'error': 0,
-                'accuracy': 0,
-                'eta': 0,
+            queue.put({"data": {
+                "epoch": 0,
+                "epochs": epochs,
+                "error": 0,
+                "accuracy": 0,
+                "eta": 0,
             }})
 
         # training loop
@@ -77,23 +77,21 @@ class Network:
                     # print(gradient)
 
                 # if queue and count % (int(len(x_train) * 0.1)) == 0:
-                #     queue.put({'data': {
-                #         'epoch': e + 1,
-                #         'epochs': epochs,
-                #         'error': error / count,
-                #         'accuracy': self.accuracy(x_val, y_val),
-                #         'step': count,
-                #         'steps': len(x_train)
-                #     }})
+                #     queue.put({"data": {
+                #     "epoch": e + 1,
+                #     "epochs": epochs,
+                #     "error": error / len(x_train),
+                #     "accuracy": self.accuracy(x_val, y_val),
+                #     "eta": ((time.time() - start) / (e + 1)) * (epochs - e - 1),
+                # }})
 
             if queue:
-                queue.put({'data': {
-                    'epoch': e + 1,
-                    'epochs': epochs,
-                    'error': error / count,
-                    'accuracy': self.accuracy(x_val, y_val),
-                    'step': count,
-                    'steps': len(x_train)
+                queue.put({"data": {
+                    "epoch": e + 1,
+                    "epochs": epochs,
+                    "error": float(f"{error / len(x_train):.4f}"),
+                    "accuracy": float(f"{self.accuracy(x_val, y_val):.2f}"),
+                    "eta": float(f"{((time.time() - start) / (e + 1)) * (epochs - e - 1):.2f}"),
                 }})
 
             if verbose:
@@ -106,6 +104,9 @@ class Network:
                 print(f", duration={time.time() - start:.2f}s", end="")
 
                 print()
+
+        if queue:
+            queue.put({"data": "done"})
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}

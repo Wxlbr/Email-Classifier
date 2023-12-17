@@ -169,6 +169,10 @@ object {
   margin-left: 1rem;
 }
 
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .mt-4 {
   margin-top: 1rem;
 }
@@ -339,11 +343,13 @@ div {
 }
 
 .h-65 {
-  height: 65%;
+  /* height: 65%; */
+  height: 9rem;
 }
 
 .h-35 {
-  height: 35%;
+  /* height: 35%; */
+  height: 4rem;
 }
 
 .mb-4 {
@@ -661,4 +667,33 @@ div {
 
 .rounded-full {
   border-radius: 9999px;
+}
+
+.mt-375 {
+  margin-top: 0.375rem;
+}
+
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
+.ml-0 {
+  margin-left: 0rem;
+} 
+
+.progress-bar {
+  --tw-bg-opacity: 1;
+  background-color: rgb(107 114 128 / var(--tw-bg-opacity));
+
+  border-radius: 9999px;
+  border-width: 0.125rem;
+
+  --tw-bg-opacity: 1;
+  border-color: rgb(55 65 81 / var(--tw-bg-opacity));
+
+  width: 90%;
+}
+
+.text-semi-bold {
+  font-weight: 600;
 }

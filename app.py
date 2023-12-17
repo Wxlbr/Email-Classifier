@@ -88,6 +88,7 @@ def sse():
     def event_stream():
         while True:
             result = queue.get()
+            result = json.dumps(result)
             yield f'data: {result}\n\n'
 
     return Response(event_stream(), mimetype="text/event-stream")
@@ -111,8 +112,8 @@ def train_network():
 def train_network_thread(network_id, network, queue):
     classifier = Classifier()
 
-    queue.put({'data': 'It worked 1!'})
-    print('It worked 1!')
+    # queue.put({'data': 'It worked 1!'})
+    # print('It worked 1!')
 
     for layer in network['layers'].values():
         classifier.add_layer(
