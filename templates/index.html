@@ -126,8 +126,6 @@
                 </div>
 
                 <script>
-                    let networks = {};
-
                     function getNetworks(func) {
 
                         fetch("/get-networks", {
@@ -210,6 +208,9 @@
                         networks = networksToLoad;
 
                         validateNetworks();
+
+
+                        checkActiveTraining();
                     }
 
                     function addNetwork() {
@@ -230,11 +231,12 @@
                         loadNetworks(networks);
                     }
 
-                    loadNetworks();
-
-                    console.log('outer', networks)
-
                     function redirectEditNetwork(networkId) {
+                        console.log("unload");
+                        if (eventSource) {
+                            eventSource.close();
+                        }
+
                         window.location.href = `/edit-network?networkId=${networkId}`;
                     }
 
@@ -257,6 +259,66 @@
                         }
                     }
 
+                    function loadTrainingStatus(networkId, data) {
+                        // Get network card
+                        networkCard = document.getElementById(networkId);
+                        trainingCard = networkCard.querySelector("#trainingCard");
+                        trainingCard.hidden = false;
+
+                        // Get training progress bar
+                        trainingProgressBar = trainingCard.querySelector("#trainingProgressBar");
+                        trainingProgressPercentage = trainingCard.querySelector("#trainingProgressPercentage");
+
+                        trainingProgressBar.value = data.epoch / data.epochs * 100;
+                        trainingProgressPercentage.innerHTML = `${Math.round(data.epoch / data.epochs * 100)}%`;
+
+                        epoch = trainingCard.querySelector("#epoch");
+                        epoch.innerHTML = `Epoch ${data.epoch}/${data.epochs},`;
+
+                        error = trainingCard.querySelector("#error");
+                        error.innerHTML = `Error: ${data.error},`;
+
+                        accuracy = trainingCard.querySelector("#accuracy");
+                        accuracy.innerHTML = `Accuracy: ${data.accuracy}%,`;
+
+                        eta = trainingCard.querySelector("#eta");
+                        eta.innerHTML = `ETA: ${data.eta}s`;
+
+                    }
+
+                    function loadTrainingSSE(networkId, data = null) {
+
+                        console.log("loadTrainingSSE", networkId);
+                        console.log("loadTrainingSSE", data);
+
+                        if (data != null) {
+                            loadTrainingStatus(networkId, data);
+                        }
+
+                        eventSource = new EventSource('/sse');
+
+                        eventSource.onmessage = function (event) {
+                            console.log(event.data);
+
+                            var eventData = JSON.parse(event.data)
+                            var data = eventData.data;
+                            var networkId = eventData.networkId;
+
+                            if (data == "done") {
+                                trainingCard.hidden = true;
+                                eventSource.close();
+                                return;
+                            }
+
+                            loadTrainingStatus(networkId, data);
+                        };
+
+                        eventSource.onerror = function (error) {
+                            console.error('EventSource failed:', error);
+                            eventSource.close();
+                        };
+                    }
+
                     function trainNetwork(networkId) {
 
                         network = networks[networkId];
@@ -271,51 +333,7 @@
                             return;
                         }
 
-                        // Get network card
-                        networkCard = document.getElementById(networkId);
-                        trainingCard = networkCard.querySelector("#trainingCard");
-                        trainingCard.hidden = false;
-
-                        // Get training progress bar
-                        trainingProgressBar = trainingCard.querySelector("#trainingProgressBar");
-                        trainingProgressPercentage = trainingCard.querySelector("#trainingProgressPercentage");
-
-                        // TODO: Maintain connection to server between pages
-                        const eventSource = new EventSource('/sse');
-
-                        eventSource.onmessage = function (event) {
-                            console.log(event.data);
-
-                            var data = JSON.parse(event.data);
-
-                            data = data.data;
-
-                            if (data == "done") {
-                                trainingCard.hidden = true;
-                                eventSource.close();
-                                return;
-                            }
-
-                            trainingProgressBar.value = data.epoch / data.epochs * 100;
-                            trainingProgressPercentage.innerHTML = `${Math.round(data.epoch / data.epochs * 100)}%`;
-
-                            epoch = trainingCard.querySelector("#epoch");
-                            epoch.innerHTML = `Epoch ${data.epoch}/${data.epochs},`;
-
-                            error = trainingCard.querySelector("#error");
-                            error.innerHTML = `Error: ${data.error},`;
-
-                            accuracy = trainingCard.querySelector("#accuracy");
-                            accuracy.innerHTML = `Accuracy: ${data.accuracy}%,`;
-
-                            eta = trainingCard.querySelector("#eta");
-                            eta.innerHTML = `ETA: ${data.eta}s`;
-                        };
-
-                        eventSource.onerror = function (error) {
-                            console.error('EventSource failed:', error);
-                            eventSource.close();
-                        };
+                        loadTrainingSSE(networkId);
 
                         fetch("/train-network", {
                             method: "POST",
@@ -335,6 +353,34 @@
                                 console.error("Error training network:", error);
                             });
                     }
+
+                    function checkActiveTraining() {
+                        fetch("/active-training-sse", {
+                            method: "GET",
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data);
+                                console.log(data.active);
+                                if (data.active == true) {
+                                    loadTrainingSSE(data.networkId, data.data);
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error fetching active training sse:", error);
+                            });
+                    }
+
+                    let networks = {};
+
+                    loadNetworks();
+
+                    var eventSource = null;
+
+                    console.log('outer', networks)
                 </script>
 
             </div>

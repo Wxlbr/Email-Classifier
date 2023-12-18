@@ -91,16 +91,16 @@
                 "valid": true
             },
             "layer-2": {
-                "layerName": "Recurrent Layer",
-                "layerType": "recurrent",
+                "errors": [],
                 "layerConfig": {
+                    "activation": "sigmoid",
                     "inputSize": "5",
                     "outputSize": "1",
-                    "activation": "sigmoid",
                     "type": "recurrent"
                 },
-                "valid": true,
-                "errors": []
+                "layerName": "Recurrent Layer",
+                "layerType": "recurrent",
+                "valid": true
             }
         },
         "valid": true

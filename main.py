@@ -86,7 +86,7 @@ class Classifier:
             self.conn.assign_email_labels(message_id, [label])
 
     # TODO: Add check for network layer structure
-    def train_network(self, X=None, Y=None, queue=None):
+    def train_network(self, X=None, Y=None, queue=None, netId=None):
         '''
         Train the network
         '''
@@ -105,7 +105,7 @@ class Classifier:
 
         # Train the network
         self.net.train(X_train, Y_train, validation_data=(
-            X_test, Y_test), queue=queue)
+            X_test, Y_test), queue=queue, netId=netId)
 
     def _train_test_split(self, X, Y, test_size=0.2):
         '''

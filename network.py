@@ -32,7 +32,7 @@ class Network:
 
         return correct / len(x_test) * 100
 
-    def train(self, x_train, y_train, epochs=100, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None):
+    def train(self, x_train, y_train, epochs=100, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
 
         assert self.layers, 'Network has no layers.'
 
@@ -42,6 +42,8 @@ class Network:
         # select loss function
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
+
+        assert queue and netId, "netId must be provided if queue is provided"
 
         if validation_data:
             x_val, y_val = validation_data
@@ -53,7 +55,9 @@ class Network:
                 "error": 0,
                 "accuracy": 0,
                 "eta": 0,
-            }})
+            }, "networkId": netId})
+
+        durations = []
 
         # training loop
         for e in range(epochs):
@@ -76,14 +80,7 @@ class Network:
                     gradient = layer.backward(gradient, learning_rate)
                     # print(gradient)
 
-                # if queue and count % (int(len(x_train) * 0.1)) == 0:
-                #     queue.put({"data": {
-                #     "epoch": e + 1,
-                #     "epochs": epochs,
-                #     "error": error / len(x_train),
-                #     "accuracy": self.accuracy(x_val, y_val),
-                #     "eta": ((time.time() - start) / (e + 1)) * (epochs - e - 1),
-                # }})
+            durations.append(time.time() - start)
 
             if queue:
                 queue.put({"data": {
@@ -91,8 +88,8 @@ class Network:
                     "epochs": epochs,
                     "error": float(f"{error / len(x_train):.4f}"),
                     "accuracy": float(f"{self.accuracy(x_val, y_val):.2f}"),
-                    "eta": float(f"{((time.time() - start) / (e + 1)) * (epochs - e - 1):.2f}"),
-                }})
+                    "eta": int((sum(durations) / (e + 1)) * (epochs - e - 1)),
+                }, "networkId": netId})
 
             if verbose:
                 print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")
@@ -101,12 +98,12 @@ class Network:
                     print(
                         f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
 
-                print(f", duration={time.time() - start:.2f}s", end="")
+                print(f", duration={durations[-1]:.2f}s", end="")
 
                 print()
 
         if queue:
-            queue.put({"data": "done"})
+            queue.put({"data": "done", "netId": netId})
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}

@@ -22,6 +22,7 @@ def load_networks_from_file():
 
 app = Flask(__name__)
 queue = Queue()
+history_queue = Queue()
 
 
 @app.route('/')
@@ -89,6 +90,7 @@ def sse():
         while True:
             result = queue.get()
             result = json.dumps(result)
+            history_queue.put(result)  # put it back
             yield f'data: {result}\n\n'
 
     return Response(event_stream(), mimetype="text/event-stream")
@@ -119,7 +121,7 @@ def train_network_thread(network_id, network, queue):
         classifier.add_layer(
             layer['layerConfig'])
 
-    classifier.train_network(queue=queue)
+    classifier.train_network(queue=queue, netId=network_id)
 
     # Get networks from file
     networks = load_networks_from_file()
@@ -132,6 +134,16 @@ def train_network_thread(network_id, network, queue):
 
     # Save network to file
     save_networks_to_file(networks)
+
+
+@app.route('/active-training-sse', methods=['GET'])
+def active_sses():
+    if history_queue.empty():
+        return jsonify({'active': False, 'networkId': None, 'data': None})
+    data = json.loads(history_queue.get())
+    data["active"] = True
+    print('Data: ', data)
+    return jsonify(data)
 
 
 if __name__ == '__main__':
