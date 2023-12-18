@@ -163,21 +163,23 @@
                                 continue;
                             } else {
                                 console.log(networkId);
+                                console.log(!networksToLoad[networkId].trained);
                                 savedNetworks.innerHTML += `<div class="card" id="${networkId}">
                                 <div class="h-65 bg-grey-600 pad-4 rounded-top">
                                     <div style="display: flex; align-items: center;">
                                         <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
                                         <!-- Network Status -->
                                         <span class="ml-2 bg-red-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="validationStatus">Invalid</span>
+                                        <span class="ml-2 bg-blue-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="trainingStatus" hidden>Trained</span>
                                     </div>
                                     <!-- Training Progress -->
                                     <div id="trainingCard" hidden>
                                         <div class="ml-1">
                                             <h3 class="text-sm text-semi-bold">Training Progress</h3>
-                                            <span class="text-sm" id="epoch">Epoch 0/0,</span>
-                                            <span class="text-sm" id="error">Error: 0.00,</span>
-                                            <span class="text-sm" id="accuracy">Accuracy: 0.00%,</span>
-                                            <span class="text-sm" id="eta">ETA: 0s</span>
+                                            <span class="text-sm" id="epoch">Preparing Environment...</span>
+                                            <span class="text-sm" id="error"></span>
+                                            <span class="text-sm" id="accuracy"></span>
+                                            <span class="text-sm" id="eta"></span>
                                         </div>
 
                                         <div class="mt-1" style="display: flex; align-items: center;">
@@ -188,18 +190,25 @@
                                 </div>
                                 <div class="h-35 pad-4 items-center rounded-bottom">
                                     <button onclick="redirectEditNetwork('${networkId}')"
-                                        class="button button-blue" type="submit">
+                                        class="button button-blue" type="submit" id="editButton">
                                         Edit
                                     </button>
                                     <button onclick="trainNetwork('${networkId}')"
-                                        class="button button-blue ml-4" type="submit">
+                                        class="button button-blue ml-4" type="submit" id="trainButton">
                                         Train
                                     </button>
-                                    <button class="button button-red ml-4" type="submit">
+                                    <button onclick="deleteNetwork('${networkId}')" 
+                                    class="button button-red ml-4" type="submit" id="deleteButton">
                                         Delete
                                     </button>
                                 </div>
                             </div>`;
+                            }
+
+                            if (networksToLoad[networkId].trained == true) {
+                                networkCard = document.getElementById(networkId);
+                                trainingStatus = networkCard.querySelector("#trainingStatus");
+                                trainingStatus.hidden = false;
                             }
                         }
 
@@ -208,7 +217,6 @@
                         networks = networksToLoad;
 
                         validateNetworks();
-
 
                         checkActiveTraining();
                     }
@@ -224,7 +232,6 @@
                             "layers": {},
                             "valid": false,
                             "status": "inactive",
-                            "network": {},
                             "trained": false
                         };
 
@@ -232,6 +239,17 @@
                     }
 
                     function redirectEditNetwork(networkId) {
+                        if (networks[networkId].trained == true) {
+                            if (confirm('Network is trained, editing will reset training. Are you sure you want to continue?')) {
+                                // Ok
+                                // TODO: Remove trained flag if any changes are made
+                                console.log('Ok, redirecting to edit network');
+                            } else {
+                                // Cancel
+                                return;
+                            }
+                        }
+
                         console.log("unload");
                         if (eventSource) {
                             eventSource.close();
@@ -291,9 +309,10 @@
                         console.log("loadTrainingSSE", networkId);
                         console.log("loadTrainingSSE", data);
 
-                        if (data != null) {
-                            loadTrainingStatus(networkId, data);
-                        }
+                        // Get network card
+                        networkCard = document.getElementById(networkId);
+                        trainingCard = networkCard.querySelector("#trainingCard");
+                        trainingCard.hidden = false;
 
                         eventSource = new EventSource('/sse');
 
@@ -304,8 +323,28 @@
                             var data = eventData.data;
                             var networkId = eventData.networkId;
 
-                            if (data == "done") {
+                            if (data.status == "done") {
                                 trainingCard.hidden = true;
+
+                                // Set edit, train and delete buttons to enabled
+                                editButton = networkCard.querySelector("#editButton");
+                                trainButton = networkCard.querySelector("#trainButton");
+                                deleteButton = networkCard.querySelector("#deleteButton");
+
+                                editButton.disabled = false;
+                                trainButton.disabled = false;
+                                deleteButton.disabled = false;
+
+                                // Set network to trained
+                                console.log("setTrained", networkId);
+                                console.log(networks)
+                                network = networks[networkId];
+                                network.trained = true;
+
+                                networkCard = document.getElementById(networkId);
+                                trainingStatus = networkCard.querySelector("#trainingStatus");
+                                trainingStatus.hidden = false;
+
                                 eventSource.close();
                                 return;
                             }
@@ -317,9 +356,34 @@
                             console.error('EventSource failed:', error);
                             eventSource.close();
                         };
+
+                        if (data != null) {
+                            loadTrainingStatus(networkId, data);
+                        }
+
+                        // Set edit, train and delete buttons to disabled
+                        networkCard = document.getElementById(networkId);
+                        editButton = networkCard.querySelector("#editButton");
+                        trainButton = networkCard.querySelector("#trainButton");
+                        deleteButton = networkCard.querySelector("#deleteButton");
+
+                        editButton.disabled = true;
+                        trainButton.disabled = true;
+                        deleteButton.disabled = true;
                     }
 
                     function trainNetwork(networkId) {
+
+                        if (networks[networkId].trained == true) {
+                            if (confirm('Network is trained, continuing will reset training. Are you sure you want to continue?')) {
+                                // Ok
+                                // TODO: Remove trained flag if user continues
+                                console.log('Ok, redirecting to edit network');
+                            } else {
+                                // Cancel
+                                return;
+                            }
+                        }
 
                         network = networks[networkId];
 
@@ -371,6 +435,34 @@
                             })
                             .catch(error => {
                                 console.error("Error fetching active training sse:", error);
+                            });
+                    }
+
+                    function deleteNetwork(networkId) {
+                        if (confirm('Are you sure you want to delete this network?')) {
+                            // Ok
+                            console.log('Ok, deleting network');
+                        } else {
+                            // Cancel
+                            return;
+                        }
+
+                        fetch("/delete-network", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                "networkId": networkId
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data);
+                                loadNetworks(data);
+                            })
+                            .catch(error => {
+                                console.error("Error deleting network:", error);
                             });
                     }
 

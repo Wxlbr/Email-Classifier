@@ -61,7 +61,8 @@ def save_network():
     network_id = data.get('networkId')
     layers = data.get('layers')
 
-    valid = all(layer['valid'] for layer in layers.values())
+    valid = all(layer['valid']
+                for layer in layers.values()) if layers else False
 
     # Get networks from file
     networks = load_networks_from_file()
@@ -144,6 +145,25 @@ def active_sses():
     data["active"] = True
     print('Data: ', data)
     return jsonify(data)
+
+
+@app.route('/delete-network', methods=['POST'])
+def delete_network():
+    data = request.get_json()
+
+    network_id = data.get('networkId')
+
+    # Get networks from file
+    networks = load_networks_from_file()
+
+    # Delete network from list
+    if network_id in networks:
+        del networks[network_id]
+
+    # Save network to file
+    save_networks_to_file(networks)
+
+    return jsonify(networks)
 
 
 if __name__ == '__main__':

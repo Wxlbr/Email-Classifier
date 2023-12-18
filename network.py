@@ -50,6 +50,7 @@ class Network:
 
         if queue:
             queue.put({"data": {
+                "status": "training",
                 "epoch": 0,
                 "epochs": epochs,
                 "error": 0,
@@ -84,6 +85,7 @@ class Network:
 
             if queue:
                 queue.put({"data": {
+                    "status": "training",
                     "epoch": e + 1,
                     "epochs": epochs,
                     "error": float(f"{error / len(x_train):.4f}"),
@@ -103,7 +105,9 @@ class Network:
                 print()
 
         if queue:
-            queue.put({"data": "done", "netId": netId})
+            queue.put({"data": {
+                "status": "done"
+            }, "networkId": netId})
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}

@@ -161,7 +161,8 @@
                                 layers[layerId]["valid"] = true;
                                 layers[layerId]["errors"] = [];
 
-                                //Check inputSize
+
+                                // Check inputSize
                                 if (layers[layerId]["layerConfig"]["inputSize"] <= 0) {
                                     layers[layerId]["valid"] = false;
                                     layers[layerId]["errors"].push("Input size must be a positive integer");
