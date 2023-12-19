@@ -43,8 +43,6 @@ class Network:
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
 
-        assert queue and netId, "netId must be provided if queue is provided"
-
         if validation_data:
             x_val, y_val = validation_data
 
@@ -139,7 +137,11 @@ class Network:
         assert layer['type'] in self.LAYER_TYPES, "Unknown layer type"
         assert layer['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
 
-        # TODO: Key checks
+        assert isinstance(layer['inputSize'],
+                          int), "inputSize must be an integer"
+        assert isinstance(layer['outputSize'],
+                          int), "outputSize must be an integer"
+
         input_size = int(layer['inputSize'])
         output_size = int(layer['outputSize'])
 

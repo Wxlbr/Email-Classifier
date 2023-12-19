@@ -1,10 +1,12 @@
 import os
+import csv
 
 import pandas as pd
 
 from network import Network
 from layer import Recurrent
 from connection import Connection
+from calc import shape
 
 
 class Classifier:
@@ -94,9 +96,6 @@ class Classifier:
         if X is None or Y is None:
             X, Y = self._default_training_data()
 
-        # max_height = X.shape[1]
-        # max_width = 1
-
         # Split into train and test sets
         X_train, X_test, Y_train, Y_test = self._train_test_split(
             X, Y, test_size=0.2)
@@ -121,8 +120,6 @@ class Classifier:
 
         X_train, Y_train = X[:train_size], Y[:train_size]
         X_test, Y_test = X[train_size:], Y[train_size:]
-
-        print(type(X_train), type(Y_train), type(X_test), type(Y_test))
 
         return X_train, X_test, Y_train, Y_test
 
@@ -150,19 +147,16 @@ class Classifier:
         Return the default training data
         '''
 
-        # Read data from inc/kaggleDataset.csv
         with open('./inc/emailsHotEncoding.csv', 'r', encoding='utf-8') as f:
-            emails = pd.read_csv(f)
+            r = csv.reader(f)
+            next(r)  # Skip header
+            data = list(r)
 
-        X = emails.drop('Prediction', axis=1).values
-        Y = emails['Prediction'].values
+        # Extract features and labels
+        X = [list((float(value),) for value in row[:-1]) for row in data]
+        Y = [int(row[-1]) for row in data]
 
-        X = X.reshape((X.shape[0], X.shape[1], 1))
-        # Y = Y.reshape((Y.shape[0], 1, 1))
-
-        # X = [list((value,) for value in row) for row in X]
-        X = X.tolist()
-        Y = Y.tolist()
+        print(shape(X), shape(Y))
 
         return X, Y
 

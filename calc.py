@@ -81,3 +81,9 @@ def sub_matrices(x: list, y: list) -> list:
         y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
 
     return [[x[i][j] - y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
+
+
+def shape(x: list) -> tuple:
+    if isinstance(x, list):
+        return (len(x),) + shape(x[0]) if x else (len(x),)
+    return (1,)
