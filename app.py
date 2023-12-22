@@ -42,12 +42,20 @@ def edit_network():
     # Get network from list
     if network_id in networks:
         layers = networks[network_id]['layers']
+
+        if 'inputSize' in networks[network_id]:
+            input_size = networks[network_id]['inputSize']
+        if 'outputSize' in networks[network_id]:
+            output_size = networks[network_id]['outputSize']
+
     else:
         layers = {}
 
     data = {
         'networkId': network_id,
-        'layers': layers
+        'layers': layers,
+        'inputSize': input_size,
+        'outputSize': output_size
     }
 
     return render_template('index2.html', data=data)
@@ -60,6 +68,8 @@ def save_network():
 
     network_id = data.get('networkId')
     layers = data.get('layers')
+    input_size = data.get('inputSize')
+    output_size = data.get('outputSize')
 
     valid = all(layer['valid']
                 for layer in layers.values()) if layers else False
@@ -72,6 +82,11 @@ def save_network():
         networks[network_id] = {}
     networks[network_id]['layers'] = layers
     networks[network_id]['valid'] = valid
+    networks[network_id]['inputSize'] = input_size
+    networks[network_id]['outputSize'] = output_size
+
+    if 'trained' in networks[network_id]:
+        networks[network_id]['trained'] = False
 
     # Save network to file
     save_networks_to_file(networks)

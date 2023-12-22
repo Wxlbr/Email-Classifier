@@ -242,7 +242,7 @@
                         if (networks[networkId].trained == true) {
                             if (confirm('Network is trained, editing will reset training. Are you sure you want to continue?')) {
                                 // Ok
-                                // TODO: Remove trained flag if any changes are made
+                                networks[networkId].trained == false;
                                 console.log('Ok, redirecting to edit network');
                             } else {
                                 // Cancel
