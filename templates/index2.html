@@ -470,7 +470,8 @@
                                 layers[layerId]["layerConfig"] = {
                                     "inputSize": document.getElementById("inputSize").value,
                                     "outputSize": document.getElementById("outputSize").value,
-                                    "activation": document.getElementById("activation").value
+                                    "activation": document.getElementById("activation").value,
+                                    "type": layers[layerId]["layerType"]
                                 };
 
                                 validateLayers();

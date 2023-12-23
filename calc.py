@@ -17,8 +17,14 @@ def dot(x: list, y: list) -> list:
 
 
 def multiply(x: list, y: float) -> list:
-    # print(x, y)
     return [[value * y for value in row] for row in x]
+
+
+def matrix_multiply(x: list, y: list) -> list:
+    assert shape(x) == shape(
+        y), f"Invalid dimensions: {shape(x)} != {shape(y)}"
+
+    return [[x[i][j] * y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
 
 
 def transpose(x: list) -> list:
@@ -48,7 +54,9 @@ def flatten(x: list) -> list:
 
 
 def mean(x: list) -> float:
-    x = flatten(x)
+    # If not already flat, flatten
+    if isinstance(x[0], list):
+        x = flatten(x)
     return sum(x) / len(x)
 
 
@@ -87,3 +95,11 @@ def shape(x: list) -> tuple:
     if isinstance(x, list):
         return (len(x),) + shape(x[0]) if x else (len(x),)
     return (1,)
+
+
+def convert_time(seconds):
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    if seconds < 3600:
+        return f"{int(seconds / 60)}m {int(seconds % 60)}s"
+    return f"{int(seconds / 3600)}h {int(seconds % 3600 / 60)}m"

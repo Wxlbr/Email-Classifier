@@ -4,6 +4,7 @@ import json
 from loss import MSE, BinaryCrossEntropy
 from layer import Recurrent
 from activation import Sigmoid, Tanh
+from calc import mean, convert_time
 
 
 class Network:
@@ -53,17 +54,22 @@ class Network:
                 "epochs": epochs,
                 "error": 0,
                 "accuracy": 0,
-                "eta": 0,
+                "epochEta": 0,
+                "totalEta": 0,
             }, "networkId": netId})
 
         durations = []
 
         # training loop
-        for e in range(epochs):
+        for e in range(1, epochs+1):
             error = 0
             start = time.time()
             count = 0
+            inner_durations = []
+            accuracy = 0
             for x, y in zip(x_train, y_train):
+                inner_start = time.time()
+
                 count += 1
                 # forward
                 output = self.predict(x)
@@ -79,16 +85,47 @@ class Network:
                     gradient = layer.backward(gradient, learning_rate)
                     # print(gradient)
 
-            durations.append(time.time() - start)
+                inner_time = time.time() - inner_start
+
+                inner_durations.append(inner_time)
+
+                if queue and count % 10 == 0:
+
+                    epochEta = mean(inner_durations) * (len(x_train) - count)
+                    totalEta = mean(inner_durations) * \
+                        (epochs - e) * len(x_train) + epochEta
+
+                    epochEta = convert_time(epochEta)
+                    totalEta = convert_time(totalEta)
+
+                    queue.put({"data": {
+                        "status": "training",
+                        "epoch": e,
+                        "epochs": epochs,
+                        "error": f"{error / count:.4f}",
+                        "accuracy": accuracy,
+                        "epochEta": epochEta,
+                        "totalEta": totalEta,
+                    }, "networkId": netId})
+
+            duration = time.time() - start
+            durations.append(duration)
+
+            epochEta = mean(inner_durations) * (len(x_train) - count)
+            totalEta = mean(inner_durations) * (epochs - e) + epochEta
+            epochEta = self._convert_time(epochEta)
+            totalEta = self._convert_time(totalEta)
+            accuracy = f"{self.accuracy(x_val, y_val):.4f}"
 
             if queue:
                 queue.put({"data": {
                     "status": "training",
-                    "epoch": e + 1,
+                    "epoch": e,
                     "epochs": epochs,
-                    "error": float(f"{error / len(x_train):.4f}"),
-                    "accuracy": float(f"{self.accuracy(x_val, y_val):.2f}"),
-                    "eta": int((sum(durations) / (e + 1)) * (epochs - e - 1)),
+                    "error": f"{error / count:.4f}",
+                    "accuracy": accuracy,
+                    "epochEta": epochEta,
+                    "totalEta": totalEta,
                 }, "networkId": netId})
 
             if verbose:
@@ -134,13 +171,13 @@ class Network:
         Add a layer to the network
         '''
 
+        # print(layer)
+
         assert layer['type'] in self.LAYER_TYPES, "Unknown layer type"
         assert layer['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
 
-        assert isinstance(layer['inputSize'],
-                          int), "inputSize must be an integer"
-        assert isinstance(layer['outputSize'],
-                          int), "outputSize must be an integer"
+        assert layer['inputSize'].isdigit(), "inputSize must be an integer"
+        assert layer['outputSize'].isdigit(), "outputSize must be an integer"
 
         input_size = int(layer['inputSize'])
         output_size = int(layer['outputSize'])
@@ -150,3 +187,8 @@ class Network:
 
         self.layers.append(self.LAYER_TYPES[layer['type']](
             input_size, output_size, activation=self.ACTIVATION_TYPES[layer['activation']]()))
+
+        # info = [{key: value for key, value in layer.info().items()
+        #          if key not in ['weights', 'recurrent_weights', 'bias']} for layer in self.layers]
+
+        # print(info)

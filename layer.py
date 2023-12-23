@@ -44,23 +44,23 @@ class Recurrent():
     '''
 
     def __init__(self, input_size, output_size, activation=Sigmoid()):
-        # Initialise input and output
+        # Initialize input and output
         self.input = None
         self.output = None
 
-        # Initialise sizes of input and output
+        # Initialize sizes of input and output
         self.input_size = input_size
         self.output_size = output_size
 
-        # Initialise weights and biases to random values
+        # Initialize weights and biases to random values
         self.weights = randn(output_size, input_size)
         self.recurrent_weights = randn(output_size, output_size)
         self.bias = randn(output_size, 1)
 
-        # Initialise hidden state to zero vectors
+        # Initialize hidden state to zero vectors
         self.hidden_state = zeros(output_size, 1)
 
-        # Initialise activation function
+        # Initialize activation function
         self.activation = activation
 
     def forward(self, input_value):
@@ -94,8 +94,6 @@ class Recurrent():
         '''
         Backward pass of the layer
         '''
-
-        # print(output_gradient, type(output_gradient))
 
         # Apply activation function derivative
         output_gradient = self.activation.backward(

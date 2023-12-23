@@ -191,7 +191,7 @@ class Classifier:
             data = list(r)
 
         # Extract features and labels
-        X = [list((float(value),) for value in row[:-1]) for row in data]
+        X = [list([float(value)] for value in row[:-1]) for row in data]
         Y = [int(row[-1]) for row in data]
 
         print(shape(X), shape(Y))

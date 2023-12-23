@@ -299,8 +299,8 @@
                         accuracy = trainingCard.querySelector("#accuracy");
                         accuracy.innerHTML = `Accuracy: ${data.accuracy}%,`;
 
-                        eta = trainingCard.querySelector("#eta");
-                        eta.innerHTML = `ETA: ${data.eta}s`;
+                        epochEta = trainingCard.querySelector("#eta");
+                        epochEta.innerHTML = `ETA: ${data.epochEta} (${data.totalEta})`;
 
                     }
 

@@ -6,82 +6,14 @@
         "network": {},
         "trained": true
     },
-    "network-2": {
-        "layers": {
-            "layer-1": {
-                "errors": [
-                    "Input size must be a positive integer",
-                    "Output size must be a positive integer"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": 0,
-                    "outputSize": 0,
-                    "type": "recurrent"
-                },
-                "layerName": "Dense Layer",
-                "layerType": "dense",
-                "valid": false
-            },
-            "layer-2": {
-                "errors": [
-                    "Input size must be a positive integer",
-                    "Output size must be a positive integer"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": 0,
-                    "outputSize": 0,
-                    "type": "recurrent"
-                },
-                "layerName": "Recurrent Layer",
-                "layerType": "recurrent",
-                "valid": false
-            },
-            "layer-3": {
-                "errors": [
-                    "Input size must be a positive integer",
-                    "Output size must be a positive integer"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": 0,
-                    "outputSize": 0,
-                    "type": "recurrent"
-                },
-                "layerName": "Recurrent Layer",
-                "layerType": "recurrent",
-                "valid": false
-            },
-            "layer-4": {
-                "errors": [
-                    "Input size must be a positive integer",
-                    "Output size must be a positive integer"
-                ],
-                "layerConfig": {
-                    "activation": "sigmoid",
-                    "inputSize": 0,
-                    "outputSize": 0,
-                    "type": "recurrent"
-                },
-                "layerName": "LSTM Layer",
-                "layerType": "lstm",
-                "valid": false
-            }
-        },
-        "valid": false,
-        "status": "inactive",
-        "network": {},
-        "trained": false
-    },
     "network-3": {
         "layers": {
             "layer-1": {
                 "errors": [],
                 "layerConfig": {
                     "activation": "sigmoid",
-                    "inputSize": "10",
-                    "outputSize": "5",
+                    "inputSize": "3000",
+                    "outputSize": "64",
                     "type": "recurrent"
                 },
                 "layerName": "Recurrent Layer",
@@ -91,9 +23,10 @@
             "layer-2": {
                 "errors": [],
                 "layerConfig": {
-                    "inputSize": "5",
+                    "activation": "sigmoid",
+                    "inputSize": "64",
                     "outputSize": "1",
-                    "activation": "sigmoid"
+                    "type": "recurrent"
                 },
                 "layerName": "Recurrent Layer",
                 "layerType": "recurrent",
@@ -3124,7 +3057,7 @@
             }
         },
         "trained": false,
-        "inputSize": "10",
+        "inputSize": "3000",
         "outputSize": "1"
     }
 }
