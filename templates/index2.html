@@ -4,7 +4,7 @@
 <!-- Sortable library  for drag-and-drop animation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
-<!-- TODO: Input for network name -->
+<!-- TODO: Allow the user to change the network name (networkId) -->
 
 <head>
     <meta charset="utf-8">
@@ -20,7 +20,7 @@
     let inputSize = 0;
     let outputSize = 0;
 
-    var flaskData = JSON.parse('{{ data| tojson }}');
+    var flaskData = JSON.parse('{{ data | tojson }}');
 
     console.log(flaskData);
 
@@ -316,10 +316,6 @@
                             <hr class="button-divider">
                             <button class="layer-button" onclick="selectLayerType('Recurrent Layer', 'recurrent')"
                                 id="newLayerSelection-recurrent">Recurrent Layer</button>
-                            <hr class="button-divider">
-                            <button class="layer-button" onclick="selectLayerType('LSTM Layer', 'lstm')"
-                                id="newLayerSelection-lstm">LSTM
-                                Layer</button>
                         </div>
                         <div class="flex justify-between mt-4">
                             <button class="button button-green mr-2" type="submit" id="newLayerPopupAddButton" disabled>
@@ -642,7 +638,6 @@
 
                 <!-- Layer Configuration Placeholder -->
                 <div class="justify-flex h-96" id="layerConfigurationPlaceholder">
-                    <!-- TODO: Format the text -->
                     <p class="text text-grey pad-4">
                         Select a layer to configure it
                     </p>

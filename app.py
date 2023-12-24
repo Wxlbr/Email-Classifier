@@ -171,9 +171,13 @@ def delete_network():
     # Get networks from file
     networks = load_networks_from_file()
 
+    print('Networks: ', networks.keys())
+
     # Delete network from list
     if network_id in networks:
         del networks[network_id]
+
+    print('Networks: ', networks.keys())
 
     # Save network to file
     save_networks_to_file(networks)

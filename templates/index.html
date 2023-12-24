@@ -223,17 +223,24 @@
 
                     function addNetwork() {
                         // NetworkId
-                        IdNum = Object.keys(networks).length + 1;
+                        IdNum = Math.floor(999 + Math.random() * 1000);
+                        while (`network-${IdNum}` in networks) {
+                            IdNum = Math.floor(999 + Math.random() * 1000);
+                        }
 
                         console.log(IdNum);
 
                         networks[`network-${IdNum}`] = {
                             "name": `Network ${IdNum}`,
                             "layers": {},
+                            "inputSize": 0,
+                            "outputSize": 0,
                             "valid": false,
                             "status": "inactive",
                             "trained": false
                         };
+
+                        saveNetwork(`network-${IdNum}`);
 
                         loadNetworks(networks);
                     }
@@ -481,6 +488,23 @@
                             // Cancel
                             return;
                         }
+                    }
+
+                    function saveNetwork(networkId) {
+                        fetch('/save-network', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 'networkId': networkId, 'layers': {}, 'inputSize': 0, 'outputSize': 0 }),
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                console.log('Success:', data);
+                            })
+                            .catch((error) => {
+                                console.error('Error:', error);
+                            });
                     }
 
                     let networks = {};
