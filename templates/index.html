@@ -61,6 +61,12 @@
 
                         <div class="h-35 pad-4 items-center rounded-bottom">
                             <!-- Disable (grey) whilst network is active -->
+
+                            <!-- Button to select network when switching, only visible when replacing -->
+                            <button class="button button-blue" type="submit" onclick="" style="display: none;"
+                                id="activeSelectButton">Select</button>
+
+                            <!-- Button to manage network when not replacing -->
                             <button class="button button-blue" type="submit" onclick="redirectEditNetwork('network-1')"
                                 id="activeViewButton">View</button>
                             <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
@@ -77,6 +83,7 @@
                             <span class="ml-4" id="activateNetworkLabel">Activate</span>
                         </div>
 
+
                     </div>
                 </div>
             </div>
@@ -86,7 +93,7 @@
                     activeNetworkStatus = document.getElementById("activeNetworkStatus");
                     activateNetworkLabel = document.getElementById("activateNetworkLabel");
                     activateNetworkButton = document.getElementById("activateNetworkButton");
-                    activeEditButton = document.getElementById("activeEditButton");
+                    activeViewButton = document.getElementById("activeViewButton");
                     activeReplaceButton = document.getElementById("activeReplaceButton");
 
                     if (activeNetworkStatus.innerHTML == "Status: Inactive") {
@@ -94,14 +101,14 @@
                         activateNetworkLabel.innerHTML = "Deactivate";
                         activateNetworkButton.classList.remove("button-green");
                         activateNetworkButton.classList.add("button-red");
-                        activeEditButton.disabled = true;
+                        activeViewButton.disabled = true;
                         activeReplaceButton.disabled = true;
                     } else {
                         activeNetworkStatus.innerHTML = "Status: Inactive";
                         activateNetworkLabel.innerHTML = "Activate";
                         activateNetworkButton.classList.remove("button-red");
                         activateNetworkButton.classList.add("button-green");
-                        activeEditButton.disabled = false;
+                        activeViewButton.disabled = false;
                         activeReplaceButton.disabled = false;
                     }
                 }
@@ -189,6 +196,8 @@
                                     </div>
                                 </div>
                                 <div class="h-35 pad-4 items-center rounded-bottom">
+                                    <button class="button button-blue" type="submit" onclick="" style="display: none;"
+                                        id="selectButton">Select</button>
                                     <button onclick="redirectEditNetwork('${networkId}')"
                                         class="button button-blue" type="submit" id="editButton">
                                         Edit
@@ -473,6 +482,86 @@
                             });
                     }
 
+                    function switchSelectNetworkButtons() {
+
+                        // Get active network card
+                        activeNetworkCard = document.getElementById("network-1");
+
+                        activeViewButton = activeNetworkCard.querySelector("#activeViewButton");
+                        activeReplaceButton = activeNetworkCard.querySelector("#activeReplaceButton");
+                        activateNetworkButton = activeNetworkCard.querySelector("#activateNetworkButton");
+                        activateNetworkLabel = activeNetworkCard.querySelector("#activateNetworkLabel");
+                        activeNetworkStatus = activeNetworkCard.querySelector("#activeNetworkStatus");
+                        activeSelectButton = activeNetworkCard.querySelector("#activeSelectButton");
+
+                        // Check if select button is an attribute
+                        if (activeViewButton.style.display != "none") {
+                            // Hide Card Details
+
+                            // Set style to display: none
+                            activeViewButton.style.display = "none";
+                            activeReplaceButton.style.display = "none";
+                            activateNetworkButton.style.display = "none";
+                            activateNetworkLabel.innerHTML = "";
+                            activeNetworkStatus.innerHTML = "";
+
+                            // Show select button on card
+                            activeSelectButton.style.display = "block";
+
+                        } else {
+                            // Show Card Details
+
+                            // Set style to display: block
+                            activeViewButton.style.display = "block";
+                            activeReplaceButton.style.display = "block";
+                            activateNetworkButton.style.display = "block";
+                            activateNetworkLabel.style.display = "block";
+                            activeNetworkStatus.innerHTML = "Status: Inactive";
+
+                            // Hide select button on card
+                            activeSelectButton.style.display = "none";
+                        }
+
+                        // Get all saved network cards
+                        savedNetworkCards = document.getElementById("savedNetworks").querySelectorAll(".card");
+
+                        // Loop through saved network cards
+                        for (i = 0; i < savedNetworkCards.length; i++) {
+                            savedNetworkCard = savedNetworkCards[i];
+
+                            // Get buttons
+                            editButton = savedNetworkCard.querySelector("#editButton");
+                            trainButton = savedNetworkCard.querySelector("#trainButton");
+                            deleteButton = savedNetworkCard.querySelector("#deleteButton");
+                            selectButton = savedNetworkCard.querySelector("#selectButton");
+
+                            // Check if select button is an attribute
+                            if (editButton.style.display != "none") {
+                                // Hide Card Details
+
+                                // Set style to display: none
+                                editButton.style.display = "none";
+                                trainButton.style.display = "none";
+                                deleteButton.style.display = "none";
+
+                                // Show select button on card
+                                selectButton.style.display = "block";
+                            } else {
+                                // Show Card Details
+
+                                // Set style to display: block
+                                editButton.style.display = "block";
+                                trainButton.style.display = "block";
+                                deleteButton.style.display = "block";
+
+                                // Hide select button on card
+                                selectButton.style.display = "none";
+                            }
+                        }
+
+
+                    }
+
                     function replaceActiveNetwork() {
 
                         activeNetworkStatus = document.getElementById("activeNetworkStatus");
@@ -481,13 +570,12 @@
                             alert("Active network must be deactivated before replacing");
                         }
 
-                        if (confirm('Are you sure you want to replace the active network?')) {
-                            // Ok
-                            console.log('Ok, replacing network');
-                        } else {
-                            // Cancel
+                        if (!confirm('Are you sure you want to replace the active network?')) {
+                            console.log('Not replacing network');
                             return;
                         }
+
+                        switchSelectNetworkButtons();
                     }
 
                     function saveNetwork(networkId) {
