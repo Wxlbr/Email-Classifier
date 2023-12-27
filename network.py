@@ -33,7 +33,7 @@ class Network:
 
         return correct / len(x_test) * 100
 
-    def train(self, x_train, y_train, epochs=100, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
+    def train(self, x_train, y_train, epochs=1, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
 
         assert self.layers, 'Network has no layers.'
 
@@ -113,8 +113,8 @@ class Network:
 
             epochEta = mean(inner_durations) * (len(x_train) - count)
             totalEta = mean(inner_durations) * (epochs - e) + epochEta
-            epochEta = self._convert_time(epochEta)
-            totalEta = self._convert_time(totalEta)
+            epochEta = convert_time(epochEta)
+            totalEta = convert_time(totalEta)
             accuracy = f"{self.accuracy(x_val, y_val):.4f}"
 
             if queue:
@@ -129,7 +129,7 @@ class Network:
                 }, "networkId": netId})
 
             if verbose:
-                print(f"{e + 1}/{epochs}, error={error / len(x_train):.4f}", end="")
+                print(f"{e}/{epochs}, error={error / len(x_train):.4f}", end="")
 
                 if validation_data:
                     print(

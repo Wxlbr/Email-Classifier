@@ -51,40 +51,8 @@
             <div>
 
                 <!-- Active Layer Card -->
-                <div class="grid grid-cols-3 grid-gap-6 w-full">
-                    <div class="card" id="network-1">
+                <div class="grid grid-cols-3 grid-gap-6 w-full" id="activeNetworkContainer">
 
-                        <div class="h-65 bg-grey-600 pad-4 rounded-top">
-                            <h2 class="card-title">Network 1</h2>
-                            <span id="activeNetworkStatus">Status: Inactive</span>
-                        </div>
-
-                        <div class="h-35 pad-4 items-center rounded-bottom">
-                            <!-- Disable (grey) whilst network is active -->
-
-                            <!-- Button to select network when switching, only visible when replacing -->
-                            <button class="button button-blue" type="submit" onclick="" style="display: none;"
-                                id="activeSelectButton">Select</button>
-
-                            <!-- Button to manage network when not replacing -->
-                            <button class="button button-blue" type="submit" onclick="redirectEditNetwork('network-1')"
-                                id="activeViewButton">View</button>
-                            <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
-                                id="activeReplaceButton">Replace</button>
-                            <button class="button button-square button-green border ml-4" id="activateNetworkButton"
-                                onclick="toggleActiveLayer()">
-                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-                                    <line x1="12" x2="12" y1="2" y2="12"></line>
-                                </svg>
-                            </button>
-                            <span class="ml-4" id="activateNetworkLabel">Activate</span>
-                        </div>
-
-
-                    </div>
                 </div>
             </div>
 
@@ -121,7 +89,7 @@
                 <!-- Add Newtork Card -->
                 <div class="card" id="addNetworkCard">
                     <div class="h-65 bg-grey-600 pad-4 items-center justify-center rounded-top">
-                        <button class="button button-square border" onclick="addNetwork()">
+                        <button class="button button-square border" onclick="addNetwork()" id="addNetworkButton">
                             <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -144,6 +112,7 @@
                             .then(response => response.json())
                             .then(data => {
                                 console.log(data);
+                                networks = data;
                                 func(data);
                             })
                             .catch(error => {
@@ -155,64 +124,100 @@
                     function loadNetworks(networksToLoad = {}) {
 
                         if (Object.keys(networksToLoad).length == 0) {
+                            console.log("getNetworks");
                             networksToLoad = getNetworks(loadNetworks);
                             return;
                         }
 
                         savedNetworks = document.getElementById("savedNetworks");
                         addNetworkCard = document.getElementById("addNetworkCard");
+                        activeNetworkContainer = document.getElementById("activeNetworkContainer");
 
                         savedNetworks.innerHTML = "";
+                        activeNetworkContainer.innerHTML = "";
 
                         for (networkId in networksToLoad) {
-                            if (networksToLoad[networkId].status == "active") {
-                                // Will be replaced by active network card
-                                continue;
-                            } else {
-                                console.log(networkId);
-                                console.log(!networksToLoad[networkId].trained);
-                                savedNetworks.innerHTML += `<div class="card" id="${networkId}">
-                                <div class="h-65 bg-grey-600 pad-4 rounded-top">
-                                    <div style="display: flex; align-items: center;">
-                                        <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
-                                        <!-- Network Status -->
-                                        <span class="ml-2 bg-red-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="validationStatus">Invalid</span>
-                                        <span class="ml-2 bg-blue-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="trainingStatus" hidden>Trained</span>
-                                    </div>
-                                    <!-- Training Progress -->
-                                    <div id="trainingCard" hidden>
-                                        <div class="ml-1">
-                                            <h3 class="text-sm text-semi-bold">Training Progress</h3>
-                                            <span class="text-sm" id="epoch">Preparing Environment...</span>
-                                            <span class="text-sm" id="error"></span>
-                                            <span class="text-sm" id="accuracy"></span>
-                                            <span class="text-sm" id="eta"></span>
-                                        </div>
+                            activeCard = networksToLoad[networkId].activeCard;
 
-                                        <div class="mt-1" style="display: flex; align-items: center;">
-                                            <progress class="progress-bar" value="0" max="100" id="trainingProgressBar"></progress>
-                                            <span class="text-sm ml-2 mt-375" id="trainingProgressPercentage">0%</span>
-                                        </div>
+                            if (activeCard) {
+
+                                console.log("activeCard", networkId);
+
+                                status = networksToLoad[networkId].status;
+
+                                activeNetworkContainer.innerHTML = `<div class="card" id="network-1">
+                                <div class="h-65 bg-grey-600 pad-4 rounded-top">
+                                    <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
+                                    <span id="activeNetworkStatus">Status: ${status === 'active' ? 'Active' : 'Inactive'}</span >
+                                </div >
+
+                                <div class="h-35 pad-4 items-center rounded-bottom">
+                                        <!-- Disable (grey) whilst network is active -->
+                                    <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
+                                        id="activeSelectButton">Select</button>
+                                    <button class="button button-blue" type="submit" onclick=""
+                                        id="activeViewButton">View</button>
+                                    <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
+                                        id="activeReplaceButton">Replace</button>
+                                    <button class="button button-square button-green border ml-4" id="activateNetworkButton"
+                                        onclick="toggleActiveLayer()">
+                                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                                            <line x1="12" x2="12" y1="2" y2="12"></line>
+                                        </svg>
+                                    </button>
+                                    <span class="ml-4" id="activateNetworkLabel">${status === 'active' ? 'Deactive' : 'Activate'}</span>
+                                </div>
+                                </div>`;
+
+                                continue;
+                            }
+
+                            console.log(networkId);
+                            console.log(!networksToLoad[networkId].trained);
+                            savedNetworks.innerHTML += `<div class="card" id = "${networkId}">
+                            <div class="h-65 bg-grey-600 pad-4 rounded-top">
+                                <div style="display: flex; align-items: center;">
+                                    <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
+                                    <!-- Network Status -->
+                                    <span class="ml-2 bg-red-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="validationStatus">Invalid</span>
+                                    <span class="ml-2 bg-blue-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="trainingStatus" hidden>Trained</span>
+                                </div>
+                                <!-- Training Progress -->
+                                <div id="trainingCard" hidden>
+                                    <div class="ml-1">
+                                        <h3 class="text-sm text-semi-bold">Training Progress</h3>
+                                        <span class="text-sm" id="epoch">Preparing Environment...</span>
+                                        <span class="text-sm" id="error"></span>
+                                        <span class="text-sm" id="accuracy"></span>
+                                        <span class="text-sm" id="eta"></span>
+                                    </div>
+
+                                    <div class="mt-1" style="display: flex; align-items: center;">
+                                        <progress class="progress-bar" value="0" max="100" id="trainingProgressBar"></progress>
+                                        <span class="text-sm ml-2 mt-375" id="trainingProgressPercentage">0%</span>
                                     </div>
                                 </div>
-                                <div class="h-35 pad-4 items-center rounded-bottom">
-                                    <button class="button button-blue" type="submit" onclick="" style="display: none;"
-                                        id="selectButton">Select</button>
-                                    <button onclick="redirectEditNetwork('${networkId}')"
-                                        class="button button-blue" type="submit" id="editButton">
-                                        Edit
-                                    </button>
-                                    <button onclick="trainNetwork('${networkId}')"
-                                        class="button button-blue ml-4" type="submit" id="trainButton">
-                                        Train
-                                    </button>
-                                    <button onclick="deleteNetwork('${networkId}')" 
-                                    class="button button-red ml-4" type="submit" id="deleteButton">
-                                        Delete
-                                    </button>
-                                </div>
+                            </div>
+                            <div class="h-35 pad-4 items-center rounded-bottom">
+                                <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
+                                    id="selectButton">Select</button>
+                                <button onclick="redirectEditNetwork('${networkId}')"
+                                    class="button button-blue" type="submit" id="editButton">
+                                    Edit
+                                </button>
+                                <button onclick="trainNetwork('${networkId}')"
+                                    class="button button-blue ml-4" type="submit" id="trainButton">
+                                    Train
+                                </button>
+                                <button onclick="deleteNetwork('${networkId}')" 
+                                class="button button-red ml-4" type="submit" id="deleteButton">
+                                    Delete
+                                </button>
+                            </div>
                             </div>`;
-                            }
 
                             if (networksToLoad[networkId].trained == true) {
                                 networkCard = document.getElementById(networkId);
@@ -227,7 +232,8 @@
 
                         validateNetworks();
 
-                        checkActiveTraining();
+                        // TODO: Kill SSE when switching active network and when training is done
+                        // checkActiveTraining();
                     }
 
                     function addNetwork() {
@@ -240,13 +246,16 @@
                         console.log(IdNum);
 
                         networks[`network-${IdNum}`] = {
+                            "networkId": `network-${IdNum}`,
                             "name": `Network ${IdNum}`,
+                            "activeCard": false,
                             "layers": {},
                             "inputSize": 0,
                             "outputSize": 0,
                             "valid": false,
                             "status": "inactive",
-                            "trained": false
+                            "trained": false,
+                            "network": {}
                         };
 
                         saveNetwork(`network-${IdNum}`);
@@ -277,7 +286,9 @@
                     function validateNetworks() {
                         for (networkId in networks) {
                             network = networks[networkId];
-                            if (network.status == "active") {
+                            console.log(networkId, network);
+                            if (network.activeCard) {
+                                // Skip active card as it has been validated already
                                 continue;
                             }
                             validationStatus = document.getElementById(networkId).querySelector("#validationStatus");
@@ -303,11 +314,11 @@
                         trainingProgressBar = trainingCard.querySelector("#trainingProgressBar");
                         trainingProgressPercentage = trainingCard.querySelector("#trainingProgressPercentage");
 
-                        trainingProgressBar.value = data.epoch / data.epochs * 100;
-                        trainingProgressPercentage.innerHTML = `${Math.round(data.epoch / data.epochs * 100)}%`;
+                        trainingProgressBar.value = (data.epoch - 1) / data.epochs * 100;
+                        trainingProgressPercentage.innerHTML = `${Math.round((data.epoch - 1) / data.epochs * 100)}% `;
 
                         epoch = trainingCard.querySelector("#epoch");
-                        epoch.innerHTML = `Epoch ${data.epoch}/${data.epochs},`;
+                        epoch.innerHTML = `Epoch ${data.epoch} /${data.epochs},`;
 
                         error = trainingCard.querySelector("#error");
                         error.innerHTML = `Error: ${data.error},`;
@@ -483,6 +494,7 @@
                     }
 
                     function switchSelectNetworkButtons() {
+                        // TODO: Activate Network Button is skewed when switching
 
                         // Get active network card
                         activeNetworkCard = document.getElementById("network-1");
@@ -502,7 +514,7 @@
                             activeViewButton.style.display = "none";
                             activeReplaceButton.style.display = "none";
                             activateNetworkButton.style.display = "none";
-                            activateNetworkLabel.innerHTML = "";
+                            activateNetworkLabel.style.display = "none";
                             activeNetworkStatus.innerHTML = "";
 
                             // Show select button on card
@@ -526,7 +538,8 @@
                         savedNetworkCards = document.getElementById("savedNetworks").querySelectorAll(".card");
 
                         // Loop through saved network cards
-                        for (i = 0; i < savedNetworkCards.length; i++) {
+                        // Skip last card as it is the add network card
+                        for (i = 0; i < savedNetworkCards.length - 1; i++) {
                             savedNetworkCard = savedNetworkCards[i];
 
                             // Get buttons
@@ -558,9 +571,76 @@
                                 selectButton.style.display = "none";
                             }
                         }
-
-
                     }
+
+                    function hideInvalidNetworks() {
+
+                        // Get all saved network cards
+                        savedNetworkCards = document.getElementById("savedNetworks").querySelectorAll(".card");
+
+                        // Loop through saved network cards
+                        // Skip last card as it is the add network card
+                        for (i = 0; i < savedNetworkCards.length - 1; i++) {
+                            savedNetworkCard = savedNetworkCards[i];
+
+                            // Get training status as only trained networks can be used
+                            // and all trained networks are inherently valid
+
+                            trainingStatus = savedNetworkCard.querySelector("#trainingStatus");
+
+                            // Check if training status is hidden
+                            if (trainingStatus.hidden == true) {
+                                // Hide Card Details
+
+                                // Set opacity to 0.5
+                                savedNetworkCard.style.opacity = 0.5;
+                                selectButton = savedNetworkCard.querySelector("#selectButton");
+                                selectButton.disabled = true;
+
+                            }
+                        }
+
+                        // Disable add network card
+                        addNetworkCard = document.getElementById("addNetworkCard");
+                        addNetworkCard.style.opacity = 0.5;
+                        addNetworkButton = addNetworkCard.querySelector("#addNetworkButton");
+                        addNetworkButton.disabled = true;
+                    }
+
+                    function showInvalidNetworks() {
+
+                        // Get all saved network cards
+                        savedNetworkCards = document.getElementById("savedNetworks").querySelectorAll(".card");
+
+                        // Loop through saved network cards
+                        // Skip last card as it is the add network card
+                        for (i = 0; i < savedNetworkCards.length - 1; i++) {
+                            savedNetworkCard = savedNetworkCards[i];
+
+                            // Get training status as only trained networks can be used
+                            // and all trained networks are inherently valid
+
+                            trainingStatus = savedNetworkCard.querySelector("#trainingStatus");
+
+                            // Check if training status is hidden
+                            if (trainingStatus.hidden == true) {
+                                // Hide Card Details
+
+                                // Set opacity to 0.5
+                                savedNetworkCard.style.opacity = 1;
+                                selectButton = savedNetworkCard.querySelector("#selectButton");
+                                selectButton.disabled = false;
+
+                            }
+                        }
+
+                        // Disable add network card
+                        addNetworkCard = document.getElementById("addNetworkCard");
+                        addNetworkCard.style.opacity = 1;
+                        addNetworkButton = addNetworkCard.querySelector("#addNetworkButton");
+                        addNetworkButton.disabled = false;
+                    }
+
 
                     function replaceActiveNetwork() {
 
@@ -576,6 +656,47 @@
                         }
 
                         switchSelectNetworkButtons();
+
+                        hideInvalidNetworks();
+                    }
+
+                    function selectActiveNetwork(newNetworkId) {
+
+                        console.log('selectActiveNetwork', newNetworkId)
+
+                        var activeNetworkId = null;
+
+                        // Get current active network id
+                        for (networkId in networks) {
+                            if (networks[networkId].activeCard) {
+                                activeNetworkId = networkId;
+                                break;
+                            }
+                        }
+
+                        fetch('/switch-active-network', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 'newNetworkId': newNetworkId, 'activeNetworkId': activeNetworkId }),
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                console.log('Success:', data);
+                                loadNetworks();
+                            })
+                            .catch((error) => {
+                                console.error('Error:', error);
+                            });
+
+                        // switchSelectNetworkButtons();
+
+                        // hideInvalidNetworks();
+
+                        // var eventSource = null; // ?
+
+
                     }
 
                     function saveNetwork(networkId) {
@@ -584,7 +705,7 @@
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ 'networkId': networkId, 'layers': {}, 'inputSize': 0, 'outputSize': 0 }),
+                            body: JSON.stringify(networks[networkId]),
                         })
                             .then((response) => response.json())
                             .then((data) => {

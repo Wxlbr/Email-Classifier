@@ -64,6 +64,30 @@ def edit_network():
 @app.route('/save-network', methods=['POST'])
 def save_network():
     # Get data from request
+    # print(request.data)
+
+    data = request.get_json()
+
+    network_id = data.get('networkId')
+
+    # Get networks from file
+    networks = load_networks_from_file()
+
+    # Save network to list
+    if network_id not in networks:
+        networks[network_id] = data
+
+    # Save network to file
+    save_networks_to_file(networks)
+
+    return jsonify(data)
+
+
+@app.route('/save-layers', methods=['POST'])
+def save_layers():
+    # Get data from request
+    # print(request.data)
+
     data = request.get_json()
 
     network_id = data.get('networkId')
@@ -80,18 +104,42 @@ def save_network():
     # Save network to list
     if network_id not in networks:
         networks[network_id] = {}
-    networks[network_id]['layers'] = layers
-    networks[network_id]['valid'] = valid
-    networks[network_id]['inputSize'] = input_size
-    networks[network_id]['outputSize'] = output_size
-
-    if 'trained' in networks[network_id]:
-        networks[network_id]['trained'] = False
+    networks[network_id] = {
+        'layers': layers,
+        'inputSize': input_size,
+        'outputSize': output_size,
+        'activeCard': False,
+        'trained': False,
+        'status': 'inactive',
+        'valid': valid,
+        'network': {}
+    }
 
     # Save network to file
     save_networks_to_file(networks)
 
     return jsonify(data)
+
+
+@app.route('/switch-active-network', methods=['POST'])
+def switch_active_card():
+    data = request.get_json()
+
+    network_id = data.get('newNetworkId')
+    active_id = data.get('activeNetworkId')
+
+    # Get networks from file
+    networks = load_networks_from_file()
+
+    # TODO: Add validation
+
+    networks[network_id]['activeCard'] = True
+    networks[active_id]['activeCard'] = False
+
+    # Save network to file
+    save_networks_to_file(networks)
+
+    return jsonify({'status': 'success'})
 
 
 @app.route('/get-networks', methods=['GET'])

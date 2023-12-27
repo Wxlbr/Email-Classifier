@@ -149,7 +149,7 @@
                             validateLayers();
 
                             // Save network
-                            saveNetwork();
+                            saveLayers();
                         }
 
                         function addLayer(layerId, layerName, layerType) {
@@ -164,7 +164,9 @@
                                     "type": layerType
                                 },
                                 "valid": false,
-                                "errors": []
+                                "errors": [],
+                                "status": "inactive",
+                                "activeCard": false,
                             };
 
                             // Load layer configuration
@@ -446,14 +448,14 @@
                                 if (layerId == "inputLayer") {
                                     inputSize = document.getElementById("inputSize").value;
                                     validateLayers();
-                                    saveNetwork();
+                                    saveLayers();
                                     return;
                                 }
 
                                 if (layerId == "outputLayer") {
                                     outputSize = document.getElementById("outputSize").value;
                                     validateLayers();
-                                    saveNetwork();
+                                    saveLayers();
                                     return;
                                 }
 
@@ -488,7 +490,7 @@
 
                                 console.log(layers);
 
-                                saveNetwork();
+                                saveLayers();
                             }
 
                             function resolvePlaceholder(remove = true) {
@@ -651,8 +653,8 @@
         // Load new network configuration
         loadNetwork(layers);
 
-        function saveNetwork() {
-            fetch('/save-network', {
+        function saveLayers() {
+            fetch('/save-layers', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
