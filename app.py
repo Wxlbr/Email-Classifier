@@ -23,6 +23,7 @@ def load_networks_from_file():
 app = Flask(__name__)
 queue = Queue()
 history_queue = Queue()
+threads = {}
 
 
 @app.route('/')
@@ -226,6 +227,70 @@ def delete_network():
         del networks[network_id]
 
     print('Networks: ', networks.keys())
+
+    # Save network to file
+    save_networks_to_file(networks)
+
+    return jsonify(networks)
+
+
+@app.route('/toggle-active-network', methods=['POST'])
+def toggle_active_network():
+    data = request.get_json()
+
+    activate = data.get('activate')
+
+    # Get networks from file
+    networks = load_networks_from_file()
+
+    # Get active network id
+    network_id = next(
+        (network_id for network_id in networks if networks[network_id]['activeCard']), None)
+
+    if activate:
+
+        print('activating')
+
+        classifier = Classifier()
+
+        with open('./inc/temp_model_loading.json', 'w', encoding='utf-8') as f:
+            json.dump(networks[network_id]['network'], f, indent=4)
+
+        classifier.load_network('./inc/temp_model_loading.json')
+
+        # Delete temp file
+        os.remove('./inc/temp_model_loading.json')
+
+        # Change network status
+        networks[network_id]['status'] = 'active'
+
+        # Create stop event
+        stop_event = threading.Event()
+
+        # Start thread with classifier
+        thread = threading.Thread(
+            target=classifier.main, args=(True, -1, stop_event))
+
+        thread.start()
+
+        # Save thread to queue
+        threads[network_id] = (
+            {'networkId': network_id, 'thread': thread, 'stop_event': stop_event})
+
+    else:
+
+        # TODO: Better handling of stopping threads
+
+        print('deactivating')
+
+        # Get active thread
+        for thread in threads.values():
+            if thread['networkId'] == network_id:
+                thread['stop_event'].set()
+                thread['thread'].join()
+
+        # Change network status
+        networks[network_id]['status'] = 'inactive'
 
     # Save network to file
     save_networks_to_file(networks)

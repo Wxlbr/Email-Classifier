@@ -155,6 +155,8 @@ class Connection:
         Create a label with the given name
         '''
 
+        print(f'Creating label: {label_name}')
+
         self.check_connected()
 
         # Create the label
@@ -250,6 +252,8 @@ class Connection:
         elif 'Unsafe' in labels and 'Safe' in existing_labels:
             self.remove_email_labels(message_id, ['Safe'])
 
+        print('Getting label IDs')
+
         # Get the label IDs
         label_ids = [self._get_label_id(label) for label in labels]
 
@@ -290,6 +294,49 @@ class Connection:
 
     def _hot_encode(self, dictionary):
         return {key: 1 if value > 0 else value for key, value in dictionary.items()}
+
+    def email_has_label(self, message_id):
+        '''
+        Check if an email has a label
+        '''
+
+        self.check_connected()
+
+        # Get the labels
+        labels = self.get_email_labels(message_id)
+
+        check_labels = [self._get_label_id(label)
+                        for label in ['Safe', 'Unsafe']]
+
+        # Check if the email has a label
+        return any(label in labels for label in check_labels)
+
+    # def _get_all_user_labels(self):
+    #     '''
+    #     Get all the user's labels
+    #     '''
+
+    #     self.check_connected()
+
+    #     # Get the labels
+    #     labels = self.__service.users().labels().list(userId='me').execute()
+
+    #     # Return the labels names
+    #     return [label['name'] for label in labels['labels']]
+
+    def unclassify_emails(self):
+        '''
+        Remove all labels from all emails 
+        '''
+
+        self.check_connected()
+
+        # Get the user's emails
+        messages = self.get_user_emails()
+
+        # Remove the labels from each email
+        for _, message in enumerate(messages):
+            self.remove_email_labels(message['id'], ['Safe', 'Unsafe'])
 
 
 if __name__ == "__main__":

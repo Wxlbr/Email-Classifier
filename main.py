@@ -13,25 +13,38 @@ class Classifier:
         self.net = None
         self.trained = False
 
-    def main(self, n=1):
+    def main(self, loop=False, n=-1, stop_event=None):
         '''
         Classify the emails
         '''
 
         if self.net is None:
+            # Load default network
             self.load_network(file_path='./inc/model.json')
 
         assert self.trained, 'Network is not trained.'
+
+        # FOR DEBUGGING
+        # self.conn.unclassify_emails()
+
+        # self.classify_emails(n=n, stop_event=stop_event)
+
+        while loop and (stop_event is None or not stop_event.is_set()):
+            self.classify_emails(n=n, stop_event=stop_event)
+
+    def classify_emails(self, n=-1, stop_event=None):
+
+        print('Classifying emails...')
 
         # Get the user's emails
         messages = self.conn.get_user_emails()
 
         # Classify each email
         for i, message in enumerate(messages):
-            if i == n:
+            if i == n and n != -1 or stop_event is not None and stop_event.is_set():
                 break
 
-            self.classify_email(message['id'], assign_label=False)
+            self.classify_email(message['id'], assign_label=True)
 
     def test_network(self):
         '''
@@ -72,6 +85,11 @@ class Classifier:
 
         assert self.net is not None, 'No network found.'
         assert self.trained, 'Network is not trained.'
+
+        # Check if the email has already been classified
+        if self.conn.email_has_label(message_id):
+            print('Skip')
+            return
 
         # Get the content of the first email
         content = self.conn.get_email_content(message_id)
@@ -175,7 +193,7 @@ class Classifier:
 
         net = Network()
 
-        net.add_layer({"inputSize": input_size, "outputSize": output_size,
+        net.add_layer({"inputSize": str(input_size), "outputSize": str(output_size),
                       "type": "recurrent", "activation": "sigmoid"})
 
         return net
@@ -203,7 +221,7 @@ if __name__ == "__main__":
 
     classifier = Classifier()
 
-    # classifier.main()
+    classifier.main()
 
-    classifier.train_network()
+    # classifier.train_network()
     # classifier.test_network()
