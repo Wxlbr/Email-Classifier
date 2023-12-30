@@ -98,9 +98,6 @@ class Connection:
             userId='me', id=message_id).execute()
         payload = message['payload']
 
-        # Get the email subject
-        # subject = [header['value'] for header in payload['headers'] if header['name'] == 'Subject'][0]
-
         # Get email body data as base64url encoded string
         content = ''
         if 'parts' in payload and payload['parts'][0]['body']['size'] > 0:
@@ -281,14 +278,6 @@ class Connection:
         # Hot encode the frequencies
         words = self._hot_encode(words)
 
-        # For debugging
-        # with open('./inc/words.txt', 'w', encoding='utf-8') as f:
-        #     json.dump(words, f)
-
-        # for word, frequency in words.items():
-        #     if frequency > 0:
-        #         print(f"{word}: {frequency}")
-
         # Return the words
         return words
 
@@ -310,19 +299,6 @@ class Connection:
 
         # Check if the email has a label
         return any(label in labels for label in check_labels)
-
-    # def _get_all_user_labels(self):
-    #     '''
-    #     Get all the user's labels
-    #     '''
-
-    #     self.check_connected()
-
-    #     # Get the labels
-    #     labels = self.__service.users().labels().list(userId='me').execute()
-
-    #     # Return the labels names
-    #     return [label['name'] for label in labels['labels']]
 
     def unclassify_emails(self):
         '''

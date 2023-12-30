@@ -12,25 +12,50 @@ class Dense():
     '''
 
     def __init__(self, input_size, output_size, activation=Sigmoid()):
+        # Initialise input
         self.input = None
-        self.output = None
+
+        # Initialise weights and biases to random values
         self.weights = randn(output_size, input_size)
         self.bias = randn(output_size, 1)
+
+        # Initialise activation function
         self.activation = activation
 
     def forward(self, input_value):
+
+        # Save input value
         self.input = input_value
-        self.output = dot(self.weights, self.input) + self.bias
-        self.output = self.activation.forward(self.output)
-        return self.output
+
+        # Calculate the weighted input
+        weighted_input = dot(self.weights, self.input)
+
+        # Calculate output by adding weighted input and bias
+        output = add_matrices(weighted_input, self.bias)
+
+        # Apply activation function
+        output = self.activation.forward(output)
+
+        # Return output
+        return output
 
     def backward(self, output_gradient, learning_rate):
+
+        # Apply activation function derivative
         output_gradient = self.activation.backward(
             output_gradient, learning_rate)
-        weights_gradient = dot(output_gradient, self.input.T)
-        input_gradient = dot(self.weights.T, output_gradient)
-        self.weights -= multiply(weights_gradient, learning_rate)
-        self.bias -= multiply(output_gradient, learning_rate)
+
+        # Calculate gradients
+        weights_gradient = dot(output_gradient, transpose(self.input))
+        input_gradient = dot(transpose(self.weights), output_gradient)
+
+        # Update weights and biases
+        self.weights = sub_matrices(self.weights, multiply(
+            weights_gradient, learning_rate))
+        self.bias = sub_matrices(self.bias, multiply(
+            output_gradient, learning_rate))
+
+        # Return gradient with respect to input
         return input_gradient
 
 
@@ -44,23 +69,22 @@ class Recurrent():
     '''
 
     def __init__(self, input_size, output_size, activation=Sigmoid()):
-        # Initialize input and output
+        # Initialise input
         self.input = None
-        self.output = None
 
-        # Initialize sizes of input and output
+        # Initialise sizes of input and output
         self.input_size = input_size
         self.output_size = output_size
 
-        # Initialize weights and biases to random values
+        # Initialise weights and biases to random values
         self.weights = randn(output_size, input_size)
         self.recurrent_weights = randn(output_size, output_size)
         self.bias = randn(output_size, 1)
 
-        # Initialize hidden state to zero vectors
+        # Initialise hidden state to zero vectors
         self.hidden_state = zeros(output_size, 1)
 
-        # Initialize activation function
+        # Initialise activation function
         self.activation = activation
 
     def forward(self, input_value):
@@ -68,27 +92,28 @@ class Recurrent():
         Forward pass of the layer
         '''
 
-        # Save input value
+        # TODO: Missing bias?
+
+        # Save input value for the backward pass
         self.input = input_value
 
         # Update hidden state
         self.hidden_state = dot(self.recurrent_weights, self.hidden_state)
 
-        # Calculate the weighted input and hidden state
+        # Calculate the weighted input
         weighted_input = dot(self.weights, self.input)
-        weighted_hidden = self.hidden_state
 
         # Update output by adding weighted input and hidden state
-        self.output = add_matrices(weighted_input, weighted_hidden)
+        output = add_matrices(weighted_input, self.hidden_state)
 
         # Apply activation function
-        self.output = self.activation.forward(self.output)
+        output = self.activation.forward(output)
 
         # Update hidden state for the next iteration
-        self.hidden_state = self.output
+        self.hidden_state = output
 
         # Return output
-        return self.output
+        return output
 
     def backward(self, output_gradient, learning_rate):
         '''

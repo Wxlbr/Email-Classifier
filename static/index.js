@@ -197,6 +197,7 @@ function redirectEditNetwork(networkId) {
             return;
         }
 
+        // TODO: Remove training flag
         networks[networkId].trained == false;
         console.log('Ok, redirecting to edit network');
     }
@@ -387,9 +388,20 @@ function deleteNetwork(networkId) {
         });
 }
 
-function switchToSelectionView() {
-    // TODO: Activate Network Button is skewed when switching
+function replaceActiveNetwork() {
 
+    let activeNetworkStatus = document.getElementById("activeNetworkStatus");
+
+    if (activeNetworkStatus.innerHTML == "Status: Active") {
+        alert("Active network must be deactivated before replacing");
+    }
+
+    if (!confirm('Are you sure you want to replace the active network?')) {
+        console.log('Not replacing network');
+        return;
+    }
+
+    // Switch to selection view
     // Get active network card
     let activeNetworkCard = document.getElementById("activeNetworkContainer").querySelector(".card");
     
@@ -436,22 +448,6 @@ function switchToSelectionView() {
     let addNetworkCard = document.getElementById("addNetworkCard");
     addNetworkCard.style.opacity = 0.5;
     addNetworkCard.querySelector("#addNetworkButton").disabled = true;
-}
-
-function replaceActiveNetwork() {
-
-    let activeNetworkStatus = document.getElementById("activeNetworkStatus");
-
-    if (activeNetworkStatus.innerHTML == "Status: Active") {
-        alert("Active network must be deactivated before replacing");
-    }
-
-    if (!confirm('Are you sure you want to replace the active network?')) {
-        console.log('Not replacing network');
-        return;
-    }
-
-    switchToSelectionView();
 }
 
 function selectActiveNetwork(newNetworkId) {

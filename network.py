@@ -31,9 +31,11 @@ class Network:
             if y == pred:
                 correct += 1
 
-        return correct / len(x_test) * 100
+        return (correct * 100) / len(x_test)
 
-    def train(self, x_train, y_train, epochs=1, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
+    def train(self, x_train, y_train, epochs=2, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
+
+        # TODO: Queue management
 
         assert self.layers, 'Network has no layers.'
 
@@ -44,116 +46,110 @@ class Network:
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
 
-        if validation_data:
-            x_val, y_val = validation_data
-
         if queue:
-            queue.put({"data": {
-                "status": "training",
-                "epoch": 0,
-                "epochs": epochs,
-                "error": 0,
-                "accuracy": 0,
-                "epochEta": 0,
-                "totalEta": 0,
-            }, "networkId": netId})
+            queue.put({
+                "data": {
+                    "status": "training",
+                    "epoch": "0",
+                    "epochs": epochs,
+                    "error": "0",
+                    "accuracy": "-",
+                    "epochEta": "0s",
+                    "totalEta": "0s",
+                },
+                "networkId": netId
+            })
 
-        durations = []
-
-        # training loop
+        # Training loop
         for e in range(1, epochs+1):
             error = 0
-            start = time.time()
-            count = 0
             inner_durations = []
-            accuracy = 0
-            for x, y in zip(x_train, y_train):
+
+            # Loop through all training data
+            for i, (x, y) in enumerate(zip(x_train, y_train)):
+
+                # Start timer
                 inner_start = time.time()
 
-                count += 1
-                # forward
+                # Forward propagation
                 output = self.predict(x)
 
-                # error
-                # print(y, output)
+                # Calculate error
                 error += loss.calc(y, output)
 
-                # backward
+                # Backward propagation
                 gradient = loss.derivative(y, output)
-                # print(gradient)
                 for layer in reversed(self.layers):
                     gradient = layer.backward(gradient, learning_rate)
-                    # print(gradient)
 
-                inner_time = time.time() - inner_start
+                # Stop timer and save duration
+                inner_durations.append(time.time() - inner_start)
 
-                inner_durations.append(inner_time)
+                # Update progress bar
+                if queue and i % 10 == 0:
 
-                if queue and count % 10 == 0:
-
-                    epochEta = mean(inner_durations) * (len(x_train) - count)
+                    epochEta = mean(inner_durations) * (len(x_train) - (i+1))
                     totalEta = mean(inner_durations) * \
                         (epochs - e) * len(x_train) + epochEta
 
-                    epochEta = convert_time(epochEta)
-                    totalEta = convert_time(totalEta)
+                    queue.put({
+                        "data": {
+                            "status": "training",
+                            "epoch": e,
+                            "epochs": epochs,
+                            "error": f"{error / (i+1):.4f}",
+                            "accuracy": "-",
+                            "epochEta": convert_time(epochEta),
+                            "totalEta": convert_time(totalEta),
+                        },
+                        "networkId": netId
+                    })
 
-                    queue.put({"data": {
+            if queue:
+                queue.put({
+                    "data": {
                         "status": "training",
                         "epoch": e,
                         "epochs": epochs,
-                        "error": f"{error / count:.4f}",
-                        "accuracy": accuracy,
-                        "epochEta": epochEta,
-                        "totalEta": totalEta,
-                    }, "networkId": netId})
-
-            duration = time.time() - start
-            durations.append(duration)
-
-            epochEta = mean(inner_durations) * (len(x_train) - count)
-            totalEta = mean(inner_durations) * (epochs - e) + epochEta
-            epochEta = convert_time(epochEta)
-            totalEta = convert_time(totalEta)
-            accuracy = f"{self.accuracy(x_val, y_val):.4f}"
-
-            if queue:
-                queue.put({"data": {
-                    "status": "training",
-                    "epoch": e,
-                    "epochs": epochs,
-                    "error": f"{error / count:.4f}",
-                    "accuracy": accuracy,
-                    "epochEta": epochEta,
-                    "totalEta": totalEta,
-                }, "networkId": netId})
+                        "error": f"{error / len(x_train):.4f}",
+                        "accuracy": f"{self.accuracy(validation_data[0], validation_data[1]):.4f}",
+                        "epochEta": "0s",
+                        "totalEta": convert_time(mean(inner_durations) * (epochs - e)),
+                    },
+                    "networkId": netId
+                })
 
             if verbose:
                 print(f"{e}/{epochs}, error={error / len(x_train):.4f}", end="")
 
                 if validation_data:
                     print(
-                        f", val_accuracy={self.accuracy(x_val, y_val):.4f}%", end="")
+                        f", val_accuracy={self.accuracy(validation_data[0], validation_data[1]):.4f}%", end="")
 
-                print(f", duration={durations[-1]:.2f}s", end="")
+                print(f", duration={sum(inner_durations):.2f}s", end="")
 
                 print()
 
         if queue:
-            queue.put({"data": {
-                "status": "done"
-            }, "networkId": netId})
+            queue.put({
+                "data": {
+                    "status": "done"
+                },
+                "networkId": netId
+            })
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}
 
     def save(self, path):
+        # TODO: Check path is valid
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.info(), f, indent=4)
 
     def load(self, path):
         self.layers.clear()
 
+        # TODO: Check path exists and is valid
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -171,8 +167,6 @@ class Network:
         Add a layer to the network
         '''
 
-        # print(layer)
-
         assert layer['type'] in self.LAYER_TYPES, "Unknown layer type"
         assert layer['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
 
@@ -187,8 +181,3 @@ class Network:
 
         self.layers.append(self.LAYER_TYPES[layer['type']](
             input_size, output_size, activation=self.ACTIVATION_TYPES[layer['activation']]()))
-
-        # info = [{key: value for key, value in layer.info().items()
-        #          if key not in ['weights', 'recurrent_weights', 'bias']} for layer in self.layers]
-
-        # print(info)
