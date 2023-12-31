@@ -1,0 +1,26 @@
+{
+    "layers": {
+        "layer-1": {
+            "activeCard": false,
+            "errors": [],
+            "layerConfig": {
+                "activation": "sigmoid",
+                "inputSize": "3000",
+                "outputSize": "1",
+                "type": "recurrent"
+            },
+            "layerName": "Recurrent Layer",
+            "layerType": "recurrent",
+            "status": "inactive",
+            "valid": true
+        }
+    },
+    "inputSize": "3000",
+    "outputSize": "1",
+    "activeCard": false,
+    "trained": false,
+    "status": "inactive",
+    "valid": true,
+    "network": {},
+    "networkId": "network-1476"
+}

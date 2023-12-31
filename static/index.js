@@ -148,7 +148,7 @@ function loadNetworks(networksToLoad = {}) {
         </div>
         </div>`;
 
-        if (networksToLoad[networkId].trained == true) {
+        if (Object.keys(networksToLoad[networkId].network).length !== 0) {
             document.getElementById(networkId).querySelector("#trainingStatus").hidden = false;
         }
     }
@@ -182,7 +182,6 @@ function addNetwork() {
         "outputSize": 0,
         "valid": false,
         "status": "inactive",
-        "trained": false,
         "network": {}
     };
 
@@ -192,17 +191,12 @@ function addNetwork() {
 }
 
 function redirectEditNetwork(networkId) {
-    if (networks[networkId].trained == true) {
+    if (Object.keys(networks[networkId].network).length !== 0) {
         if (!confirm('Network is trained, editing will reset training. Are you sure you want to continue?')) {
             return;
         }
-
-        // TODO: Remove training flag
-        networks[networkId].trained == false;
-        console.log('Ok, redirecting to edit network');
     }
 
-    console.log("unload");
     if (eventSource) {
         eventSource.close();
     }
@@ -238,11 +232,10 @@ function loadTrainingStatus(networkId, data) {
     trainingCard.querySelector("#trainingProgressPercentage").innerHTML = `${Math.round((data.epoch - 1) / data.epochs * 100)}% `;
 
     // Set epoch, error, accuracy and eta
-    trainingCard.querySelector("#epoch").innerHTML = `Epoch ${data.epoch} /${data.epochs},`;
+    trainingCard.querySelector("#epoch").innerHTML = `Epoch ${data.epoch}/${data.epochs},`;
     trainingCard.querySelector("#error").innerHTML = `Error: ${data.error},`;
     trainingCard.querySelector("#accuracy").innerHTML = `Accuracy: ${data.accuracy}%,`;
     trainingCard.querySelector("#eta").innerHTML = `ETA: ${data.epochEta} (${data.totalEta})`;
-
 }
 
 function loadTrainingSSE(networkId, data = null) {
@@ -275,7 +268,6 @@ function loadTrainingSSE(networkId, data = null) {
             // Set network to trained
             console.log("setTrained", networkId);
             console.log(networks)
-            networks[networkId].trained = true;
 
             networkCard.querySelector("#trainingStatus").hidden = false;
 
@@ -305,12 +297,10 @@ function trainNetwork(networkId) {
 
     let network = networks[networkId];
 
-    if (network.trained) {
+    if (Object.keys(network.network).length !== 0) {
         if (!confirm('Network is trained, continuing will reset training. Are you sure you want to continue?')) {
             return;
         }
-
-        network.trained == false;
     
         let networkCard = document.getElementById(networkId);
         networkCard.querySelector("#trainingStatus").hidden = true;
@@ -487,7 +477,7 @@ function saveNetwork(networkId) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(networks[networkId]),
+        body: JSON.stringify({ 'networkId': networkId }),
     })
         .then((response) => response.json())
         .then(() => {})

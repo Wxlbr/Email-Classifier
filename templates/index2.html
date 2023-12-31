@@ -18,7 +18,7 @@
     let layers = {};
 
     let inputSize = 0;
-    let outputSize = 0; // TODO: Lock output size at 1 as it will always need to be bianry classification
+    let outputSize = 1;
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
@@ -34,24 +34,7 @@
         inputSize = flaskData.inputSize;
     }
 
-    if (flaskData.outputSize) {
-        outputSize = flaskData.outputSize;
-    }
-
     console.log(layers, inputSize, outputSize)
-
-    // Enable Sortable.js
-    const layersView = document.getElementById("layersView");
-
-    // Initialise Sortable on the layersView container
-    const sortable = new Sortable(layersView, {
-        animation: 150,
-        handle: ".handle",
-        onUpdate: (evt) => updateLayerOrder(evt),
-    });
-
-    // Load new network configuration
-    loadNetwork(layers);
 
 </script>
 
@@ -222,5 +205,20 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Enable Sortable.js
+        const layersView = document.getElementById("layersView");
+
+        // Initialise Sortable on the layersView container
+        const sortable = new Sortable(layersView, {
+            animation: 150,
+            handle: ".handle",
+            onUpdate: (evt) => updateLayerOrder(evt),
+        });
+
+        // Load new network configuration
+        loadNetwork(layers);
+    </script>
 
 </html>

@@ -288,6 +288,9 @@ function loadLayerConfiguration(layerId) {
         document.getElementById("ConfigurationErrorBox").style.display = "none";
         document.getElementById("deleteLayerConfigurationButton").style.display = "none";
 
+        // Make Input Size Read Only if it is the output layer as it is binary classification
+        document.getElementById("outputSize").readOnly = true;
+
     } else {
 
         const layer = layers[layerId];

@@ -20,13 +20,6 @@ def multiply(x: list, y: float) -> list:
     return [[value * y for value in row] for row in x]
 
 
-def matrix_multiply(x: list, y: list) -> list:
-    assert shape(x) == shape(
-        y), f"Invalid dimensions: {shape(x)} != {shape(y)}"
-
-    return [[x[i][j] * y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
-
-
 def transpose(x: list) -> list:
     return [[x[j][i] for j in range(len(x))] for i in range(len(x[0]))]
 
@@ -89,6 +82,14 @@ def sub_matrices(x: list, y: list) -> list:
         y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
 
     return [[x[i][j] - y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
+
+
+def multiply_matrices(x: list, y: list) -> list:
+    assert len(x) == len(y), f"Invalid dimensions: {len(x)} != {len(y)}"
+    assert len(x[0]) == len(
+        y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
+
+    return [[x[i][j] * y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
 
 
 def shape(x: list) -> tuple:

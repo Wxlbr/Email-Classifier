@@ -1,4 +1,4 @@
-from calc import exp, matrix_multiply
+from calc import exp, multiply_matrices
 
 
 class Sigmoid:
@@ -17,7 +17,7 @@ class Sigmoid:
         return self.sigmoid(x)
 
     def backward(self, x):
-        return matrix_multiply(x, self.sigmoid_derivative(self.input))
+        return multiply_matrices(x, self.sigmoid_derivative(self.input))
 
     def get_type(self):
         return self.type
@@ -39,7 +39,7 @@ class Tanh:
         return self.tanh(x)
 
     def backward(self, x):
-        return matrix_multiply(x, self.tanh_derivative(self.input))
+        return multiply_matrices(x, self.tanh_derivative(self.input))
 
     def get_type(self):
         return self.type

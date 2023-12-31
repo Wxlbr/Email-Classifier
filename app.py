@@ -19,6 +19,8 @@ def load_networks_from_file():
     with open('./inc/networks.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# TODO: Swap queue for a websocket
+
 
 app = Flask(__name__)
 queue = Queue()
@@ -40,26 +42,10 @@ def edit_network():
     # Get network from list
     networks = load_networks_from_file()
 
-    # Get network from list
-    if network_id in networks:
-        layers = networks[network_id]['layers']
+    # Add network id to network
+    networks[network_id]['networkId'] = network_id
 
-        if 'inputSize' in networks[network_id]:
-            input_size = networks[network_id]['inputSize']
-        if 'outputSize' in networks[network_id]:
-            output_size = networks[network_id]['outputSize']
-
-    else:
-        layers = {}
-
-    data = {
-        'networkId': network_id,
-        'layers': layers,
-        'inputSize': input_size,
-        'outputSize': output_size
-    }
-
-    return render_template('index2.html', data=data)
+    return render_template('index2.html', data=networks[network_id])
 
 
 @app.route('/save-network', methods=['POST'])
@@ -74,9 +60,17 @@ def save_network():
     # Get networks from file
     networks = load_networks_from_file()
 
-    # Save network to list
-    if network_id not in networks:
-        networks[network_id] = data
+    networks[network_id] = {
+        "networkId": network_id,
+        "name": f"Network {network_id.split('-')[0]}",
+        "activeCard": False,
+        "layers": {},
+        "inputSize": 0,
+        "outputSize": 0,
+        "valid": False,
+        "status": "inactive",
+        "network": {}
+    }
 
     # Save network to file
     save_networks_to_file(networks)
@@ -110,7 +104,6 @@ def save_layers():
         'inputSize': input_size,
         'outputSize': output_size,
         'activeCard': False,
-        'trained': False,
         'status': 'inactive',
         'valid': valid,
         'network': {}
@@ -195,7 +188,6 @@ def train_network_thread(network_id, network, queue):
     if network_id not in networks:
         networks[network_id] = {}
     networks[network_id]['network'] = classifier.net.info()
-    networks[network_id]['trained'] = True
 
     # Save network to file
     save_networks_to_file(networks)
