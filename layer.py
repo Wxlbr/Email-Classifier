@@ -58,6 +58,28 @@ class Dense():
         # Return gradient with respect to input
         return input_gradient
 
+    def info(self):
+        '''
+        Return a dictionary containing the variables of the layer
+        '''
+
+        return {
+            'input_size': len(self.input),
+            'output_size': len(self.weights),
+            'weights': self.weights,
+            'bias': self.bias,
+            'activation': self.activation.get_type(),
+            'type': 'dense'
+        }
+
+    def load(self, info):
+        '''
+        Load the variables of the layer from a dictionary
+        '''
+
+        self.weights = info.get('weights', self.weights)
+        self.bias = info.get('bias', self.bias)
+
 
 class Recurrent():
     '''
