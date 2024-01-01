@@ -110,10 +110,12 @@ class Classifier:
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
 
-    def train_network(self, X=None, Y=None, queue=None, netId=None):
+    def train_network(self, X=None, Y=None, socketio=None, netId=None):
         '''
         Train the network
         '''
+
+        print('Training network...')
 
         # Use default training data if none is provided
         if X is None or Y is None:
@@ -133,7 +135,7 @@ class Classifier:
 
         # Train the network
         self.net.train(X_train, Y_train, validation_data=(
-            X_test, Y_test), queue=queue, netId=netId)
+            X_test, Y_test), socketio=socketio, netId=netId)
 
         self.trained = True
 

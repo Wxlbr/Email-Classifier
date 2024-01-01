@@ -8,14 +8,18 @@
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
     <script src="/static/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
 </head>
 
 <script>
+    // Socket must be a global variable so that it can be 
+    // accessed by other scripts and will remain open
+    let socket = initTrainingSocket();
+
+    // TODO: Remove networks as a global variable
     let networks = {};
 
     loadNetworks();
-
-    var eventSource = null;
 
     console.log('outer', networks)
 </script>

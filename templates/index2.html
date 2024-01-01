@@ -15,16 +15,16 @@
 </head>
 
 <script>
+    // TODO: Remove layers as a global variable
     let layers = {};
 
+    // TODO: Remove inputSize and outputSize as global variables
     let inputSize = 0;
     let outputSize = 1;
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
     console.log(flaskData);
-
-    networkId = flaskData.networkId;
 
     if (flaskData.layers) {
         layers = flaskData.layers;

@@ -1,3 +1,12 @@
+// function writeToCache(key, value) {
+//     localStorage.setItem(key, JSON.stringify(value));
+// }
+
+// function readFromCache(key) {
+//     const cachedData = localStorage.getItem(key);
+//     return cachedData ? JSON.parse(cachedData) : null;
+// }
+
 function toggleActiveLayer() {
 
     const activate = activateNetworkLabel.innerHTML == "Activate" ? true : false;
@@ -18,11 +27,11 @@ function toggleActiveLayer() {
         },
         body: JSON.stringify({ 'activate': activate }),
     })
-        .then((response) => response.json())
-        .then(() => {})
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    .then((response) => response.json())
+    .then(() => {})
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function getNetworks(func) {
@@ -33,15 +42,14 @@ function getNetworks(func) {
             "Content-Type": "application/json"
         }
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            // networks = data;
-            func(data);
-        })
-        .catch(error => {
-            console.error("Error fetching networks:", error);
-        });
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        func(data);
+    })
+    .catch(error => {
+        console.error("Error fetching networks:", error);
+    });
 }
 
 function loadNetworks(networksToLoad = {}) {
@@ -132,7 +140,9 @@ function loadNetworks(networksToLoad = {}) {
         </div>
         <div class="h-35 pad-4 items-center rounded-bottom">
             <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
-                id="selectButton">Select</button>
+                id="selectButton">
+                Select
+            </button>
             <button onclick="redirectEditNetwork('${networkId}')"
                 class="button button-blue" type="submit" id="editButton">
                 Edit
@@ -158,10 +168,7 @@ function loadNetworks(networksToLoad = {}) {
 
     networks = networksToLoad;
 
-    validateNetworks();
-
-    // TODO: Kill SSE when switching active network and when training is done
-    // checkActiveTraining();
+    validateNetworks(networksToLoad);
 }
 
 function addNetwork() {
@@ -191,22 +198,22 @@ function addNetwork() {
 }
 
 function redirectEditNetwork(networkId) {
-    if (Object.keys(networks[networkId].network).length !== 0) {
+    if (!document.getElementById(networkId).querySelector("#trainingStatus").hidden) {
         if (!confirm('Network is trained, editing will reset training. Are you sure you want to continue?')) {
             return;
         }
     }
 
-    if (eventSource) {
-        eventSource.close();
+    if (socket != null) {
+        socket.disconnect();
     }
 
     window.location.href = `/edit-network?networkId=${networkId}`;
 }
 
-function validateNetworks() {
-    for (let networkId in networks) {
-        const network = networks[networkId];
+function validateNetworks(networksToValidate) {
+    for (let networkId in networksToValidate) {
+        const network = networksToValidate[networkId];
         console.log(networkId, network);
         if (network.activeCard) {
             // Skip active card as it has been validated already
@@ -238,82 +245,86 @@ function loadTrainingStatus(networkId, data) {
     trainingCard.querySelector("#eta").innerHTML = `ETA: ${data.epochEta} (${data.totalEta})`;
 }
 
-function loadTrainingSSE(networkId, data = null) {
+function initTrainingSocket() {
 
-    console.log("loadTrainingSSE", networkId);
-    console.log("loadTrainingSSE", data);
+    let namespace = '/train';
+    // let room = 'test';
 
-    // Get network card
-    let networkCard = document.getElementById(networkId);
-    let trainingCard = networkCard.querySelector("#trainingCard");
-    trainingCard.hidden = false;
+    const socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
 
-    let eventSource = new EventSource('/sse');
+    // Add event listeners or any other socket-related logic here
+    socket.on('connect', () => {
+        console.log('Socket connected');
+    });
 
-    eventSource.onmessage = function (event) {
-        console.log(event.data);
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+    });
 
-        let eventData = JSON.parse(event.data)
-        let data = eventData.data;
-        let networkId = eventData.networkId;
+    // Add a listener for training updates
+    socket.on('training_update', function(data) {
+        console.log('Received training');
+        console.log('Received training update:', data);
 
-        if (data.status == "done") {
-            trainingCard.hidden = true;
+        // Cache data for page refresh
+        // writeToCache(data.networkId, data);
 
-            // Set edit, train and delete buttons to enabled
-            networkCard.querySelector("#editButton").disabled = false;
-            networkCard.querySelector("#trainButton").disabled = false;
-            networkCard.querySelector("#deleteButton").disabled = false;
+        loadTrainingStatus(data.networkId, data);
+    });
 
-            // Set network to trained
-            console.log("setTrained", networkId);
-            console.log(networks)
+    // Add a listener for training done
+    socket.on('training_done', function(data) {
+        console.log('Received training done');
+        console.log('Received training done:', data);
 
-            networkCard.querySelector("#trainingStatus").hidden = false;
+        let networkCard = document.getElementById(data.networkId);
+        let trainingCard = networkCard.querySelector("#trainingCard");
 
-            eventSource.close();
-            return;
-        }
+        trainingCard.hidden = true;
 
-        loadTrainingStatus(networkId, data);
-    };
+        // Set edit, train and delete buttons to enabled
+        networkCard.querySelector("#editButton").disabled = false;
+        networkCard.querySelector("#trainButton").disabled = false;
+        networkCard.querySelector("#deleteButton").disabled = false;
 
-    eventSource.onerror = function (error) {
-        console.error('EventSource failed:', error);
-        eventSource.close();
-    };
+        // Set network to trained
+        // console.log("setTrained", data.networkId);
 
-    if (data != null) {
-        loadTrainingStatus(networkId, data);
-    }
+        networkCard.querySelector("#trainingStatus").hidden = false;
+    });
 
-    // Set edit, train and delete buttons to disabled
-    networkCard.querySelector("#editButton").disabled = true;
-    networkCard.querySelector("#trainButton").disabled = true;
-    networkCard.querySelector("#deleteButton").disabled = true;
+    return socket;
 }
 
 function trainNetwork(networkId) {
 
-    let network = networks[networkId];
+    // Get network card
+    let networkCard = document.getElementById(networkId);
+
+    let valid = networkCard.querySelector("#validationStatus").innerHTML == "Valid" ? true : false;
 
     if (Object.keys(network.network).length !== 0) {
         if (!confirm('Network is trained, continuing will reset training. Are you sure you want to continue?')) {
             return;
         }
     
-        let networkCard = document.getElementById(networkId);
-        networkCard.querySelector("#trainingStatus").hidden = true;
+        document.getElementById(networkId).querySelector("#trainingStatus").hidden = true;
 
         console.log('Ok, redirecting to edit network');
     }
 
-    if (!network.valid) {
+    if (!valid) {
         alert("Network is invalid, please edit and validate before training");
         return;
     }
 
-    loadTrainingSSE(networkId);
+    // Hide training card
+    networkCard.querySelector("#trainingCard").hidden = false;
+
+    // Set edit, train and delete buttons to disabled
+    networkCard.querySelector("#editButton").disabled = true;
+    networkCard.querySelector("#trainButton").disabled = true;
+    networkCard.querySelector("#deleteButton").disabled = true;
 
     fetch("/train-network", {
         method: "POST",
@@ -325,34 +336,31 @@ function trainNetwork(networkId) {
             "network": network
         })
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
-        .catch(error => {
-            console.error("Error training network:", error);
-        });
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+    })
+    .catch(error => {
+        console.error("Error training network:", error);
+    });
 }
 
-function checkActiveTraining() {
-    fetch("/active-training-sse", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            console.log(data.active);
-            if (data.active) {
-                loadTrainingSSE(data.networkId, data.data);
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching active training sse:", error);
-        });
-}
+// function checkActiveTraining() {
+//     // Check if active network is training
+//     for (networkId in networks) {
+//         const network = networks[networkId];
+
+//         if (!network.activeCard) {
+            
+//             // Read from cache
+//             let cachedData = readFromCache(networkId);
+
+//             if (cachedData != null) {
+//                 loadTrainingSSE(networkId, cachedData);
+//             }
+//         }
+//     }
+// }
 
 function deleteNetwork(networkId) {
     if (!confirm('Are you sure you want to delete this network?')) {
@@ -368,14 +376,14 @@ function deleteNetwork(networkId) {
             "networkId": networkId
         })
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            loadNetworks(data);
-        })
-        .catch(error => {
-            console.error("Error deleting network:", error);
-        });
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        loadNetworks(data);
+    })
+    .catch(error => {
+        console.error("Error deleting network:", error);
+    });
 }
 
 function replaceActiveNetwork() {
@@ -444,15 +452,9 @@ function selectActiveNetwork(newNetworkId) {
 
     console.log('selectActiveNetwork', newNetworkId)
 
-    let activeNetworkId = null;
-
-    // Get current active network id
-    for (const networkId in networks) {
-        if (networks[networkId].activeCard) {
-            activeNetworkId = networkId;
-            break;
-        }
-    }
+    // TODO: Check if network is not null
+    let activeNetworkCard = document.getElementById("activeNetworkContainer").querySelector(".card");   
+    let activeNetworkId = activeNetworkCard.id;
 
     fetch('/switch-active-network', {
         method: 'POST',
@@ -461,14 +463,14 @@ function selectActiveNetwork(newNetworkId) {
         },
         body: JSON.stringify({ 'newNetworkId': newNetworkId, 'activeNetworkId': activeNetworkId }),
     })
-        .then((response) => response.json())
-        .then((data) => {
-            console.log('Success:', data);
-            loadNetworks();
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        loadNetworks();
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function saveNetwork(networkId) {
@@ -479,9 +481,9 @@ function saveNetwork(networkId) {
         },
         body: JSON.stringify({ 'networkId': networkId }),
     })
-        .then((response) => response.json())
-        .then(() => {})
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    .then((response) => response.json())
+    .then(() => {})
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }

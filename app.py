@@ -1,11 +1,13 @@
 import os
 import json
 import threading
-from queue import Queue
-
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO
 
 from main import Classifier
+
+app = Flask(__name__)
+socketio = SocketIO(app)
 
 
 def save_networks_to_file(networks):
@@ -18,14 +20,6 @@ def load_networks_from_file():
         return {}
     with open('./inc/networks.json', 'r', encoding='utf-8') as f:
         return json.load(f)
-
-# TODO: Swap queue for a websocket
-
-
-app = Flask(__name__)
-queue = Queue()
-history_queue = Queue()
-threads = {}
 
 
 @app.route('/')
@@ -97,8 +91,6 @@ def save_layers():
     networks = load_networks_from_file()
 
     # Save network to list
-    if network_id not in networks:
-        networks[network_id] = {}
     networks[network_id] = {
         'layers': layers,
         'inputSize': input_size,
@@ -142,16 +134,14 @@ def get_networks():
     return jsonify(networks)
 
 
-@app.route('/sse')
-def sse():
-    def event_stream():
-        while True:
-            result = queue.get()
-            result = json.dumps(result)
-            history_queue.put(result)  # put it back
-            yield f'data: {result}\n\n'
+@socketio.on('connect', namespace='/train')
+def handle_connect():
+    print('Client connected')
 
-    return Response(event_stream(), mimetype="text/event-stream")
+
+@socketio.on('disconnect', namespace='/train')
+def handle_disconnect():
+    print('Client disconnected')
 
 
 @app.route('/train-network', methods=['POST'])
@@ -163,44 +153,28 @@ def train_network():
     network = data.get('network')
 
     thread = threading.Thread(target=train_network_thread, args=(
-        network_id, network, queue))
+        network_id, network,))
     thread.start()
 
-    return jsonify(data)
+    return jsonify({'status': 'success'})
 
 
-def train_network_thread(network_id, network, queue):
+def train_network_thread(network_id, network):
     classifier = Classifier()
 
-    # queue.put({'data': 'It worked 1!'})
-    # print('It worked 1!')
-
     for layer in network['layers'].values():
-        classifier.add_layer(
-            layer['layerConfig'])
+        classifier.add_layer(layer['layerConfig'])
 
-    classifier.train_network(queue=queue, netId=network_id)
+    classifier.train_network(socketio=socketio, netId=network_id)
 
     # Get networks from file
     networks = load_networks_from_file()
 
-    # Save network to list
     if network_id not in networks:
         networks[network_id] = {}
     networks[network_id]['network'] = classifier.net.info()
 
-    # Save network to file
     save_networks_to_file(networks)
-
-
-@app.route('/active-training-sse', methods=['GET'])
-def active_sses():
-    if history_queue.empty():
-        return jsonify({'active': False, 'networkId': None, 'data': None})
-    data = json.loads(history_queue.get())
-    data["active"] = True
-    print('Data: ', data)
-    return jsonify(data)
 
 
 @app.route('/delete-network', methods=['POST'])
@@ -228,6 +202,9 @@ def delete_network():
 
 @app.route('/toggle-active-network', methods=['POST'])
 def toggle_active_network():
+
+    # TODO: Pass websocket to thread so it can emit events
+
     data = request.get_json()
 
     activate = data.get('activate')
@@ -266,8 +243,8 @@ def toggle_active_network():
         thread.start()
 
         # Save thread to queue
-        threads[network_id] = (
-            {'networkId': network_id, 'thread': thread, 'stop_event': stop_event})
+        # threads[network_id] = (
+        #     {'networkId': network_id, 'thread': thread, 'stop_event': stop_event})
 
     else:
 
@@ -276,10 +253,10 @@ def toggle_active_network():
         print('deactivating')
 
         # Get active thread
-        for thread in threads.values():
-            if thread['networkId'] == network_id:
-                thread['stop_event'].set()
-                thread['thread'].join()
+        # for thread in threads.values():
+        #     if thread['networkId'] == network_id:
+        #         thread['stop_event'].set()
+        #         thread['thread'].join()
 
         # Change network status
         networks[network_id]['status'] = 'inactive'
@@ -291,4 +268,4 @@ def toggle_active_network():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)

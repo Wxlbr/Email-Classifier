@@ -33,9 +33,7 @@ class Network:
 
         return (correct * 100) / len(x_test)
 
-    def train(self, x_train, y_train, epochs=2, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, queue=None, netId=None):
-
-        # TODO: Queue management
+    def train(self, x_train, y_train, epochs=2, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, socketio=None, netId=None):
 
         assert self.layers, 'Network has no layers.'
 
@@ -46,19 +44,18 @@ class Network:
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
 
-        if queue:
-            queue.put({
-                "data": {
-                    "status": "training",
-                    "epoch": "0",
-                    "epochs": epochs,
-                    "error": "0",
-                    "accuracy": "-",
-                    "epochEta": "0s",
-                    "totalEta": "0s",
-                },
+        if socketio:
+
+            socketio.emit('training_update', {
+                "status": "training",
+                "epoch": "0",
+                "epochs": epochs,
+                "error": "0",
+                "accuracy": "-",
+                "epochEta": "0s",
+                "totalEta": "0s",
                 "networkId": netId
-            })
+            }, namespace='/train')
 
         # Training loop
         for e in range(1, epochs+1):
@@ -86,38 +83,35 @@ class Network:
                 inner_durations.append(time.time() - inner_start)
 
                 # Update progress bar
-                if queue and i % 10 == 0:
+                if socketio and i % 10 == 0:
 
                     epochEta = mean(inner_durations) * (len(x_train) - (i+1))
                     totalEta = mean(inner_durations) * \
                         (epochs - e) * len(x_train) + epochEta
 
-                    queue.put({
-                        "data": {
-                            "status": "training",
-                            "epoch": e,
-                            "epochs": epochs,
-                            "error": f"{error / (i+1):.4f}",
-                            "accuracy": "-",
-                            "epochEta": convert_time(epochEta),
-                            "totalEta": convert_time(totalEta),
-                        },
-                        "networkId": netId
-                    })
-
-            if queue:
-                queue.put({
-                    "data": {
+                    socketio.emit('training_update', {
                         "status": "training",
                         "epoch": e,
                         "epochs": epochs,
-                        "error": f"{error / len(x_train):.4f}",
-                        "accuracy": f"{self.accuracy(validation_data[0], validation_data[1]):.4f}",
-                        "epochEta": "0s",
-                        "totalEta": convert_time(mean(inner_durations) * (epochs - e)),
-                    },
+                        "error": f"{error / (i+1):.4f}",
+                        "accuracy": "-",
+                        "epochEta": convert_time(epochEta),
+                        "totalEta": convert_time(totalEta),
+                        "networkId": netId
+                    }, namespace='/train')
+
+            if socketio:
+
+                socketio.emit('training_update', {
+                    "status": "training",
+                    "epoch": e,
+                    "epochs": epochs,
+                    "error": f"{error / len(x_train):.4f}",
+                    "accuracy": f"{self.accuracy(validation_data[0], validation_data[1]):.4f}",
+                    "epochEta": "0s",
+                    "totalEta": convert_time(mean(inner_durations) * (epochs - e)),
                     "networkId": netId
-                })
+                }, namespace='/train')
 
             if verbose:
                 print(f"{e}/{epochs}, error={error / len(x_train):.4f}", end="")
@@ -130,13 +124,12 @@ class Network:
 
                 print()
 
-        if queue:
-            queue.put({
-                "data": {
-                    "status": "done"
-                },
+        if socketio:
+
+            socketio.emit('training_done', {
+                "status": "done",
                 "networkId": netId
-            })
+            }, namespace='/train')
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}
