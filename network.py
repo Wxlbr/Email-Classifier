@@ -35,6 +35,8 @@ class Network:
 
     def train(self, x_train, y_train, epochs=2, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, socketio=None, netId=None):
 
+        print('Began Training')
+
         assert self.layers, 'Network has no layers.'
 
         assert len(x_train) == len(
@@ -172,5 +174,11 @@ class Network:
         if not self.layers:
             self.layers = []
 
+        print(
+            f"Adding layer: {layer['type']}, Input Size: {input_size}, Output Size: {output_size}")
+
         self.layers.append(self.LAYER_TYPES[layer['type']](
             input_size, output_size, activation=self.ACTIVATION_TYPES[layer['activation']]()))
+
+        print(
+            f"Added layer: {layer['type']}, Input Size: {input_size}, Output Size: {output_size}")

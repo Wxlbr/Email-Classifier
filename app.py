@@ -147,6 +147,8 @@ def handle_disconnect():
 @app.route('/train-network', methods=['POST'])
 def train_network():
 
+    print('Received train request')
+
     data = request.get_json()
 
     network_id = data.get('networkId')
@@ -164,6 +166,8 @@ def train_network_thread(network_id, network):
 
     for layer in network['layers'].values():
         classifier.add_layer(layer['layerConfig'])
+
+    print('Training network')
 
     classifier.train_network(socketio=socketio, netId=network_id)
 

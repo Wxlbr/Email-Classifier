@@ -298,6 +298,9 @@ function initTrainingSocket() {
 
 function trainNetwork(networkId) {
 
+    // Get network
+    let network = networks[networkId];
+
     // Get network card
     let networkCard = document.getElementById(networkId);
 

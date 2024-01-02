@@ -18,6 +18,8 @@ class Classifier:
         Classify the emails
         '''
 
+        print('Loading network...')
+
         if self.net is None:
             # Load default network
             self.load_network(file_path='./inc/model.json')
@@ -28,6 +30,8 @@ class Classifier:
         # self.conn.unclassify_emails()
 
         # self.classify_emails(n=n, stop_event=stop_event)
+
+        print('Started main loop')
 
         while loop and (stop_event is None or not stop_event.is_set()):
             self.classify_emails(n=n, stop_event=stop_event)
