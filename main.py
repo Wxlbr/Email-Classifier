@@ -1,6 +1,8 @@
 import os
 import csv
 
+import threading
+
 from network import Network
 from connection import Connection
 from calc import shape
@@ -12,13 +14,26 @@ class Classifier:
         self.conn = Connection()
         self.net = None
         self.trained = False
+        self.stop_event = threading.Event()
 
-    def main(self, loop=False, n=-1, stop_event=None):
+    def stop_classification(self):
+        # print('Stopping classification...')
+        self.stop_event.set()
+
+    def start_classification_thread(self, n=-1):
+        # Reset the stop event in case it was set before
+        self.stop_event.clear()
+
+        # Start classification in a separate thread
+        thread = threading.Thread(target=self.classify_emails, args=(n,))
+        thread.start()
+
+    def main(self, loop=False, n=-1):
         '''
         Classify the emails
         '''
 
-        print('Loading network...')
+        # print('Loading network...')
 
         if self.net is None:
             # Load default network
@@ -29,26 +44,29 @@ class Classifier:
         # FOR DEBUGGING
         # self.conn.unclassify_emails()
 
-        # self.classify_emails(n=n, stop_event=stop_event)
+        # self.classify_emails(n=n)
 
-        print('Started main loop')
+        # print('Started main loop')
 
-        while loop and (stop_event is None or not stop_event.is_set()):
-            self.classify_emails(n=n, stop_event=stop_event)
+        while loop and not self.stop_event.is_set():
+            self.classify_emails(n=n)
 
-    def classify_emails(self, n=-1, stop_event=None):
+    def classify_emails(self, n=-1):
 
-        print('Classifying emails...')
+        # print('Classifying emails...')
 
         # Get the user's emails
         messages = self.conn.get_user_emails()
 
         # Classify each email
         for i, message in enumerate(messages):
-            if i == n and n != -1 or stop_event is not None and stop_event.is_set():
+            if i == n or self.stop_event.is_set():
+                # print('Stopping classification...')
                 break
 
-            self.classify_email(message['id'], assign_label=True)
+            # print('Classifying email', i)
+
+            self.classify_email(message['id'], assign_label=False)
 
     def test_network(self):
         '''
@@ -160,15 +178,25 @@ class Classifier:
 
         return X_train, X_test, Y_train, Y_test
 
-    def load_network(self, file_path):
+    def load_network(self, network_dictionary=None, file_path=None):
         '''
-        Load the network from file
+        Load a trained network from a file or dictionary
         '''
 
-        assert os.path.exists(file_path), 'File does not exist.'
+        # Only one of the parameters can be provided
+        assert (network_dictionary is None) != (
+            file_path is None), 'Only one of the parameters can be provided.'
+
+        if file_path is not None:
+            assert os.path.exists(file_path), 'File does not exist.'
+
+        if network_dictionary is not None:
+            assert isinstance(network_dictionary,
+                              dict), 'Network is not a dictionary.'
 
         self.net = Network()
-        self.net.load(file_path)
+        self.net.load(network_dictionary=network_dictionary,
+                      file_path=file_path)
         self.trained = True
 
     def add_layer(self, layer):

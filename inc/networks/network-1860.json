@@ -1,0 +1,24 @@
+{
+    "networkId": "network-1860",
+    "name": "Network network",
+    "activeCard": false,
+    "layers": {
+        "layer-1": {
+            "layerName": "Recurrent Layer",
+            "layerConfig": {
+                "inputSize": "3000",
+                "outputSize": "1",
+                "activation": "sigmoid",
+                "type": "recurrent"
+            },
+            "valid": true,
+            "errors": [],
+            "status": "inactive"
+        }
+    },
+    "inputSize": "3000",
+    "outputSize": 1,
+    "valid": true,
+    "status": "inactive",
+    "network": {}
+}

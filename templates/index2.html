@@ -19,8 +19,8 @@
     let layers = {};
 
     // TODO: Remove inputSize and outputSize as global variables
-    let inputSize = 0;
-    let outputSize = 1;
+    let inputSize = "0";
+    let outputSize = "1";
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
@@ -35,7 +35,7 @@
     }
 
     // TODO: Remove networkId as a global variable
-    let networkId = flaskData.networkId;
+    const networkId = flaskData.networkId;
 
     console.log(layers, inputSize, outputSize)
 

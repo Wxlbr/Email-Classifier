@@ -141,12 +141,18 @@ class Network:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.info(), f, indent=4)
 
-    def load(self, path):
+    def load(self, network_dictionary=None, file_path=None):
         self.layers.clear()
 
-        # TODO: Check path exists and is valid
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        if network_dictionary is not None:
+            data = network_dictionary
+
+            with open('temp.json', 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+
+        if file_path is not None:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
 
         for i in data:
             assert data[i]['type'] in self.LAYER_TYPES, "Unknown layer type"

@@ -34,7 +34,6 @@ function loadNetwork(layers) {
 function addLayer(layerId, layerName, layerType) {
     layers[layerId] = {
         "layerName": layerName,
-        "layerType": layerType,
         "layerConfig": {
             // Default layer configuration values
             "inputSize": 0,
@@ -45,7 +44,6 @@ function addLayer(layerId, layerName, layerType) {
         "valid": false,
         "errors": [],
         "status": "inactive",
-        "activeCard": false,
     };
 
     // Load layer configuration
@@ -233,7 +231,7 @@ function saveLayerConfiguration(layerId) {
         "inputSize": document.getElementById("inputSize").value,
         "outputSize": document.getElementById("outputSize").value,
         "activation": document.getElementById("activation").value,
-        "type": layers[layerId]["layerType"]
+        "type": layers[layerId]["layerConfig"]["type"]
     };
 
     validateLayers();

@@ -1,6 +1,8 @@
 import os
 import json
+import random
 import threading
+
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 
@@ -9,17 +11,7 @@ from main import Classifier
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-
-def save_networks_to_file(networks):
-    with open('./inc/networks.json', 'w', encoding='utf-8') as f:
-        json.dump(networks, f, indent=4)
-
-
-def load_networks_from_file():
-    if not os.path.exists('./inc/networks.json'):
-        return {}
-    with open('./inc/networks.json', 'r', encoding='utf-8') as f:
-        return json.load(f)
+active_classifier = Classifier()
 
 
 @app.route('/')
@@ -33,50 +25,46 @@ def edit_network():
     # Get network Id from request
     network_id = request.args.get('networkId')
 
-    # Get network from list
-    networks = load_networks_from_file()
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
 
-    # Add network id to network
-    networks[network_id]['networkId'] = network_id
+    print(network)
 
-    return render_template('index2.html', data=networks[network_id])
+    return render_template('index2.html', data=network)
 
 
-@app.route('/save-network', methods=['POST'])
+@app.route('/save-new-network', methods=['POST'])
 def save_network():
-    # Get data from request
-    # print(request.data)
 
-    data = request.get_json()
+    # Get networks
+    networks = [file for file in os.listdir('./inc/networks/') if file != "active"] + \
+        os.listdir('./inc/networks/active/')
 
-    network_id = data.get('networkId')
+    # Generate new network id
+    network_id = f'network-{random.randint(1000, 9999)}'
+    while network_id in networks:
+        network_id = f'network-{random.randint(1000, 9999)}'
 
-    # Get networks from file
-    networks = load_networks_from_file()
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            "networkId": network_id,
+            "name": f"Network {network_id.split('-')[0]}",
+            "activeCard": False,
+            "layers": {},
+            "inputSize": 0,
+            "outputSize": 0,
+            "valid": False,
+            "status": "inactive",
+            "network": {}
+        }, f, indent=4)
 
-    networks[network_id] = {
-        "networkId": network_id,
-        "name": f"Network {network_id.split('-')[0]}",
-        "activeCard": False,
-        "layers": {},
-        "inputSize": 0,
-        "outputSize": 0,
-        "valid": False,
-        "status": "inactive",
-        "network": {}
-    }
-
-    # Save network to file
-    save_networks_to_file(networks)
-
-    return jsonify(data)
+    return jsonify({'status': 'success'})
 
 
 @app.route('/save-layers', methods=['POST'])
 def save_layers():
     # Get data from request
-    # print(request.data)
-
     data = request.get_json()
 
     network_id = data.get('networkId')
@@ -87,61 +75,88 @@ def save_layers():
     valid = all(layer['valid']
                 for layer in layers.values()) if layers else False
 
-    # Get networks from file
-    networks = load_networks_from_file()
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
 
     # Save network to list
-    networks[network_id] = {
+    network.update({
         'layers': layers,
         'inputSize': input_size,
         'outputSize': output_size,
-        'activeCard': False,
-        'status': 'inactive',
-        'valid': valid,
-        'network': {}
-    }
+        'valid': valid
+    })
 
     # Save network to file
-    save_networks_to_file(networks)
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
 
     return jsonify(data)
 
 
 @app.route('/switch-active-network', methods=['POST'])
 def switch_active_card():
-    data = request.get_json()
 
-    network_id = data.get('newNetworkId')
-    active_id = data.get('activeNetworkId')
+    network_id = request.get_json().get('newNetworkId')
 
-    # Get networks from file
-    networks = load_networks_from_file()
+    # Only one file in path ./inc/networks/active/ at a time, open it
+    active_network_file = os.listdir('./inc/networks/active/')[0]
 
-    # TODO: Add validation
+    os.rename(f'./inc/networks/active/{active_network_file}',
+              f'./inc/networks/{active_network_file}')
 
-    networks[network_id]['activeCard'] = True
-    networks[active_id]['activeCard'] = False
-
-    # Save network to file
-    save_networks_to_file(networks)
+    os.rename(f'./inc/networks/{network_id}.json',
+              f'./inc/networks/active/{network_id}.json')
 
     return jsonify({'status': 'success'})
 
 
 @app.route('/get-networks', methods=['GET'])
 def get_networks():
-    networks = load_networks_from_file()
+
+    # Get networks from files
+    networks = {'active': {}, 'inactive': {}}
+
+    for file in os.listdir('./inc/networks/'):
+        if file == 'active':
+            # Ignore active folder directory
+            continue
+
+        with open(f'./inc/networks/{file}', 'r', encoding='utf-8') as f:
+            networks['inactive'][file.split('.')[0]] = json.load(f)
+
+    with open('./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'r', encoding='utf-8') as f:
+        active_network = json.load(f)
+
+    networks['active'][active_network['networkId']] = active_network
+
+    with open('temp.json', 'w', encoding='utf-8') as f:
+        json.dump(networks, f, indent=4)
+
     return jsonify(networks)
 
 
+@app.route('/get-network', methods=['POST'])
+def get_network():
+
+    # Get network Id from request
+    network_id = request.get_json().get('networkId')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    return jsonify(network)
+
+
 @socketio.on('connect', namespace='/train')
-def handle_connect():
-    print('Client connected')
+def handle_train_connect():
+    print('Client connected to /train namespace')
 
 
 @socketio.on('disconnect', namespace='/train')
-def handle_disconnect():
-    print('Client disconnected')
+def handle_train_disconnect():
+    print('Client disconnected from /train namespace')
 
 
 @app.route('/train-network', methods=['POST'])
@@ -149,126 +164,88 @@ def train_network():
 
     print('Received train request')
 
-    data = request.get_json()
+    network_id = request.get_json().get('networkId')
 
-    network_id = data.get('networkId')
-    network = data.get('network')
+    # Get layers from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        layers = json.load(f)['layers']
 
     thread = threading.Thread(target=train_network_thread, args=(
-        network_id, network,))
+        network_id, layers,))
     thread.start()
 
     return jsonify({'status': 'success'})
 
 
-def train_network_thread(network_id, network):
+def train_network_thread(network_id, layers):
     classifier = Classifier()
 
-    for layer in network['layers'].values():
+    for layer in layers.values():
         classifier.add_layer(layer['layerConfig'])
 
     print('Training network')
 
     classifier.train_network(socketio=socketio, netId=network_id)
 
-    # Get networks from file
-    networks = load_networks_from_file()
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
 
-    if network_id not in networks:
-        networks[network_id] = {}
-    networks[network_id]['network'] = classifier.net.info()
+    # Save network to the dictionary (network_id will already be in dictionary)
+    network['network'] = classifier.net.info()
 
-    save_networks_to_file(networks)
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
 
 
 @app.route('/delete-network', methods=['POST'])
 def delete_network():
-    data = request.get_json()
 
-    network_id = data.get('networkId')
+    network_id = request.get_json().get('networkId')
 
-    # Get networks from file
-    networks = load_networks_from_file()
+    # Check if network id is in path ./inc/networks/
+    if os.path.exists(f'./inc/networks/{network_id}.json'):
+        os.remove(f'./inc/networks/{network_id}.json')
 
-    print('Networks: ', networks.keys())
-
-    # Delete network from list
-    if network_id in networks:
-        del networks[network_id]
-
-    print('Networks: ', networks.keys())
-
-    # Save network to file
-    save_networks_to_file(networks)
-
-    return jsonify(networks)
+    return jsonify({'status': 'success'})
 
 
 @app.route('/toggle-active-network', methods=['POST'])
 def toggle_active_network():
 
-    # TODO: Pass websocket to thread so it can emit events
+    activate = request.get_json().get('activate')
 
-    data = request.get_json()
-
-    activate = data.get('activate')
-
-    # Get networks from file
-    networks = load_networks_from_file()
-
-    # Get active network id
-    network_id = next(
-        (network_id for network_id in networks if networks[network_id]['activeCard']), None)
+    # Get network from file
+    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'r', encoding='utf-8') as f:
+        network = json.load(f)
 
     if activate:
 
         print('activating')
 
-        classifier = Classifier()
-
-        with open('./inc/temp_model_loading.json', 'w', encoding='utf-8') as f:
-            json.dump(networks[network_id]['network'], f, indent=4)
-
-        classifier.load_network('./inc/temp_model_loading.json')
-
-        # Delete temp file
-        os.remove('./inc/temp_model_loading.json')
+        active_classifier.load_network(network['network'])
 
         # Change network status
-        networks[network_id]['status'] = 'active'
+        network['status'] = 'active'
 
-        # Create stop event
-        stop_event = threading.Event()
-
-        # Start thread with classifier
-        thread = threading.Thread(
-            target=classifier.main, args=(True, -1, stop_event))
-
-        thread.start()
-
-        # Save thread to queue
-        # threads[network_id] = (
-        #     {'networkId': network_id, 'thread': thread, 'stop_event': stop_event})
+        # Start classification thread
+        active_classifier.start_classification_thread()
 
     else:
 
-        # TODO: Better handling of stopping threads
-
         print('deactivating')
 
-        # Get active thread
-        # for thread in threads.values():
-        #     if thread['networkId'] == network_id:
-        #         thread['stop_event'].set()
-        #         thread['thread'].join()
+        active_classifier.stop_classification()
 
         # Change network status
-        networks[network_id]['status'] = 'inactive'
+        network['status'] = 'inactive'
 
     # Save network to file
-    save_networks_to_file(networks)
+    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
 
-    return jsonify(networks)
+    return jsonify({'status': 'success'})
 
 
 if __name__ == '__main__':

@@ -1,12 +1,3 @@
-// function writeToCache(key, value) {
-//     localStorage.setItem(key, JSON.stringify(value));
-// }
-
-// function readFromCache(key) {
-//     const cachedData = localStorage.getItem(key);
-//     return cachedData ? JSON.parse(cachedData) : null;
-// }
-
 function toggleActiveLayer() {
 
     const activate = activateNetworkLabel.innerHTML == "Activate" ? true : false;
@@ -34,31 +25,22 @@ function toggleActiveLayer() {
     });
 }
 
-function getNetworks(func) {
+function loadNetworks() {
 
     fetch("/get-networks", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
+        method: "GET"
     })
     .then(response => response.json())
     .then(data => {
         console.log(data);
-        func(data);
+        loadNetworksHelper(data['active'], data['inactive']);
     })
     .catch(error => {
         console.error("Error fetching networks:", error);
     });
 }
 
-function loadNetworks(networksToLoad = {}) {
-
-    if (Object.keys(networksToLoad).length == 0) {
-        console.log("getNetworks");
-        getNetworks(loadNetworks);
-        return;
-    }
+function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
 
     let savedNetworks = document.getElementById("savedNetworks");
     let activeNetworkContainer = document.getElementById("activeNetworkContainer");
@@ -68,51 +50,7 @@ function loadNetworks(networksToLoad = {}) {
     savedNetworks.innerHTML = "";
     activeNetworkContainer.innerHTML = "";
 
-    for (networkId in networksToLoad) {
-        const activeCard = networksToLoad[networkId].activeCard;
-
-        if (activeCard) {
-
-            console.log("activeCard", networkId);
-
-            let status = networksToLoad[networkId].status;
-
-            activeNetworkContainer.innerHTML = `<div class="card" id="${networkId}">
-            <div class="h-65 bg-grey-600 pad-4 rounded-top">
-                <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
-                <span id="activeNetworkStatus">Status: ${status === 'active' ? 'Active' : 'Inactive'}</span >
-            </div >
-
-            <div class="h-35 pad-4 items-center rounded-bottom">
-                    <!-- Disable (grey) whilst network is active -->
-                <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
-                    id="activeSelectButton">Select</button>
-                <button class="button button-blue" type="submit" onclick=""
-                    id="activeViewButton">View</button>
-                <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
-                    id="activeReplaceButton">Replace</button>
-                <button class="button button-square button-${status === 'active' ? 'red' : 'green'} border ml-4" id="activateNetworkButton"
-                    onclick="toggleActiveLayer()">
-                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-                        <line x1="12" x2="12" y1="2" y2="12"></line>
-                    </svg>
-                </button>
-                <span class="ml-4" id="activateNetworkLabel">${status === 'active' ? 'Deactive' : 'Activate'}</span>
-            </div>
-            </div>`;
-
-            let activeNetworkCard = document.getElementById(networkId);
-
-            if (status === 'active') {
-                activeNetworkCard.querySelector("#activeViewButton").disabled = true;
-                activeNetworkCard.querySelector("#activeReplaceButton").disabled = true;
-            }
-
-            continue;
-        }
+    for (networkId in inactiveNetworks) {
 
         savedNetworks.innerHTML += `<div class="card" id = "${networkId}">
         <div class="h-65 bg-grey-600 pad-4 rounded-top">
@@ -158,43 +96,75 @@ function loadNetworks(networksToLoad = {}) {
         </div>
         </div>`;
 
-        if (Object.keys(networksToLoad[networkId].network).length !== 0) {
+        if (Object.keys(inactiveNetworks[networkId].network).length !== 0) {
             document.getElementById(networkId).querySelector("#trainingStatus").hidden = false;
+        }
+    }
+
+    for (networkId in activeNetork) {
+
+        let status = activeNetork[networkId].status;
+
+        activeNetworkContainer.innerHTML = `<div class="card" id="${networkId}">
+        <div class="h-65 bg-grey-600 pad-4 rounded-top">
+            <h2 class="card-title">Network ${networkId.split('-')[1]}</h2>
+            <span id="activeNetworkStatus">Status: ${status === 'active' ? 'Active' : 'Inactive'}</span >
+        </div >
+
+        <div class="h-35 pad-4 items-center rounded-bottom">
+                <!-- Disable (grey) whilst network is active -->
+            <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
+                id="activeSelectButton">Select</button>
+            <button class="button button-blue" type="submit" onclick=""
+                id="activeViewButton">View</button>
+            <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
+                id="activeReplaceButton">Replace</button>
+            <button class="button button-square button-${status === 'active' ? 'red' : 'green'} border ml-4" id="activateNetworkButton"
+                onclick="toggleActiveLayer()">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                    <line x1="12" x2="12" y1="2" y2="12"></line>
+                </svg>
+            </button>
+            <span class="ml-4" id="activateNetworkLabel">${status === 'active' ? 'Deactive' : 'Activate'}</span>
+        </div>
+        </div>`;
+
+        let activeNetworkCard = document.getElementById(networkId);
+
+        if (status === 'active') {
+            activeNetworkCard.querySelector("#activeViewButton").disabled = true;
+            activeNetworkCard.querySelector("#activeReplaceButton").disabled = true;
         }
     }
 
     // Add new network card
     savedNetworks.innerHTML += addNetworkCard.outerHTML;
 
-    networks = networksToLoad;
+    console.log(inactiveNetworks);
 
-    validateNetworks(networksToLoad);
+    // Only inactive networks need to be validated as active networks are already validated
+    validateNetworks(inactiveNetworks);
 }
 
 function addNetwork() {
-    // NetworkId
-    let IdNum = Math.floor(999 + Math.random() * 1000);
-    while (`network-${IdNum}` in networks) {
-        IdNum = Math.floor(999 + Math.random() * 1000);
-    }
 
-    console.log(IdNum);
-
-    networks[`network-${IdNum}`] = {
-        "networkId": `network-${IdNum}`,
-        "name": `Network ${IdNum}`,
-        "activeCard": false,
-        "layers": {},
-        "inputSize": 0,
-        "outputSize": 0,
-        "valid": false,
-        "status": "inactive",
-        "network": {}
-    };
-
-    saveNetwork(`network-${IdNum}`);
-
-    loadNetworks(networks);
+    fetch('/save-new-network', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+        loadNetworks();
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function redirectEditNetwork(networkId) {
@@ -215,10 +185,6 @@ function validateNetworks(networksToValidate) {
     for (let networkId in networksToValidate) {
         const network = networksToValidate[networkId];
         console.log(networkId, network);
-        if (network.activeCard) {
-            // Skip active card as it has been validated already
-            continue;
-        }
 
         const valid = network.valid;
         let validationStatus = document.getElementById(networkId).querySelector("#validationStatus");
@@ -243,6 +209,17 @@ function loadTrainingStatus(networkId, data) {
     trainingCard.querySelector("#error").innerHTML = `Error: ${data.error},`;
     trainingCard.querySelector("#accuracy").innerHTML = `Accuracy: ${data.accuracy}%,`;
     trainingCard.querySelector("#eta").innerHTML = `ETA: ${data.epochEta} (${data.totalEta})`;
+
+    // TODO: Check buttons are disabled 
+    let networkCard = document.getElementById(networkId);
+
+    // Hide training card
+    networkCard.querySelector("#trainingCard").hidden = false;
+
+    // Set edit, train and delete buttons to disabled
+    networkCard.querySelector("#editButton").disabled = true;
+    networkCard.querySelector("#trainButton").disabled = true;
+    networkCard.querySelector("#deleteButton").disabled = true;
 }
 
 function initTrainingSocket() {
@@ -269,7 +246,10 @@ function initTrainingSocket() {
         // Cache data for page refresh
         // writeToCache(data.networkId, data);
 
-        loadTrainingStatus(data.networkId, data);
+        // Ensure training card is visible
+        if (document.getElementById(data.networkId)) {
+            loadTrainingStatus(data.networkId, data);
+        }
     });
 
     // Add a listener for training done
@@ -299,7 +279,29 @@ function initTrainingSocket() {
 function trainNetwork(networkId) {
 
     // Get network
-    let network = networks[networkId];
+    fetch ("/get-network", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "networkId": networkId })
+    })  
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        trainNetworkHelper(data);
+    })
+    .catch(error => {
+        console.error("Error fetching network:", error);
+    });
+}
+
+function trainNetworkHelper(network) {
+
+    // Get network
+    const networkId = network.networkId;
+
+    console.log('Training network:', networkId);
 
     // Get network card
     let networkCard = document.getElementById(networkId);
@@ -334,10 +336,7 @@ function trainNetwork(networkId) {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            "networkId": networkId,
-            "network": network
-        })
+        body: JSON.stringify({ "networkId": networkId })
     })
     .then(response => response.json())
     .then(data => {
@@ -347,23 +346,6 @@ function trainNetwork(networkId) {
         console.error("Error training network:", error);
     });
 }
-
-// function checkActiveTraining() {
-//     // Check if active network is training
-//     for (networkId in networks) {
-//         const network = networks[networkId];
-
-//         if (!network.activeCard) {
-            
-//             // Read from cache
-//             let cachedData = readFromCache(networkId);
-
-//             if (cachedData != null) {
-//                 loadTrainingSSE(networkId, cachedData);
-//             }
-//         }
-//     }
-// }
 
 function deleteNetwork(networkId) {
     if (!confirm('Are you sure you want to delete this network?')) {
@@ -375,14 +357,12 @@ function deleteNetwork(networkId) {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            "networkId": networkId
-        })
+        body: JSON.stringify({ "networkId": networkId })
     })
     .then(response => response.json())
     .then(data => {
         console.log(data);
-        loadNetworks(data);
+        loadNetworks();
     })
     .catch(error => {
         console.error("Error deleting network:", error);
@@ -455,37 +435,18 @@ function selectActiveNetwork(newNetworkId) {
 
     console.log('selectActiveNetwork', newNetworkId)
 
-    // TODO: Check if network is not null
-    let activeNetworkCard = document.getElementById("activeNetworkContainer").querySelector(".card");   
-    let activeNetworkId = activeNetworkCard.id;
-
     fetch('/switch-active-network', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 'newNetworkId': newNetworkId, 'activeNetworkId': activeNetworkId }),
+        body: JSON.stringify({ 'newNetworkId': newNetworkId }),
     })
     .then((response) => response.json())
     .then((data) => {
         console.log('Success:', data);
         loadNetworks();
     })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-}
-
-function saveNetwork(networkId) {
-    fetch('/save-network', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 'networkId': networkId }),
-    })
-    .then((response) => response.json())
-    .then(() => {})
     .catch((error) => {
         console.error('Error:', error);
     });
