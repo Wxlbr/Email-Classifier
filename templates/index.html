@@ -57,7 +57,7 @@
 
             <!-- Title -->
             <h1 class="title">
-                Welcome to Neural Networks Homepage
+                Neural Networks
             </h1>
 
             <!-- Active Network -->
@@ -91,6 +91,32 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Train Network Pop Up -->
+            <div id="trainNetworkPopup" class="popup" style="display: none;">
+                <div class="popup-content card pad-4 flex-col items-center">
+                    <h1 class="subtitle mb-4" id="trainNetworkPopupTitle">
+                        Pop-up Window</h1>
+                    <div class="flex-col items-center w-full">
+                        <div class="flex justify-between align-center w-full">
+                            <!-- <hr class="button-divider"> -->
+                            <label class="label" for="trainNetworkEpochs"
+                                style="margin-left: 10%; margin-right: 1rem;">Epochs</label>
+                            <input class="button border bg-grey-700 text-gray-300" type="number" id="trainNetworkEpochs"
+                                min="1" value="1" style="width: 20%;">
+                            <hr class="button-divider">
+                        </div>
+                        <div class="flex justify-between mt-4">
+                            <button class="button button-green mr-2" type="submit" id="trainNetworkButton"
+                                onClick="trainNetworkFromPopUp()">
+                                Train </button>
+                            <button class="button button-red bg-red-500" type="submit" id="trainNetworkCancelButton"
+                                onclick="toggleTrainPopup()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
         </main>
     </div>
 </body>

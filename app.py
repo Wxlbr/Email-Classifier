@@ -31,7 +31,7 @@ def edit_network():
 
     print(network)
 
-    return render_template('index2.html', data=network)
+    return render_template('editNetwork.html', data=network)
 
 
 @app.route('/save-new-network', methods=['POST'])
@@ -53,7 +53,7 @@ def save_network():
             "activeCard": False,
             "layers": {},
             "inputSize": 0,
-            "outputSize": 0,
+            "outputSize": 1,
             "valid": False,
             "status": "inactive",
             "network": {}
@@ -165,19 +165,20 @@ def train_network():
     print('Received train request')
 
     network_id = request.get_json().get('networkId')
+    epochs = request.get_json().get('epochs')
 
     # Get layers from file
     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
         layers = json.load(f)['layers']
 
     thread = threading.Thread(target=train_network_thread, args=(
-        network_id, layers,))
+        network_id, layers, epochs,))
     thread.start()
 
     return jsonify({'status': 'success'})
 
 
-def train_network_thread(network_id, layers):
+def train_network_thread(network_id, layers, epochs):
     classifier = Classifier()
 
     for layer in layers.values():
@@ -185,7 +186,8 @@ def train_network_thread(network_id, layers):
 
     print('Training network')
 
-    classifier.train_network(socketio=socketio, netId=network_id)
+    classifier.train_network(
+        epochs=epochs, socketio=socketio, netId=network_id)
 
     # Get network from file
     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:

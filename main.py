@@ -132,7 +132,7 @@ class Classifier:
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
 
-    def train_network(self, X=None, Y=None, socketio=None, netId=None):
+    def train_network(self, X=None, Y=None, epochs=1, socketio=None, netId=None):
         '''
         Train the network
         '''
@@ -156,7 +156,7 @@ class Classifier:
             X, Y, test_size=0.2)
 
         # Train the network
-        self.net.train(X_train, Y_train, validation_data=(
+        self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
             X_test, Y_test), socketio=socketio, netId=netId)
 
         self.trained = True

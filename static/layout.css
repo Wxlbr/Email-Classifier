@@ -365,6 +365,10 @@ div {
   align-items: center;
 }
 
+.align-center {
+  align-items: center;
+}
+
 .flex-col {
   display: flex;
   flex-direction: column;
@@ -651,6 +655,7 @@ div {
   width: 80%;
 }
 
+
 /* Centre the popUp window and bring in front */
 .popup {
   display: none;
@@ -671,6 +676,11 @@ div {
 
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.text-dark-grey {
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity));
 }
 
 .border-red {

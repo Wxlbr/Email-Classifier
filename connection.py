@@ -18,7 +18,7 @@ class Connection:
         'https://www.googleapis.com/auth/gmail.modify'
     ]
 
-    def __init__(self, token_path='token.pickle', app_credentials_path='credentials.json'):
+    def __init__(self, token_path='./inc/credentials/token.pickle', app_credentials_path='./inc/credentials/credentials.json'):
         '''
         Initialise the connection object
         '''

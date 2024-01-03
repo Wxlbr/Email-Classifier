@@ -125,6 +125,9 @@ class Recurrent():
         # Calculate the weighted input
         weighted_input = dot(self.weights, self.input)
 
+        # Update output by adding weighted input and bias
+        output = add_matrices(weighted_input, self.bias)
+
         # Update output by adding weighted input and hidden state
         output = add_matrices(weighted_input, self.hidden_state)
 

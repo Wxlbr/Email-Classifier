@@ -9,18 +9,16 @@
     <link rel="stylesheet" href="/static/layout.css">
     <title>This totally works</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
-    <script src="/static/index2.js"></script>
+    <script src="/static/editNetwork.js"></script>
     <!-- Sortable library for drag-and-drop animation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 </head>
 
 <script>
-    // TODO: Remove layers as a global variable
     let layers = {};
 
-    // TODO: Remove inputSize and outputSize as global variables
-    let inputSize = "0";
-    let outputSize = "1";
+    let inputSize = 0;
+    let outputSize = 1;
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
@@ -34,7 +32,6 @@
         inputSize = flaskData.inputSize;
     }
 
-    // TODO: Remove networkId as a global variable
     const networkId = flaskData.networkId;
 
     console.log(layers, inputSize, outputSize)
@@ -105,6 +102,7 @@
                     </button>
                 </div>
 
+                <!-- Add Layer Pop Up -->
                 <div id="newLayerPopup" class="popup" style="display: none;">
                     <div class="popup-content card pad-4 flex-col items-center">
                         <h1 class="subtitle mb-4">

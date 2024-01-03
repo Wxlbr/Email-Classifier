@@ -33,7 +33,7 @@ class Network:
 
         return (correct * 100) / len(x_test)
 
-    def train(self, x_train, y_train, epochs=2, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, socketio=None, netId=None):
+    def train(self, x_train, y_train, epochs=1, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, socketio=None, netId=None):
 
         print('Began Training')
 
@@ -46,6 +46,9 @@ class Network:
         assert loss in self.LOSS_TYPES, "Unknown loss function."
         loss = self.LOSS_TYPES[loss]()
 
+        # Training loop
+        accuracy = "-"
+
         if socketio:
 
             socketio.emit('training_update', {
@@ -53,13 +56,12 @@ class Network:
                 "epoch": "0",
                 "epochs": epochs,
                 "error": "0",
-                "accuracy": "-",
+                "accuracy": accuracy,
                 "epochEta": "0s",
                 "totalEta": "0s",
                 "networkId": netId
             }, namespace='/train')
 
-        # Training loop
         for e in range(1, epochs+1):
             error = 0
             inner_durations = []
@@ -96,11 +98,14 @@ class Network:
                         "epoch": e,
                         "epochs": epochs,
                         "error": f"{error / (i+1):.4f}",
-                        "accuracy": "-",
+                        "accuracy": accuracy,
                         "epochEta": convert_time(epochEta),
                         "totalEta": convert_time(totalEta),
                         "networkId": netId
                     }, namespace='/train')
+
+            # accuracy = f"{self.accuracy(validation_data[0], validation_data[1]):.4f}" if validation_data else "-"
+            accuracy = f"{self.accuracy(validation_data[0], validation_data[1]):.0f}" if validation_data else "-"
 
             if socketio:
 
@@ -109,7 +114,7 @@ class Network:
                     "epoch": e,
                     "epochs": epochs,
                     "error": f"{error / len(x_train):.4f}",
-                    "accuracy": f"{self.accuracy(validation_data[0], validation_data[1]):.4f}",
+                    "accuracy": accuracy,
                     "epochEta": "0s",
                     "totalEta": convert_time(mean(inner_durations) * (epochs - e)),
                     "networkId": netId
@@ -119,8 +124,7 @@ class Network:
                 print(f"{e}/{epochs}, error={error / len(x_train):.4f}", end="")
 
                 if validation_data:
-                    print(
-                        f", val_accuracy={self.accuracy(validation_data[0], validation_data[1]):.4f}%", end="")
+                    print(f", val_accuracy={accuracy}%", end="")
 
                 print(f", duration={sum(inner_durations):.2f}s", end="")
 

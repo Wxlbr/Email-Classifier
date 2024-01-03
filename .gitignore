@@ -1,14 +1,12 @@
 # Ignore build directories
-.vscode/
+vscode/
 __pycache__/
 
 # Venv
 venv/
 
 # Ignore private files
-credentials.json
-token.pickle
+inc/credentials/
 
 # Ignore test files
 test.py
-inc/words.txt
