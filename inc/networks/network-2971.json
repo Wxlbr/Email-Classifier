@@ -1,0 +1,11 @@
+{
+    "networkId": "network-2971",
+    "name": "Network network",
+    "activeCard": false,
+    "layers": {},
+    "inputSize": "3000",
+    "outputSize": 1,
+    "valid": false,
+    "status": "inactive",
+    "network": {}
+}

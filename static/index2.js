@@ -1,4 +1,26 @@
-function loadNetwork(layers) {
+function redirectIndex() {
+    window.location.href = "/";
+}
+
+function loadNetwork() {
+    fetch('/get-layers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 'networkId': networkId }),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        loadNetworkHelper(data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+function loadNetworkHelper(layers) {
     // Clear network sidebar
     document.getElementById("layersView").innerHTML = "";
 
@@ -27,27 +49,25 @@ function loadNetwork(layers) {
         </div>`;
     }
 
-    validateLayers();
     saveLayers();
 }
 
-function addLayer(layerId, layerName, layerType) {
-    layers[layerId] = {
-        "layerName": layerName,
-        "layerConfig": {
-            // Default layer configuration values
-            "inputSize": 0,
-            "outputSize": 0,
-            "activation": "sigmoid",
-            "type": layerType
+function addLayer(layerName, layerType) {
+    fetch('/add-layer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         },
-        "valid": false,
-        "errors": [],
-        "status": "inactive",
-    };
-
-    // Load layer configuration
-    loadNetwork(layers);
+        body: JSON.stringify({ 'layerName': layerName, 'layerType': layerType }),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        loadNetwork();
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function selectLayer(layerId) {
@@ -63,97 +83,22 @@ function selectLayer(layerId) {
     }
 }
 
-function validateLayers() {
-
-    for (const layerId in layers) {
-        const idNum = parseInt(layerId.split("-")[1]);
-        const layer = layers[layerId];
-        layer["valid"] = true;
-        layer["errors"] = [];
-
-
-        // Check inputSize
-        if (layer["layerConfig"]["inputSize"] <= 0) {
-            layer["valid"] = false;
-            layer["errors"].push("Input size must be a positive integer");
-        }
-
-        if (idNum == 1) {
-            // First layer
-            if (layer["layerConfig"]["inputSize"] != inputSize) {
-                layer["valid"] = false;
-                layer["errors"].push("Input size must match network input size of " + inputSize);
-            }
-        } else {
-            // Previous layer exists
-            if (layer["layerConfig"]["inputSize"] != layers["layer-" + (idNum - 1)][
-                "layerConfig"]["outputSize"]) {
-                layer["valid"] = false;
-                layer["errors"].push("Input size must match previous layer's output size of " +
-                    layers["layer-" + (idNum - 1)]["layerConfig"]["outputSize"]);
-            }
-        }
-
-        // Check outputSize
-        if (layer["layerConfig"]["outputSize"] <= 0) {
-            layer["valid"] = false;
-            layer["errors"].push("Output size must be a positive integer");
-        }
-
-        if ("layer-" + (idNum + 1) in layers) {
-            // Next layer exists
-            if (layer["layerConfig"]["outputSize"] != layers["layer-" + (idNum + 1)][
-                "layerConfig"]["inputSize"]) {
-                layer["valid"] = false;
-                layer["errors"].push("Output size must match next layer's input size of " +
-                    layers["layer-" + (idNum + 1)]["layerConfig"]["inputSize"]);
-            }
-        } else {
-            // Next layer does not exist, must be the last layer
-            if (layer["layerConfig"]["outputSize"] != outputSize) {
-                layer["valid"] = false;
-                layer["errors"].push("Output size must match network output size of " + outputSize);
-            }
-        }
-
-        // Update validation status
-        let validationStatus = document.getElementById(layerId).querySelector("#validationStatus");
-        const valid = layer["valid"];
-
-        validationStatus.innerHTML = valid ? "Valid" : "Invalid";
-        validationStatus.classList.toggle("bg-green-500", valid);
-        validationStatus.classList.toggle("bg-red-500", !valid);
-    }
-}
-
 function updateLayerOrder(event) {
-
-    // Move layer in layers object
-    const oldLayerId = "layer-" + (event.oldIndex + 1);
-    const newLayerId = "layer-" + (event.newIndex + 1);
-
-    const layer = layers[oldLayerId];
-    delete layers[oldLayerId];
-
-    // Rename keys to be sequential
-    let count = 1;
-    const newLayers = {};
-    for (const id in layers) {
-        if (('layer-' + count) == newLayerId) {
-            newLayers['layer-' + count++] = layer;
-            newLayers['layer-' + count++] = layers[id];
-        } else {
-            newLayers['layer-' + count++] = layers[id];
-        }
-    }
-
-    if (!(newLayerId in newLayers)) {
-        newLayers[newLayerId] = layer;
-    }
-
-    layers = newLayers;
-
-    loadNetwork(layers);
+    fetch ('/update-layer-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 'networkId': networkId, 'oldIndex': event.oldIndex, 'newIndex': event.newIndex }),
+    })  
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        loadNetwork();
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function togglePopup(elementId) {
@@ -186,9 +131,6 @@ function selectLayerType(layerName, layerType) {
         }
     }
 
-    // Determine the layerId
-    const layerId = "layer-" + (Object.keys(layers).length + 1);
-
     // Change the onclick function of the add button to add the selected layer type
     const addButton = document.getElementById("newLayerPopupAddButton");
     addButton.onclick = function () {
@@ -196,27 +138,23 @@ function selectLayerType(layerName, layerType) {
         togglePopup("newLayerPopup");
 
         // Add the layer
-        addLayer(layerId, layerName, layerType);
+        addLayer(layerName, layerType);
     };
 
     // Activate the add button
     addButton.disabled = false;
 }
 
-function saveLayerConfiguration(layerId) {
-
-    event.preventDefault();
+function saveLayerConfigurationHelper(layerId, layers) {
 
     if (layerId == "inputLayer") {
         inputSize = document.getElementById("inputSize").value;
-        validateLayers();
         saveLayers();
         return;
     }
 
     if (layerId == "outputLayer") {
         outputSize = document.getElementById("outputSize").value;
-        validateLayers();
         saveLayers();
         return;
     }
@@ -234,7 +172,6 @@ function saveLayerConfiguration(layerId) {
         "type": layers[layerId]["layerConfig"]["type"]
     };
 
-    validateLayers();
     saveLayers();
 
     // Change Error Box
@@ -254,7 +191,48 @@ function saveLayerConfiguration(layerId) {
     console.log(layers);
 }
 
+function saveLayerConfiguration(layerId) {
+    
+    console.log("Saving layer configuration for layer: " + layerId + "..." + networkId);
+
+    return;
+
+    fetch('/get-layers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 'networkId': networkId }),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        saveLayerConfigurationHelper(layerId, data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
 function loadLayerConfiguration(layerId) {
+    fetch('/get-layers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 'networkId': networkId }),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+        loadLayerConfigurationHelper(layerId, data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+function loadLayerConfigurationHelper(layerId, layers) {
 
     // Hide Placeholder
     document.getElementById("layerConfigurationPlaceholder").style.display = "none";
@@ -322,46 +300,55 @@ function deleteLayer(layerId) {
 
     event.preventDefault();
 
-    // Rename layers and keys to be sequential
-    let count = 1;
-    const newLayers = {};
-    for (const id in layers) {
-        const newId = 'layer-' + count;
-        if (id != layerId) {
-            newLayers[newId] = layers[id];
-            count++;
-        }
-    }
-
-    layers = newLayers;
-
-    // Reload network sidebar
-    loadNetwork(layers);
-
-    // Show Placeholder
-    document.getElementById("layerConfigurationTitle").innerHTML = "Layer Configuration";
-    document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
-    document.getElementById("layerConfigurationOptionsWindow").hidden = true;
-}
-
-function saveLayers() {
-    fetch('/save-layers', {
+    fetch('/delete-layer', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 'networkId': networkId, 'layers': layers, 'inputSize': inputSize, 'outputSize': outputSize }),
+        body: JSON.stringify({ 'networkId': networkId, 'layerId': layerId }),
     })
-        .then((response) => response.json())
-        .then((data) => {
-            console.log('Success:', data);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
+
+        // Reload network sidebar
+        loadNetwork();
+
+        // Show Placeholder
+        document.getElementById("layerConfigurationTitle").innerHTML = "Layer Configuration";
+        document.getElementById("layerConfigurationPlaceholder").style.display = "flex";
+        document.getElementById("layerConfigurationOptionsWindow").hidden = true;
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
-function redirectIndex() {
-    window.location.href = "/";
-}
+function saveLayers() {
+    fetch ('/validate-layers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 'networkId': networkId }),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('Success:', data);
 
+        const layers = data["layers"];
+
+        for (const layerId in layers) {
+            // Update validation status
+            let validationStatus = document.getElementById(layerId).querySelector("#validationStatus");
+            const valid = layers[layerId]["valid"];
+
+            validationStatus.innerHTML = valid ? "Valid" : "Invalid";
+            validationStatus.classList.toggle("bg-green-500", valid);
+            validationStatus.classList.toggle("bg-red-500", !valid);
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}

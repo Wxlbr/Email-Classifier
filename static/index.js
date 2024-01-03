@@ -183,10 +183,9 @@ function redirectEditNetwork(networkId) {
 
 function validateNetworks(networksToValidate) {
     for (let networkId in networksToValidate) {
-        const network = networksToValidate[networkId];
-        console.log(networkId, network);
+        console.log(networkId);
 
-        const valid = network.valid;
+        const valid = networksToValidate[networkId].valid;
         let validationStatus = document.getElementById(networkId).querySelector("#validationStatus");
 
         validationStatus.innerHTML = valid ? "Valid" : "Invalid";

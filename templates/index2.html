@@ -16,19 +16,19 @@
 
 <script>
     // TODO: Remove layers as a global variable
-    let layers = {};
+    // let layers = {};
 
     // TODO: Remove inputSize and outputSize as global variables
-    let inputSize = "0";
-    let outputSize = "1";
+    let inputSize = 0;
+    let outputSize = 1;
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
     console.log(flaskData);
 
-    if (flaskData.layers) {
-        layers = flaskData.layers;
-    }
+    // if (flaskData.layers) {
+    //     layers = flaskData.layers;
+    // }
 
     if (flaskData.inputSize) {
         inputSize = flaskData.inputSize;
@@ -37,7 +37,7 @@
     // TODO: Remove networkId as a global variable
     const networkId = flaskData.networkId;
 
-    console.log(layers, inputSize, outputSize)
+    console.log(inputSize, outputSize)
 
 </script>
 
@@ -186,7 +186,7 @@
 
                         <!-- Save Layer Configuration -->
                         <button class="button button-green bg-green-500 mr-4" type="submit"
-                            onclick="saveLayerConfiguration('')" id="saveLayerConfigurationButton">
+                            onclick="saveLayerConfiguration()" id="saveLayerConfigurationButton">
                             Save
                         </button>
 
@@ -221,7 +221,7 @@
         });
 
         // Load new network configuration
-        loadNetwork(layers);
+        loadNetwork();
     </script>
 
 </html>

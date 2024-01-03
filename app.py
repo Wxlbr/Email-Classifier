@@ -19,6 +19,8 @@ def index():
     return render_template('index.html')
 
 
+# Network Management
+
 @app.route('/edit-network', methods=['GET'])
 def edit_network():
 
@@ -29,9 +31,7 @@ def edit_network():
     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
         network = json.load(f)
 
-    print(network)
-
-    return render_template('index2.html', data=network)
+    return render_template('index2.html')
 
 
 @app.route('/save-new-network', methods=['POST'])
@@ -48,50 +48,19 @@ def save_network():
 
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
         json.dump({
+            # Default network values
             "networkId": network_id,
             "name": f"Network {network_id.split('-')[0]}",
             "activeCard": False,
             "layers": {},
-            "inputSize": 0,
-            "outputSize": 0,
+            "inputSize": 3000,
+            "outputSize": 1,
             "valid": False,
             "status": "inactive",
             "network": {}
         }, f, indent=4)
 
     return jsonify({'status': 'success'})
-
-
-@app.route('/save-layers', methods=['POST'])
-def save_layers():
-    # Get data from request
-    data = request.get_json()
-
-    network_id = data.get('networkId')
-    layers = data.get('layers')
-    input_size = data.get('inputSize')
-    output_size = data.get('outputSize')
-
-    valid = all(layer['valid']
-                for layer in layers.values()) if layers else False
-
-    # Get network from file
-    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
-        network = json.load(f)
-
-    # Save network to list
-    network.update({
-        'layers': layers,
-        'inputSize': input_size,
-        'outputSize': output_size,
-        'valid': valid
-    })
-
-    # Save network to file
-    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
-        json.dump(network, f, indent=4)
-
-    return jsonify(data)
 
 
 @app.route('/switch-active-network', methods=['POST'])
@@ -147,6 +116,227 @@ def get_network():
         network = json.load(f)
 
     return jsonify(network)
+
+
+# Layer Management
+
+@app.route('/get-layers', methods=['POST'])
+def get_layers():
+
+    # Get network Id from request
+    network_id = request.get_json().get('networkId')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    return jsonify(network['layers'])
+
+
+# @app.route('/save-layers', methods=['POST'])
+# def save_layers():
+#     # Get data from request
+#     data = request.get_json()
+
+#     network_id = data.get('networkId')
+#     layers = data.get('layers')
+#     input_size = data.get('inputSize')
+#     output_size = data.get('outputSize')
+
+#     valid = all(layer['valid']
+#                 for layer in layers.values()) if layers else False
+
+#     # Get network from file
+#     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+#         network = json.load(f)
+
+#     # Save network to list
+#     network.update({
+#         'layers': layers,
+#         'inputSize': input_size,
+#         'outputSize': output_size,
+#         'valid': valid
+#     })
+
+#     # Save network to file
+#     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+#         json.dump(network, f, indent=4)
+
+#     return jsonify({'status': 'success'})
+
+
+@app.route('/update-layer-config', methods=['POST'])
+def update_layer():
+
+    network_id = request.get_json().get('networkId')
+    layer_id = request.get_json().get('layerId')
+    config_data = request.get_json().get('configData')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    layers = network['layers']
+
+    layers[layer_id]['config'].update(config_data)
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/add-layer', methods=['POST'])
+def add_layer():
+
+    network_id = request.args.get('networkId')
+    layerName = request.get_json().get('layerName')
+    layerType = request.get_json().get('layerType')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    layers = network['layers']
+
+    layer_id = f'layer-{len(layers) + 1}'
+
+    layers[layer_id] = {
+        "layerName": layerName,
+        "layerConfig": {
+            # Default layer configuration values
+            "inputSize": 0,
+            "outputSize": 0,
+            "activation": "sigmoid",
+            "type": layerType
+        },
+        "valid": False,
+        "errors": [],
+        "status": "inactive",
+    }
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/update-layer-order', methods=['POST'])
+def update_layer_order():
+
+    network_id = request.get_json().get('networkId')
+    old_index = request.get_json().get('oldIndex')
+    new_index = request.get_json().get('newIndex')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    layers = list(network['layers'].values())
+
+    # swap indexes
+    layers[old_index], layers[new_index] = layers[new_index], layers[old_index]
+
+    network['layers'] = {f'layer-{i + 1}': layer for i,
+                         layer in enumerate(layers)}
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/delete-layer', methods=['POST'])
+def delete_layer():
+
+    network_id = request.get_json().get('networkId')
+    layer_id = request.get_json().get('layerId')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    layers = network['layers']
+
+    del layers[layer_id]
+
+    network['layers'] = {f'layer-{i + 1}': layer for i,
+                         layer in enumerate(layers.values())}
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/validate-layers', methods=['POST'])
+def validate_layers():
+
+    network_id = request.get_json().get('networkId')
+
+    # Get networks from files
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    layers = network['layers']
+    input_size = network['inputSize']
+    output_size = network['outputSize']
+
+    for layer_id in layers:
+        id_num = int(layer_id.split("-")[1])
+        layer = layers[layer_id]
+        layer["valid"] = True
+        layer["errors"] = []
+
+        # Check inputSize
+        if int(layer["layerConfig"]["inputSize"]) <= 0:
+            layer["valid"] = False
+            layer["errors"].append("Input size must be a positive integer")
+
+        if id_num == 1:
+            # First layer
+            if int(layer["layerConfig"]["inputSize"]) != input_size:
+                layer["valid"] = False
+                layer["errors"].append(
+                    "Input size must match network input size of " + input_size)
+
+        else:
+            # Previous layer exists
+            if int(layer["layerConfig"]["inputSize"]) != int(layers["layer-" + str(id_num - 1)]["layerConfig"]["outputSize"]):
+                layer["valid"] = False
+                layer["errors"].append("Input size must match previous layer's output size of " +
+                                       layers["layer-" + (id_num - 1)]["layerConfig"]["outputSize"])
+
+        # Check outputSize
+        if int(layer["layerConfig"]["outputSize"]) <= 0:
+            layer["valid"] = False
+            layer["errors"].append("Output size must be a positive integer")
+
+        if "layer-" + str(id_num + 1) in layers:
+            # Next layer exists
+            if int(layer["layerConfig"]["outputSize"]) != int(layers["layer-" + str(id_num + 1)]["layerConfig"]["inputSize"]):
+                layer["valid"] = False
+                layer["errors"].append("Output size must match next layer's input size of " +
+                                       layers["layer-" + str(id_num + 1)]["layerConfig"]["inputSize"])
+
+        else:
+            # Next layer does not exist, must be the last layer
+            if int(layer["layerConfig"]["outputSize"]) != output_size:
+                layer["valid"] = False
+                layer["errors"].append(
+                    "Output size must match network output size of " + output_size)
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success'})
+
+# Network Training
 
 
 @socketio.on('connect', namespace='/train')
@@ -217,19 +407,16 @@ def toggle_active_network():
     activate = request.get_json().get('activate')
 
     # Get network from file
-    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'r', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
         network = json.load(f)
+
+    network['status'] = 'active' if activate else 'inactive'
 
     if activate:
 
         print('activating')
 
         active_classifier.load_network(network['network'])
-
-        # Change network status
-        network['status'] = 'active'
-
-        # Start classification thread
         active_classifier.start_classification_thread()
 
     else:
@@ -238,11 +425,8 @@ def toggle_active_network():
 
         active_classifier.stop_classification()
 
-        # Change network status
-        network['status'] = 'inactive'
-
     # Save network to file
-    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'w', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'w', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
     return jsonify({'status': 'success'})
