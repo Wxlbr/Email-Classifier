@@ -59,6 +59,7 @@ function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
                 <!-- Network Status -->
                 <span class="ml-2 bg-red-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="validationStatus">Invalid</span>
                 <span class="ml-2 bg-blue-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="trainingStatus" hidden>Trained</span>
+                <span class="ml-2 bg-blue-500 text-dark-grey padx-2 pady-1 rounded-full text-xs" id="trainingAccuracy" hidden></span>
             </div>
             <!-- Training Progress -->
             <div id="trainingCard" hidden>
@@ -93,11 +94,17 @@ function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
             class="button button-red ml-4" type="submit" id="deleteButton">
                 Delete
             </button>
+            <button onclick="stopTraining('${networkId}')" 
+            class="button button-red" type="submit" id="stopTrainingButton" style="display: none;">
+                Stop Training
+            </button>
         </div>
         </div>`;
 
         if (Object.keys(inactiveNetworks[networkId].network).length !== 0) {
             document.getElementById(networkId).querySelector("#trainingStatus").hidden = false;
+            document.getElementById(networkId).querySelector("#trainingAccuracy").hidden = false;
+            document.getElementById(networkId).querySelector("#trainingAccuracy").innerHTML = inactiveNetworks[networkId]['network']['accuracy'] + "%";
         }
     }
 
@@ -217,9 +224,13 @@ function loadTrainingStatus(networkId, data) {
     networkCard.querySelector("#trainingCard").hidden = false;
 
     // Set edit, train and delete buttons to disabled
-    networkCard.querySelector("#editButton").disabled = true;
-    networkCard.querySelector("#trainButton").disabled = true;
-    networkCard.querySelector("#deleteButton").disabled = true;
+    // networkCard.querySelector("#editButton").disabled = true;
+    // networkCard.querySelector("#trainButton").disabled = true;
+    // networkCard.querySelector("#deleteButton").disabled = true;
+
+    networkCard.querySelector("#editButton").style.display = "none";
+    networkCard.querySelector("#trainButton").style.display = "none";
+    networkCard.querySelector("#deleteButton").style.display = "none";
 }
 
 function clearTrainingStatus(networkId) {
@@ -259,9 +270,6 @@ function initTrainingSocket() {
         console.log('Received training');
         console.log('Received training update:', data);
 
-        // Cache data for page refresh
-        // writeToCache(data.networkId, data);
-
         // Ensure training card is visible
         if (document.getElementById(data.networkId)) {
             loadTrainingStatus(data.networkId, data);
@@ -279,14 +287,30 @@ function initTrainingSocket() {
         trainingCard.hidden = true;
 
         // Set edit, train and delete buttons to enabled
-        networkCard.querySelector("#editButton").disabled = false;
-        networkCard.querySelector("#trainButton").disabled = false;
-        networkCard.querySelector("#deleteButton").disabled = false;
+        // networkCard.querySelector("#editButton").disabled = false;
+        // networkCard.querySelector("#trainButton").disabled = false;
+        // networkCard.querySelector("#deleteButton").disabled = false;
 
         // Set network to trained
         // console.log("setTrained", data.networkId);
 
-        networkCard.querySelector("#trainingStatus").hidden = false;
+        // networkCard.querySelector("#trainingStatus").hidden = false;
+
+        // Hide training card
+        networkCard.querySelector("#trainingCard").hidden = true;
+
+        // Set edit, train and delete buttons to enabled
+        networkCard.querySelector("#editButton").style.display = "block";
+        networkCard.querySelector("#trainButton").style.display = "block";
+        networkCard.querySelector("#deleteButton").style.display = "block";
+        networkCard.querySelector("#stopTrainingButton").style.display = "none";
+
+        // Set network to trained
+        networkCard.querySelector("#trainingStatus").hidden = data.cancelled;
+
+        // Set network accuracy
+        networkCard.querySelector("#trainingAccuracy").innerHTML = data.accuracy + "%";
+        networkCard.querySelector("#trainingAccuracy").hidden = data.cancelled;
 
         // Clear training status
         clearTrainingStatus(data.networkId);
@@ -333,6 +357,7 @@ function trainNetworkHelper(network, epochs) {
         }
     
         document.getElementById(networkId).querySelector("#trainingStatus").hidden = true;
+        document.getElementById(networkId).querySelector("#trainingAccuracy").hidden = true;
 
         console.log('Ok, redirecting to edit network');
     }
@@ -342,13 +367,18 @@ function trainNetworkHelper(network, epochs) {
         return;
     }
 
-    // Hide training card
+    // Show training card
     networkCard.querySelector("#trainingCard").hidden = false;
 
     // Set edit, train and delete buttons to disabled
-    networkCard.querySelector("#editButton").disabled = true;
-    networkCard.querySelector("#trainButton").disabled = true;
-    networkCard.querySelector("#deleteButton").disabled = true;
+    // networkCard.querySelector("#editButton").disabled = true;
+    // networkCard.querySelector("#trainButton").disabled = true;
+    // networkCard.querySelector("#deleteButton").disabled = true;
+
+    networkCard.querySelector("#editButton").style.display = "none";
+    networkCard.querySelector("#trainButton").style.display = "none";
+    networkCard.querySelector("#deleteButton").style.display = "none";
+    networkCard.querySelector("#stopTrainingButton").style.display = "block";
 
     fetch("/train-network", {
         method: "POST",
@@ -363,6 +393,35 @@ function trainNetworkHelper(network, epochs) {
     })
     .catch(error => {
         console.error("Error training network:", error);
+    });
+}
+
+function stopTraining(networkId) {
+    fetch("/stop-training", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "networkId": networkId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+
+        // Get network card
+        let networkCard = document.getElementById(networkId);
+
+        // Hide training card
+        networkCard.querySelector("#trainingCard").hidden = true;
+
+        // Set edit, train and delete buttons to enabled
+        networkCard.querySelector("#editButton").style.display = "block";
+        networkCard.querySelector("#trainButton").style.display = "block";
+        networkCard.querySelector("#deleteButton").style.display = "block";
+        networkCard.querySelector("#stopTrainingButton").style.display = "none";
+    })
+    .catch(error => {
+        console.error("Error stopping training:", error);
     });
 }
 

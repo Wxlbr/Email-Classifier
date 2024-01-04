@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 
 import threading
 
@@ -14,6 +15,7 @@ class Classifier:
         self.conn = Connection()
         self.net = None
         self.trained = False
+        self.accuracy = 0
         self.stop_event = threading.Event()
 
     def stop_classification(self):
@@ -132,6 +134,45 @@ class Classifier:
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
 
+    def start_training_thread(self, network_id, layers, epochs, socketio):
+        # Reset the stop event in case it was set before
+        if self.net:
+            self.net.clear_stop_event()
+
+        # Start training in a separate thread
+        thread = threading.Thread(target=self.train_network_thread, args=(
+            network_id, layers, epochs, socketio,))
+        thread.start()
+
+    def train_network_thread(self, network_id, layers, epochs, socketio):
+        for layer in layers.values():
+            self.add_layer(layer['layerConfig'])
+
+        print('Training network')
+
+        self.train_network(
+            epochs=epochs, socketio=socketio, netId=network_id)
+
+        # Get network from file
+        with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+            network = json.load(f)
+
+        # Save network to the dictionary (network_id will already be in dictionary)
+        network['network'] = self.net.info()
+        network['network']['accuracy'] = self.accuracy
+
+        # Save network to file
+        with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+            json.dump(network, f, indent=4)
+
+    def stop_training(self):
+        '''
+        Stop the training of the network
+        '''
+
+        if self.net is not None:
+            self.net.stop()
+
     def train_network(self, X=None, Y=None, epochs=1, socketio=None, netId=None):
         '''
         Train the network
@@ -156,10 +197,8 @@ class Classifier:
             X, Y, test_size=0.2)
 
         # Train the network
-        self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
+        self.trained, self.accuracy = self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
             X_test, Y_test), socketio=socketio, netId=netId)
-
-        self.trained = True
 
     def _train_test_split(self, X, Y, test_size=0.2):
         '''
