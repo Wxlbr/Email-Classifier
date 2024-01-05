@@ -43,13 +43,6 @@ class Classifier:
 
         assert self.trained, 'Network is not trained.'
 
-        # FOR DEBUGGING
-        # self.conn.unclassify_emails()
-
-        # self.classify_emails(n=n)
-
-        # print('Started main loop')
-
         while loop and not self.stop_event.is_set():
             self.classify_emails(n=n)
 

@@ -114,8 +114,6 @@ class Recurrent():
         Forward pass of the layer
         '''
 
-        # TODO: Missing bias?
-
         # Save input value for the backward pass
         self.input = input_value
 
