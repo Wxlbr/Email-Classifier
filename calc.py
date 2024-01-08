@@ -2,11 +2,19 @@ import math
 import random
 
 
+def zeros(rows: int, cols: int) -> list:
+    return [[0] * cols] * rows
+
+
+def ones(rows: int, cols: int) -> list:
+    return [[1] * cols] * rows
+
+
 def dot(x: list, y: list) -> list:
 
     assert len(x[0]) == len(y), f"Invalid dimensions: {len(x[0])} != {len(y)}"
 
-    result = [[0 for _ in range(len(y[0]))] for _ in range(len(x))]
+    result = zeros(len(x), len(y[0]))
 
     for i, row_x in enumerate(x):
         for j, _ in enumerate(y[0]):
@@ -16,34 +24,26 @@ def dot(x: list, y: list) -> list:
     return result
 
 
-def multiply(x: list, y: float) -> list:
-    return [[value * y for value in row] for row in x]
+def multiply(matrix: list, multiplier: float) -> list:
+    return [[element * multiplier for element in row] for row in matrix]
 
 
-def transpose(x: list) -> list:
-    return [[x[j][i] for j in range(len(x))] for i in range(len(x[0]))]
+def transpose(matrix: list) -> list:
+    return [[matrix[row][col] for row in range(len(matrix))] for col in range(len(matrix[0]))]
 
 
 def randn(x: int, y: int) -> list:
     return [[random.uniform(-1, 1) for _ in range(y)] for _ in range(x)]
 
 
-def zeros(x: int, y: int) -> list:
-    return [[0] * y] * x
-
-
-def ones(x: int, y: int) -> list:
-    return [[1] * y] * x
-
-
-def exp(x: list) -> list:
+def exp(x):
     if isinstance(x, list):
-        return [[math.exp(value) for value in row] for row in x]
+        return [[math.exp(element) for element in row] for row in x]
     return math.exp(x)
 
 
-def flatten(x: list) -> list:
-    return [item for sublist in x for item in sublist]
+def flatten(matrix: list) -> list:
+    return [element for sublist in matrix for element in sublist]
 
 
 def mean(x: list) -> float:
@@ -55,7 +55,7 @@ def mean(x: list) -> float:
 
 def log(x: list) -> list:
     if isinstance(x, list):
-        return [[math.log(value) for value in row] for row in x]
+        return [[math.log(element) for element in row] for row in x]
     return math.log(x)
 
 
@@ -64,38 +64,39 @@ def log(x: list) -> list:
 #     return len(x)
 
 
-def negative(x: list) -> list:
-    return [[-value for value in row] for row in x]
-
-
-def add_matrices(x: list, y: list) -> list:
-    assert len(x) == len(y), f"Invalid dimensions: {len(x)} != {len(y)}"
-    assert len(x[0]) == len(
-        y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
-
-    return [[x[i][j] + y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
-
-
-def sub_matrices(x: list, y: list) -> list:
-    assert len(x) == len(y), f"Invalid dimensions: {len(x)} != {len(y)}"
-    assert len(x[0]) == len(
-        y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
-
-    return [[x[i][j] - y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
-
-
-def multiply_matrices(x: list, y: list) -> list:
-    assert len(x) == len(y), f"Invalid dimensions: {len(x)} != {len(y)}"
-    assert len(x[0]) == len(
-        y[0]), f"Invalid dimensions: {len(x[0])} != {len(y[0])}"
-
-    return [[x[i][j] * y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
+def negative(matrix: list) -> list:
+    return [[-element for element in row] for row in matrix]
 
 
 def shape(x: list) -> tuple:
     if isinstance(x, list):
         return (len(x),) + shape(x[0]) if x else (len(x),)
     return (1,)
+
+
+def same_dimensions(mat_1: list, mat_2: list) -> bool:
+    return len(mat_1) == len(mat_2) and len(mat_1[0]) == len(mat_2[0])
+
+
+def add_matrices(mat_1: list, mat_2: list) -> list:
+    assert same_dimensions(
+        mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
+
+    return [[mat_1[row][col] + mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
+
+
+def sub_matrices(mat_1: list, mat_2: list) -> list:
+    assert same_dimensions(
+        mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
+
+    return [[mat_1[row][col] - mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
+
+
+def multiply_matrices(mat_1: list, mat_2: list) -> list:
+    assert same_dimensions(
+        mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
+
+    return [[mat_1[row][col] * mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
 
 
 def convert_time(seconds):
