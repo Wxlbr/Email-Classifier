@@ -15,6 +15,13 @@ class Network:
 
     def __init__(self, layers=[]):
         self.layers = layers
+        self.stop_training = False
+
+    def stop(self):
+        self.stop_training = True
+
+    def clear_stop_flag(self):
+        self.stop_training = False
 
     def predict(self, input_value):
         assert self.layers, 'Network has no layers.'
@@ -47,13 +54,13 @@ class Network:
         loss = self.LOSS_TYPES[loss]()
 
         # Training loop
-        accuracy = "-"
+        accuracy = "0"
 
         if socketio:
 
             socketio.emit('training_update', {
                 "status": "training",
-                "epoch": "0",
+                "epoch": "1",
                 "epochs": epochs,
                 "error": "0",
                 "accuracy": accuracy,
@@ -65,6 +72,7 @@ class Network:
         for e in range(1, epochs+1):
             error = 0
             inner_durations = []
+            running_correct = 0
 
             # Loop through all training data
             for i, (x, y) in enumerate(zip(x_train, y_train)):
@@ -72,8 +80,19 @@ class Network:
                 # Start timer
                 inner_start = time.time()
 
+                if self.stop_training:
+                    if socketio:
+                        socketio.emit('training_done', {
+                            "status": "done",
+                            "networkId": netId
+                        }, namespace='/train')
+
+                    return False
+
                 # Forward propagation
                 output = self.predict(x)
+
+                running_correct += 1 if y == (output[0][0] > 0.5) else 0
 
                 # Calculate error
                 error += loss.calc(y, output)
@@ -89,6 +108,8 @@ class Network:
                 # Update progress bar
                 if socketio and i % 10 == 0:
 
+                    running_accuracy = f"{(running_correct * 100) / (i+1):.0f}"
+
                     epochEta = mean(inner_durations) * (len(x_train) - (i+1))
                     totalEta = mean(inner_durations) * \
                         (epochs - e) * len(x_train) + epochEta
@@ -98,7 +119,7 @@ class Network:
                         "epoch": e,
                         "epochs": epochs,
                         "error": f"{error / (i+1):.4f}",
-                        "accuracy": accuracy,
+                        "accuracy": running_accuracy,
                         "epochEta": convert_time(epochEta),
                         "totalEta": convert_time(totalEta),
                         "networkId": netId
@@ -134,8 +155,16 @@ class Network:
 
             socketio.emit('training_done', {
                 "status": "done",
+                "cancelled": self.stop_training,
+                "accuracy": accuracy,
                 "networkId": netId
             }, namespace='/train')
+
+        if self.stop_training:
+            print('Training stopped.')
+            return False, accuracy
+
+        return True, accuracy
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}

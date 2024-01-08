@@ -23,63 +23,63 @@ class Connection:
         Initialise the connection object
         '''
 
-        self.__service = None
-        self.__credentials = None
-        self.__token_path = token_path
-        self.__app_credentials_path = app_credentials_path
+        self._service = None
+        self._credentials = None
+        self._token_path = token_path
+        self._app_credentials_path = app_credentials_path
 
-    def check_connected(self, reconnect=False):
+    def _check_connected(self):
         '''
         Check if the connection is valid, and reconnect if necessary
         '''
 
         # Check for valid credentials and service or reconnect flag
-        if (not self.__credentials or not self.__credentials.valid) or (
-                not self.__service) or (reconnect):
+        if (not self._credentials or not self._credentials.valid) or (
+                not self._service):
 
             # Refresh credentials
-            self.update_credentials()
+            self._update_credentials()
 
             # Rebuild service
-            self.__service = build(
-                'gmail', self.API_VERSION, credentials=self.__credentials)
+            self._service = build(
+                'gmail', self.API_VERSION, credentials=self._credentials)
 
-    def update_credentials(self):
+    def _update_credentials(self):
         '''
         Update the credentials for the connection with the Gmail API
         '''
 
         # Credentials for the API
-        self.__credentials = None
+        self._credentials = None
 
         # Check if token_path exists
         # The file at token_path stores the user's access and refresh tokens, and is
         # created automatically when the authorisation flow completes for the first time
-        if os.path.exists(self.__token_path):
-            with open(self.__token_path, 'rb') as token:
-                self.__credentials = pickle.load(token)
+        if os.path.exists(self._token_path):
+            with open(self._token_path, 'rb') as token:
+                self._credentials = pickle.load(token)
 
         # If there are no (valid) credentials available, let the user log in
-        if not self.__credentials or not self.__credentials.valid:
+        if not self._credentials or not self._credentials.valid:
 
             # Use 0Auth2.0 flow to generate credentials
             flow = InstalledAppFlow.from_client_secrets_file(
-                self.__app_credentials_path, self.API_SCOPES)
-            self.__credentials = flow.run_local_server(port=self.OAUTH_PORT)
+                self._app_credentials_path, self.API_SCOPES)
+            self._credentials = flow.run_local_server(port=self.OAUTH_PORT)
 
             # Save the credentials for next time
-            with open(self.__token_path, 'wb') as token:
-                pickle.dump(self.__credentials, token)
+            with open(self._token_path, 'wb') as token:
+                pickle.dump(self._credentials, token)
 
     def get_user_emails(self):
         '''
         Retrieve a list of the user's emails
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get a list of messages
-        result = self.__service.users().messages().list(userId='me').execute()
+        result = self._service.users().messages().list(userId='me').execute()
 
         # Get the messages from the result
         messages = result.get('messages', [])
@@ -92,9 +92,9 @@ class Connection:
         Retrieve the content of an email based on its ID
         '''
 
-        self.check_connected()
+        self._check_connected()
 
-        message = self.__service.users().messages().get(
+        message = self._service.users().messages().get(
             userId='me', id=message_id).execute()
         payload = message['payload']
 
@@ -135,10 +135,10 @@ class Connection:
         Retrieve the labels of an email based on its ID
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the message
-        result = self.__service.users().messages().get(
+        result = self._service.users().messages().get(
             userId='me', id=message_id).execute()
 
         # Get the labels
@@ -154,32 +154,28 @@ class Connection:
 
         print(f'Creating label: {label_name}')
 
-        self.check_connected()
+        self._check_connected()
 
         # Create the label
         label = {'name': label_name, 'messageListVisibility': 'show',
                  'labelListVisibility': 'labelShow'}
 
         # Create the label
-        self.__service.users().labels().create(userId='me', body=label).execute()
+        self._service.users().labels().create(userId='me', body=label).execute()
 
     def _get_label_id(self, label_name):
         '''
         Get the ID of a label with the given name
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the existing labels
-        existing_labels = self.__service.users().labels().list(userId='me').execute()
+        existing_labels = self._service.users().labels().list(userId='me').execute()
 
         # Get the label ID
-        label_id = None
-
-        for label in existing_labels['labels']:
-            if label['name'] == label_name:
-                label_id = label['id']
-                break
+        label_id = next(
+            (label['id'] for label in existing_labels['labels'] if label['name'] == label_name), None)
 
         # If the label doesn't exist, create it
         if not label_id:
@@ -194,18 +190,14 @@ class Connection:
         Get the name of a label with the given ID
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the existing labels
-        existing_labels = self.__service.users().labels().list(userId='me').execute()
+        existing_labels = self._service.users().labels().list(userId='me').execute()
 
         # Get the label name
-        label_name = None
-
-        for label in existing_labels['labels']:
-            if label['id'] == label_id:
-                label_name = label['name']
-                break
+        label_name = next(
+            (label['name'] for label in existing_labels['labels'] if label['id'] == label_id), None)
 
         # Return the label name
         return label_name
@@ -215,16 +207,19 @@ class Connection:
         Remove labels from an email based on its name
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the label IDs
         label_ids = [self._get_label_id(label) for label in labels]
 
         # Remove the labels from a request body
-        body = {'removeLabelIds': label_ids, 'addLabelIds': []}
+        body = {
+            'removeLabelIds': label_ids,
+            'addLabelIds': []
+        }
 
         # Modify the message
-        self.__service.users().messages().modify(
+        self._service.users().messages().modify(
             userId='me', id=message_id, body=body).execute()
 
     def assign_email_labels(self, message_id, labels):
@@ -232,7 +227,7 @@ class Connection:
         Assign labels to an email based on its name
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Check that both safe and unsafe are not in the labels
         assert not ('Safe' in labels and 'Unsafe' in labels)
@@ -258,7 +253,7 @@ class Connection:
         body = {'removeLabelIds': [], 'addLabelIds': label_ids}
 
         # Modify the message
-        self.__service.users().messages().modify(
+        self._service.users().messages().modify(
             userId='me', id=message_id, body=body).execute()
 
     def word_counter(self, plaintext):
@@ -289,7 +284,7 @@ class Connection:
         Check if an email has a label
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the labels
         labels = self.get_email_labels(message_id)
@@ -305,7 +300,7 @@ class Connection:
         Remove all labels from all emails 
         '''
 
-        self.check_connected()
+        self._check_connected()
 
         # Get the user's emails
         messages = self.get_user_emails()

@@ -1,7 +1,6 @@
 import os
 import json
 import random
-import threading
 
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
@@ -11,6 +10,7 @@ from main import Classifier
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+training_classifiers = {}
 active_classifier = Classifier()
 
 
@@ -169,36 +169,37 @@ def train_network():
 
     # Get layers from file
     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
-        layers = json.load(f)['layers']
-
-    thread = threading.Thread(target=train_network_thread, args=(
-        network_id, layers, epochs,))
-    thread.start()
-
-    return jsonify({'status': 'success'})
-
-
-def train_network_thread(network_id, layers, epochs):
-    classifier = Classifier()
-
-    for layer in layers.values():
-        classifier.add_layer(layer['layerConfig'])
-
-    print('Training network')
-
-    classifier.train_network(
-        epochs=epochs, socketio=socketio, netId=network_id)
-
-    # Get network from file
-    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
         network = json.load(f)
 
-    # Save network to the dictionary (network_id will already be in dictionary)
-    network['network'] = classifier.net.info()
+    layers = network['layers']
+
+    if 'network' in network:
+        del network['network']
 
     # Save network to file
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
+
+    # thread = threading.Thread(target=train_network_thread, args=(
+    #     network_id, layers, epochs,))
+    # thread.start()
+
+    training_classifiers[network_id] = Classifier()
+
+    training_classifiers[network_id].start_training_thread(
+        network_id, layers, epochs, socketio)
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/stop-training', methods=['POST'])
+def stop_training():
+
+    network_id = request.get_json().get('networkId')
+
+    training_classifiers[network_id].stop_training()
+
+    return jsonify({'status': 'success'})
 
 
 @app.route('/delete-network', methods=['POST'])
