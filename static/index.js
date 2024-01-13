@@ -528,6 +528,11 @@ function selectActiveNetwork(newNetworkId) {
     .catch((error) => {
         console.error('Error:', error);
     });
+
+    // Activate add network card
+    let addNetworkCard = document.getElementById("addNetworkCard");
+    addNetworkCard.style.opacity = 1;
+    addNetworkCard.querySelector("#addNetworkButton").disabled = false;
 }
 
 function toggleTrainPopup(networkId) {
