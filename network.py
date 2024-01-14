@@ -125,7 +125,6 @@ class Network:
                         "networkId": netId
                     }, namespace='/train')
 
-            # accuracy = f"{self.accuracy(validation_data[0], validation_data[1]):.4f}" if validation_data else "-"
             accuracy = f"{self.accuracy(validation_data[0], validation_data[1]):.0f}" if validation_data else "-"
 
             if socketio:
@@ -168,11 +167,6 @@ class Network:
 
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}
-
-    def save(self, path):
-        # TODO: Check path is valid
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(self.info(), f, indent=4)
 
     def load(self, network_dictionary=None, file_path=None):
         self.layers.clear()

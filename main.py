@@ -250,7 +250,7 @@ class Classifier:
             return False
 
         # Data is not compatible if the input and output sizes do not match that of the network
-        return self.net.layers[0].input_size == len(X[0]) and self.net.layers[-1].output_size == 1
+        return self.net.layers[0].input_size == len(X[0]) and self.net.layers[-1].output_size == 1 and len(Y[0]) == 1
 
     def _default_network(self, input_size, output_size):
         '''

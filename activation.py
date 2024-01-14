@@ -1,5 +1,7 @@
 from calc import exp, multiply_matrices
 
+# Activation functions are built to handle matrices as input and output values
+
 
 class Sigmoid:
     def __init__(self):

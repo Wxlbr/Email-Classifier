@@ -125,13 +125,10 @@ def get_networks():
         with open(f'./inc/networks/{file}', 'r', encoding='utf-8') as f:
             networks['inactive'][file.split('.')[0]] = json.load(f)
 
-    with open('./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'r', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
         active_network = json.load(f)
 
     networks['active'][active_network['networkId']] = active_network
-
-    with open('temp.json', 'w', encoding='utf-8') as f:
-        json.dump(networks, f, indent=4)
 
     return jsonify(networks)
 
@@ -220,7 +217,7 @@ def toggle_active_network():
     activate = request.get_json().get('activate')
 
     # Get network from file
-    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'r', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
         network = json.load(f)
 
     if activate:
@@ -245,7 +242,7 @@ def toggle_active_network():
         network['status'] = 'inactive'
 
     # Save network to file
-    with open(f'./inc/networks/active/' + os.listdir('./inc/networks/active/')[0], 'w', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
     return jsonify({'status': 'success'})
