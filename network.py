@@ -165,6 +165,7 @@ class Network:
 
         return True, accuracy
 
+    # TODO: No layers
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}
 

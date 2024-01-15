@@ -17,10 +17,19 @@ class Classifier:
         self.trained = False
         self.accuracy = 0
         self.stop_event = threading.Event()
+        self.is_training = False
+
+    def get_is_training(self):
+        return self.is_training
 
     def stop_classification(self):
         # print('Stopping classification...')
         self.stop_event.set()
+
+        # Set training to false
+        self.is_training = False
+
+        # TODO: Home page remove trained and accuracy flag
 
     def start_classification_thread(self, n=-1):
         # Reset the stop event in case it was set before
@@ -103,6 +112,8 @@ class Classifier:
         assert self.net is not None, 'No network found.'
         assert self.trained, 'Network is not trained.'
 
+        print(self.net.info())
+
         # Check if the email has already been classified
         if self.conn.email_has_label(message_id):
             print('Skip')
@@ -136,6 +147,9 @@ class Classifier:
         thread = threading.Thread(target=self.train_network_thread, args=(
             network_id, layers, epochs, socketio,))
         thread.start()
+
+        # Set to is training
+        self.is_training = True
 
     def train_network_thread(self, network_id, layers, epochs, socketio):
         for layer in layers.values():
@@ -192,6 +206,9 @@ class Classifier:
         # Train the network
         self.trained, self.accuracy = self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
             X_test, Y_test), socketio=socketio, netId=netId)
+
+        # Set training to false
+        self.is_training = False
 
     def _train_test_split(self, X, Y, test_size=0.2):
         '''
@@ -250,7 +267,7 @@ class Classifier:
             return False
 
         # Data is not compatible if the input and output sizes do not match that of the network
-        return self.net.layers[0].input_size == len(X[0]) and self.net.layers[-1].output_size == 1 and len(Y[0]) == 1
+        return self.net.layers[0].input_size == len(X[0]) and self.net.layers[-1].output_size == 1
 
     def _default_network(self, input_size, output_size):
         '''

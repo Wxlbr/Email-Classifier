@@ -1,13 +1,13 @@
 function toggleActiveLayer() {
 
-    const activate = activateNetworkLabel.innerHTML == "Activate" ? true : false;
+    const activate = activateNetworkButtonText.innerHTML == "On" ? true : false;
 
     console.log('activate', activate);
 
     document.getElementById("activeNetworkStatus").innerHTML = activate ? "Status: Active" : "Status: Inactive";
-    document.getElementById("activateNetworkLabel").innerHTML = activate ? "Deactivate" : "Activate";
-    document.getElementById("activateNetworkButton").classList.toggle("button-green", activate);
-    document.getElementById("activateNetworkButton").classList.toggle("button-red", !activate);
+    document.getElementById("activateNetworkButton").classList.toggle("button-green", !activate);
+    document.getElementById("activateNetworkButton").classList.toggle("button-red", activate);
+    document.getElementById("activateNetworkButtonText").innerHTML = activate ? "Off" : "On"
     document.getElementById("activeViewButton").disabled = activate ? true : false;
     document.getElementById("activeReplaceButton").disabled = activate ? true : false;
 
@@ -126,7 +126,7 @@ function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
                 id="activeViewButton">View</button>
             <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
                 id="activeReplaceButton">Replace</button>
-            <button class="button button-square button-${status === 'active' ? 'red' : 'green'} border ml-4" id="activateNetworkButton"
+            <button class="button button-${status === 'active' ? 'red' : 'green'} border ml-2" id="activateNetworkButton"
                 onclick="toggleActiveLayer()">
                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -134,8 +134,8 @@ function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
                     <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
                     <line x1="12" x2="12" y1="2" y2="12"></line>
                 </svg>
+                <p class="ml-1" id="activateNetworkButtonText">${status === 'active' ? 'Off' : 'On'}</p>
             </button>
-            <span class="ml-4" id="activateNetworkLabel">${status === 'active' ? 'Deactive' : 'Activate'}</span>
         </div>
         </div>`;
 
@@ -154,6 +154,21 @@ function loadNetworksHelper(activeNetork = {}, inactiveNetworks = {}) {
 
     // Only inactive networks need to be validated as active networks are already validated
     validateNetworks(inactiveNetworks);
+
+    // Check for any networks currently being trained
+    fetch("/current-training", {
+        method: "GET"
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        for (const id in data.ids) {
+            showTrainingCard(data.ids[id]);
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching networks:", error);
+    });
 }
 
 function addNetwork() {
@@ -339,6 +354,19 @@ function trainNetwork(networkId, epochs) {
     });
 }
 
+function showTrainingCard(networkId) {
+
+    // Get network card
+    let networkCard = document.getElementById(networkId);
+
+    // Show training card
+    networkCard.querySelector("#trainingCard").hidden = false;
+    networkCard.querySelector("#editButton").style.display = "none";
+    networkCard.querySelector("#trainButton").style.display = "none";
+    networkCard.querySelector("#deleteButton").style.display = "none";
+    networkCard.querySelector("#stopTrainingButton").style.display = "block";
+}
+
 function trainNetworkHelper(network, epochs) {
 
     // Get network
@@ -367,18 +395,7 @@ function trainNetworkHelper(network, epochs) {
         return;
     }
 
-    // Show training card
-    networkCard.querySelector("#trainingCard").hidden = false;
-
-    // Set edit, train and delete buttons to disabled
-    // networkCard.querySelector("#editButton").disabled = true;
-    // networkCard.querySelector("#trainButton").disabled = true;
-    // networkCard.querySelector("#deleteButton").disabled = true;
-
-    networkCard.querySelector("#editButton").style.display = "none";
-    networkCard.querySelector("#trainButton").style.display = "none";
-    networkCard.querySelector("#deleteButton").style.display = "none";
-    networkCard.querySelector("#stopTrainingButton").style.display = "block";
+    showTrainingCard(networkId);
 
     fetch("/train-network", {
         method: "POST",
@@ -463,12 +480,13 @@ function replaceActiveNetwork() {
     // Switch to selection view
     // Get active network card
     let activeNetworkCard = document.getElementById("activeNetworkContainer").querySelector(".card");
+
+    // TODO: Hide Stop Training button in selection view
     
     // Set style to display: none
     activeNetworkCard.querySelector("#activeViewButton").style.display = "none";
     activeNetworkCard.querySelector("#activeReplaceButton").style.display = "none";
     activeNetworkCard.querySelector("#activateNetworkButton").style.display = "none";
-    activeNetworkCard.querySelector("#activateNetworkLabel").style.display = "none";
     activeNetworkCard.querySelector("#activeNetworkStatus").innerHTML = "";
 
     // Show select button on card

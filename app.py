@@ -171,7 +171,7 @@ def train_network():
     layers = network['layers']
 
     if 'network' in network:
-        del network['network']
+        network['network'].clear()
 
     # Save network to file
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
@@ -187,6 +187,18 @@ def train_network():
         network_id, layers, epochs, socketio)
 
     return jsonify({'status': 'success'})
+
+
+@app.route('/current-training', methods=['GET'])
+def get_current_training_networks():
+
+    ids = []
+
+    for network_id in training_classifiers:
+        if training_classifiers[network_id].get_is_training():
+            ids.append(network_id)
+
+    return jsonify({'status': 'success', 'ids': ids})
 
 
 @app.route('/stop-training', methods=['POST'])
@@ -228,6 +240,8 @@ def toggle_active_network():
 
         # Change network status
         network['status'] = 'active'
+
+        print('Loaded Network')
 
         # Start classification thread
         active_classifier.start_classification_thread()

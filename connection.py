@@ -27,6 +27,7 @@ class Connection:
         self._credentials = None
         self._token_path = token_path
         self._app_credentials_path = app_credentials_path
+        self._check_connected()
 
     def _check_connected(self):
         '''
@@ -34,15 +35,14 @@ class Connection:
         '''
 
         # Check for valid credentials and service or reconnect flag
-        if (not self._credentials or not self._credentials.valid) or (
-                not self._service):
+        if not (self._credentials and self._credentials.valid and self._service):
 
             # Refresh credentials
             self._update_credentials()
 
             # Rebuild service
-            self._service = build(
-                'gmail', self.API_VERSION, credentials=self._credentials)
+            self._service = build('gmail', self.API_VERSION,
+                                  credentials=self._credentials)
 
     def _update_credentials(self):
         '''
