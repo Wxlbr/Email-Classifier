@@ -238,11 +238,6 @@ function loadTrainingStatus(networkId, data) {
     // Hide training card
     networkCard.querySelector("#trainingCard").hidden = false;
 
-    // Set edit, train and delete buttons to disabled
-    // networkCard.querySelector("#editButton").disabled = true;
-    // networkCard.querySelector("#trainButton").disabled = true;
-    // networkCard.querySelector("#deleteButton").disabled = true;
-
     networkCard.querySelector("#editButton").style.display = "none";
     networkCard.querySelector("#trainButton").style.display = "none";
     networkCard.querySelector("#deleteButton").style.display = "none";
@@ -300,16 +295,6 @@ function initTrainingSocket() {
         let trainingCard = networkCard.querySelector("#trainingCard");
 
         trainingCard.hidden = true;
-
-        // Set edit, train and delete buttons to enabled
-        // networkCard.querySelector("#editButton").disabled = false;
-        // networkCard.querySelector("#trainButton").disabled = false;
-        // networkCard.querySelector("#deleteButton").disabled = false;
-
-        // Set network to trained
-        // console.log("setTrained", data.networkId);
-
-        // networkCard.querySelector("#trainingStatus").hidden = false;
 
         // Hide training card
         networkCard.querySelector("#trainingCard").hidden = true;

@@ -59,11 +59,6 @@ def log(x: list) -> list:
     return math.log(x)
 
 
-# def size(x: list) -> int:
-#     x = flatten(x)
-#     return len(x)
-
-
 def negative(matrix: list) -> list:
     return [[-element for element in row] for row in matrix]
 

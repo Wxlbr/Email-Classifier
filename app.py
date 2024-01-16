@@ -177,10 +177,6 @@ def train_network():
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
-    # thread = threading.Thread(target=train_network_thread, args=(
-    #     network_id, layers, epochs,))
-    # thread.start()
-
     training_classifiers[network_id] = Classifier()
 
     training_classifiers[network_id].start_training_thread(
@@ -194,9 +190,9 @@ def get_current_training_networks():
 
     ids = []
 
-    for network_id in training_classifiers:
-        if training_classifiers[network_id].get_is_training():
-            ids.append(network_id)
+    for classifier in training_classifiers.values():
+        if classifier.get_is_training():
+            ids.append(classifier.get_network_id())
 
     return jsonify({'status': 'success', 'ids': ids})
 
