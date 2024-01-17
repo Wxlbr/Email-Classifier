@@ -23,6 +23,9 @@ class Network:
     def clear_stop_flag(self):
         self.stop_training = False
 
+    def did_stop(self):
+        return self.stop_training
+
     def predict(self, input_value):
         assert self.layers, 'Network has no layers.'
 
@@ -87,7 +90,7 @@ class Network:
                             "networkId": netId
                         }, namespace='/train')
 
-                    return False
+                    return False, accuracy
 
                 # Forward propagation
                 output = self.predict(x)
@@ -190,6 +193,8 @@ class Network:
                 data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
             layer.load(data[i])
             self.layers.append(layer)
+
+        print(self.layers)
 
     def add_layer(self, layer):
         '''

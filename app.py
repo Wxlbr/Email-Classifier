@@ -59,7 +59,7 @@ def save_network():
             "network": {}
         }, f, indent=4)
 
-    return jsonify({'status': 'success'})
+    return jsonify({'status': 'success', 'process': '/save-new-network'})
 
 
 @app.route('/save-layers', methods=['POST'])
@@ -91,7 +91,7 @@ def save_layers():
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
-    return jsonify(data)
+    return jsonify({'status': 'success', 'process': '/save-layers', **data})
 
 
 @app.route('/switch-active-network', methods=['POST'])
@@ -108,7 +108,7 @@ def switch_active_card():
     os.rename(f'./inc/networks/{network_id}.json',
               f'./inc/networks/active/{network_id}.json')
 
-    return jsonify({'status': 'success'})
+    return jsonify({'status': 'success', 'process': '/switch-active-network'})
 
 
 @app.route('/get-networks', methods=['GET'])
@@ -130,7 +130,7 @@ def get_networks():
 
     networks['active'][active_network['networkId']] = active_network
 
-    return jsonify(networks)
+    return {'status': 'success', 'process': '/get-networks', **networks}
 
 
 @app.route('/get-network', methods=['POST'])
@@ -172,6 +172,7 @@ def train_network():
 
     if 'network' in network:
         network['network'].clear()
+        print('clearing network')
 
     # Save network to file
     with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
@@ -182,7 +183,7 @@ def train_network():
     training_classifiers[network_id].start_training_thread(
         network_id, layers, epochs, socketio)
 
-    return jsonify({'status': 'success'})
+    return jsonify({'status': 'success', 'process': '/train-network'})
 
 
 @app.route('/current-training', methods=['GET'])
@@ -190,9 +191,9 @@ def get_current_training_networks():
 
     ids = []
 
-    for classifier in training_classifiers.values():
+    for network_id, classifier in training_classifiers.items():
         if classifier.get_is_training():
-            ids.append(classifier.get_network_id())
+            ids.append(network_id)
 
     return jsonify({'status': 'success', 'ids': ids})
 
@@ -204,7 +205,17 @@ def stop_training():
 
     training_classifiers[network_id].stop_training()
 
-    return jsonify({'status': 'success'})
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    network['network'].clear()  # Clear network and accuracy
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success', 'process': '/stop-training'})
 
 
 @app.route('/delete-network', methods=['POST'])
@@ -216,7 +227,7 @@ def delete_network():
     if os.path.exists(f'./inc/networks/{network_id}.json'):
         os.remove(f'./inc/networks/{network_id}.json')
 
-    return jsonify({'status': 'success'})
+    return jsonify({'status': 'success', 'process': '/delete-network'})
 
 
 @app.route('/toggle-active-network', methods=['POST'])
@@ -255,7 +266,7 @@ def toggle_active_network():
     with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
-    return jsonify({'status': 'success'})
+    return jsonify({'status': 'success', 'process': '/toggle-active-network'})
 
 
 if __name__ == '__main__':

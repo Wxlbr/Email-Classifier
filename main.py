@@ -18,6 +18,7 @@ class Classifier:
         self.accuracy = 0
         self.stop_event = threading.Event()
         self.is_training = False
+        self.stop_training_flag = False
 
     def get_is_training(self):
         return self.is_training
@@ -28,8 +29,6 @@ class Classifier:
 
         # Set training to false
         self.is_training = False
-
-        # TODO: Home page remove trained and accuracy flag
 
     def start_classification_thread(self, n=-1):
         # Reset the stop event in case it was set before
@@ -165,8 +164,11 @@ class Classifier:
             network = json.load(f)
 
         # Save network to the dictionary (network_id will already be in dictionary)
-        network['network'] = self.net.info()
-        network['network']['accuracy'] = self.accuracy
+        if self.net.did_stop():
+            network['network'] = {}
+        else:
+            network['network'] = self.net.info()
+            network['network']['accuracy'] = self.accuracy
 
         # Save network to file
         with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
@@ -176,6 +178,9 @@ class Classifier:
         '''
         Stop the training of the network
         '''
+
+        self.stop_training_flag = True
+        self.is_training = False
 
         if self.net is not None:
             self.net.stop()
@@ -187,9 +192,17 @@ class Classifier:
 
         print('Training network...')
 
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
         # Use default training data if none is provided
         if X is None or Y is None:
             X, Y = self._default_training_data()
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
 
         # Create a default network if none exists
         if self.net is None:
@@ -199,9 +212,17 @@ class Classifier:
         assert self._check_data_compatability(
             X, Y), 'Data is not compatible with the current network.'
 
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
         # Split into train and test sets
         X_train, X_test, Y_train, Y_test = self._train_test_split(
             X, Y, test_size=0.2)
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
 
         # Train the network
         self.trained, self.accuracy = self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
