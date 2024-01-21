@@ -140,7 +140,7 @@ class Classifier:
     def start_training_thread(self, network_id, layers, epochs, socketio):
         # Reset the stop event in case it was set before
         if self.net:
-            self.net.clear_stop_event()
+            self.net.clear_stop_flag()
 
         # Start training in a separate thread
         thread = threading.Thread(target=self.train_network_thread, args=(

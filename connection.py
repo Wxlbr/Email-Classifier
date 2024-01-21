@@ -18,13 +18,14 @@ class Connection:
         'https://www.googleapis.com/auth/gmail.modify'
     ]
 
-    def __init__(self, token_path='./inc/credentials/token.pickle', app_credentials_path='./inc/credentials/credentials.json'):
+    def __init__(self, word_list_path='./inc/word_list.json', token_path='./inc/credentials/token.pickle', app_credentials_path='./inc/credentials/credentials.json'):
         '''
         Initialise the connection object
         '''
 
         self._service = None
         self._credentials = None
+        self._word_list_path = word_list_path
         self._token_path = token_path
         self._app_credentials_path = app_credentials_path
         self._check_connected()
@@ -52,9 +53,7 @@ class Connection:
         # Credentials for the API
         self._credentials = None
 
-        # Check if token_path exists
-        # The file at token_path stores the user's access and refresh tokens, and is
-        # created automatically when the authorisation flow completes for the first time
+        # Check if there is a saved token
         if os.path.exists(self._token_path):
             with open(self._token_path, 'rb') as token:
                 self._credentials = pickle.load(token)
@@ -262,7 +261,7 @@ class Connection:
         '''
 
         # Get the words
-        with open('inc/words.json', 'r', encoding='utf-8') as f:
+        with open(self._word_list_path, 'r', encoding='utf-8') as f:
             words = {word: 0 for word in json.load(f)}
 
         # Count the frequencies
