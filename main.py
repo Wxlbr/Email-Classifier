@@ -137,117 +137,6 @@ class Classifier:
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
 
-    def start_training_thread(self, network_id, layers, epochs, socketio):
-        # Reset the stop event in case it was set before
-        if self.net:
-            self.net.clear_stop_flag()
-
-        # Start training in a separate thread
-        thread = threading.Thread(target=self.train_network_thread, args=(
-            network_id, layers, epochs, socketio,))
-        thread.start()
-
-        # Set to is training
-        self.is_training = True
-
-    def train_network_thread(self, network_id, layers, epochs, socketio):
-        for layer in layers.values():
-            self.add_layer(layer['layerConfig'])
-
-        print('Training network')
-
-        self.train_network(
-            epochs=epochs, socketio=socketio, netId=network_id)
-
-        # Get network from file
-        with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
-            network = json.load(f)
-
-        # Save network to the dictionary (network_id will already be in dictionary)
-        if self.net.did_stop():
-            network['network'] = {}
-        else:
-            network['network'] = self.net.info()
-            network['network']['accuracy'] = self.accuracy
-
-        # Save network to file
-        with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
-            json.dump(network, f, indent=4)
-
-    def stop_training(self):
-        '''
-        Stop the training of the network
-        '''
-
-        self.stop_training_flag = True
-        self.is_training = False
-
-        if self.net is not None:
-            self.net.stop()
-
-    def train_network(self, X=None, Y=None, epochs=1, socketio=None, netId=None):
-        '''
-        Train the network
-        '''
-
-        print('Training network...')
-
-        if self.stop_training_flag:
-            print('Training stopped.')
-            return
-
-        # Use default training data if none is provided
-        if X is None or Y is None:
-            X, Y = self._default_training_data()
-
-        if self.stop_training_flag:
-            print('Training stopped.')
-            return
-
-        # Create a default network if none exists
-        if self.net is None:
-            print('No network found. Creating a default network.')
-            self.net = self._default_network(len(X[0]), 1)
-
-        assert self._check_data_compatability(
-            X, Y), 'Data is not compatible with the current network.'
-
-        if self.stop_training_flag:
-            print('Training stopped.')
-            return
-
-        # Split into train and test sets
-        X_train, X_test, Y_train, Y_test = self._train_test_split(
-            X, Y, test_size=0.2)
-
-        if self.stop_training_flag:
-            print('Training stopped.')
-            return
-
-        # Train the network
-        self.trained, self.accuracy = self.net.train(X_train, Y_train, epochs=epochs, validation_data=(
-            X_test, Y_test), socketio=socketio, netId=netId)
-
-        # Set training to false
-        self.is_training = False
-
-    def _train_test_split(self, X, Y, test_size=0.2):
-        '''
-        Split the data into train and test sets
-        '''
-
-        assert len(X) == len(Y) and len(X) > 0
-
-        train_size = int(len(X) * (1 - test_size))
-        test_size = len(X) - train_size
-
-        assert train_size > 0 and test_size > 0
-
-        X_train, Y_train = X[:train_size], Y[:train_size]
-        X_test, Y_test = X[train_size:], Y[train_size:]
-
-        return X_train, X_test, Y_train, Y_test
-
     def load_network(self, network_dictionary=None, file_path=None):
         '''
         Load a trained network from a file or dictionary
@@ -319,6 +208,119 @@ class Classifier:
         print(shape(X), shape(Y))
 
         return X, Y
+
+    # Training Related Methods
+
+    def start_training_thread(self, network_id, layers, epochs, socketio):
+        # Reset the stop event in case it was set before
+        if self.net:
+            self.net.clear_stop_flag()
+
+        # Start training in a separate thread
+        thread = threading.Thread(target=self.train_network_thread, args=(
+            network_id, layers, epochs, socketio,))
+        thread.start()
+
+        # Set to is training
+        self.is_training = True
+
+    def stop_training(self):
+        '''
+        Stop the training of the network
+        '''
+
+        self.stop_training_flag = True
+        self.is_training = False
+
+        if self.net is not None:
+            self.net.stop()
+
+    def train_network_thread(self, network_id, layers, epochs, socketio):
+        for layer in layers.values():
+            self.add_layer(layer['layerConfig'])
+
+        print('Training network')
+
+        self.train_network(
+            epochs=epochs, socketio=socketio, netId=network_id)
+
+        # Get network from file
+        with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+            network = json.load(f)
+
+        # Save network to the dictionary (network_id will already be in dictionary)
+        if self.net.did_stop():
+            network['network'] = {}
+        else:
+            network['network'] = self.net.info()
+            network['network']['accuracy'] = self.accuracy
+
+        # Save network to file
+        with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+            json.dump(network, f, indent=4)
+
+    def train_network(self, X=None, Y=None, epochs=1, socketio=None, netId=None):
+        '''
+        Train the network
+        '''
+
+        print('Training network...')
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
+        # Use default training data if none is provided
+        if X is None or Y is None:
+            X, Y = self._default_training_data()
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
+        # Create a default network if none exists
+        if self.net is None:
+            print('No network found. Creating a default network.')
+            self.net = self._default_network(len(X[0]), 1)
+
+        assert self._check_data_compatability(
+            X, Y), 'Data is not compatible with the current network.'
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
+        # Split into train and test sets
+        X_train, X_test, Y_train, Y_test = self._train_test_split(
+            X, Y, test_size=0.2)
+
+        if self.stop_training_flag:
+            print('Training stopped.')
+            return
+
+        # Train the network
+        self.trained, self.accuracy = self.net.train(X_train, Y_train, validation_data=(
+            X_test, Y_test), epochs=epochs, socketio=socketio, netId=netId)
+
+        # Set training to false
+        self.is_training = False
+
+    def _train_test_split(self, X, Y, test_size=0.2):
+        '''
+        Split the data into train and test sets
+        '''
+
+        assert len(X) == len(Y) and len(X) > 0
+
+        train_size = int(len(X) * (1 - test_size))
+        test_size = len(X) - train_size
+
+        assert train_size > 0 and test_size > 0
+
+        X_train, Y_train = X[:train_size], Y[:train_size]
+        X_test, Y_test = X[train_size:], Y[train_size:]
+
+        return X_train, X_test, Y_train, Y_test
 
 
 if __name__ == "__main__":

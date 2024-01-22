@@ -77,21 +77,36 @@ def add_matrices(mat_1: list, mat_2: list) -> list:
     assert same_dimensions(
         mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
 
-    return [[mat_1[row][col] + mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
+    return [
+        [
+            mat_1[row][col] + mat_2[row][col] for col in range(len(mat_1[0]))
+        ]
+        for row in range(len(mat_1))
+    ]
 
 
 def sub_matrices(mat_1: list, mat_2: list) -> list:
     assert same_dimensions(
         mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
 
-    return [[mat_1[row][col] - mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
+    return [
+        [
+            mat_1[row][col] - mat_2[row][col] for col in range(len(mat_1[0]))
+        ]
+        for row in range(len(mat_1))
+    ]
 
 
 def multiply_matrices(mat_1: list, mat_2: list) -> list:
     assert same_dimensions(
         mat_1, mat_2), f"Invalid dimensions: {shape(mat_1)} != {shape(mat_2)}"
 
-    return [[mat_1[row][col] * mat_2[row][col] for col in range(len(mat_1[0]))] for row in range(len(mat_1))]
+    return [
+        [
+            mat_1[row][col] * mat_2[row][col] for col in range(len(mat_1[0]))
+        ]
+        for row in range(len(mat_1))
+    ]
 
 
 def convert_time(seconds):

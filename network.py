@@ -43,7 +43,9 @@ class Network:
 
         return (correct * 100) / len(x_test)
 
-    def train(self, x_train, y_train, epochs=1, learning_rate=0.01, loss='binary_crossentropy', validation_data=None, verbose=True, socketio=None, netId=None):
+    def train(self, x_train, y_train, epochs=1, learning_rate=0.01,
+              loss='binary_crossentropy', validation_data=None,
+              verbose=True, socketio=None, netId=None):
 
         print('Began Training')
 
@@ -128,7 +130,10 @@ class Network:
                         "networkId": netId
                     }, namespace='/train')
 
-            accuracy = f"{self.accuracy(validation_data[0], validation_data[1]):.0f}" if validation_data else "-"
+            accuracy = (
+                f"{self.accuracy(validation_data[0], validation_data[1]):.0f}"
+                if validation_data else "-"
+            )
 
             if socketio:
 
@@ -169,6 +174,7 @@ class Network:
         return True, accuracy
 
     # TODO: No layers
+
     def info(self):
         return {i: layer.info() for i, layer in enumerate(self.layers)}
 
@@ -190,7 +196,9 @@ class Network:
             assert data[i]['activation'] in self.ACTIVATION_TYPES, "Unknown activation type"
 
             layer = self.LAYER_TYPES[data[i]['type']](
-                data[i]['input_size'], data[i]['output_size'], activation=self.ACTIVATION_TYPES[data[i]['activation']]())
+                data[i]['input_size'], data[i]['output_size'],
+                activation=self.ACTIVATION_TYPES[data[i]['activation']]()
+            )
             layer.load(data[i])
             self.layers.append(layer)
 
