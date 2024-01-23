@@ -29,7 +29,7 @@ def edit_network():
     with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
         network = json.load(f)
 
-    print(network)
+    # print(network)
 
     return render_template('editNetwork.html', data=network)
 
@@ -267,6 +267,24 @@ def toggle_active_network():
         json.dump(network, f, indent=4)
 
     return jsonify({'status': 'success', 'process': '/toggle-active-network'})
+
+
+@app.route('/remove-trained', methods=['POST'])
+def remove_trained():
+
+    network_id = request.get_json().get('networkId')
+
+    # Get network from file
+    with open(f'./inc/networks/{network_id}.json', 'r', encoding='utf-8') as f:
+        network = json.load(f)
+
+    network['network'].clear()
+
+    # Save network to file
+    with open(f'./inc/networks/{network_id}.json', 'w', encoding='utf-8') as f:
+        json.dump(network, f, indent=4)
+
+    return jsonify({'status': 'success', 'process': '/remove-trained'})
 
 
 if __name__ == '__main__':

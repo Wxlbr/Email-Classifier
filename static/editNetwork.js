@@ -1,11 +1,6 @@
-function loadNetwork(layers) {
-    // Clear network sidebar
-    document.getElementById("layersView").innerHTML = "";
-
-    let layersView = document.getElementById("layersView");
-
-    for (const layerId in layers) {
-        layersView.innerHTML += `<div aria-grabbed="false" id="${layerId}"
+function generateLayerHTML(layerId, layerName) {
+    return `
+        <div aria-grabbed="false" id="${layerId}"
         class="navMargin flex items-center gap-3 rounded bg-grey-700 padx-3 pady-2 text-grey transition-all hover:text-white cursor-move"
         onclick="selectLayer('${layerId}')">
 
@@ -19,13 +14,19 @@ function loadNetwork(layers) {
         </svg>
 
         <!-- Layer Name -->
-        ${layers[layerId]["layerName"]}
+        ${layerName}
 
         <!-- Layer Status -->
         <span class="ml-auto bg-green-500 text-dark-grey padx-2 pady-1 rounded-full text-xs"
             id="validationStatus">Valid</span>
         </div>`;
-    }
+}
+
+function loadNetwork(layers) {
+    const layersView = document.getElementById("layersView");
+    layersView.innerHTML = Object.entries(layers)
+        .map(([layerId, { layerName }]) => generateLayerHTML(layerId, layerName))
+        .join('');
 
     validateLayers();
     saveLayers();
@@ -64,66 +65,49 @@ function selectLayer(layerId) {
 }
 
 function validateLayers() {
-
-    for (const layerId in layers) {
+    Object.entries(layers).forEach(([layerId, layer]) => {
         const idNum = parseInt(layerId.split("-")[1]);
-        const layer = layers[layerId];
-        layer["valid"] = true;
-        layer["errors"] = [];
-
+        const { layerConfig: { inputSize, outputSize } } = layer;
+        layer.valid = true;
+        layer.errors = [];
 
         // Check inputSize
-        if (layer["layerConfig"]["inputSize"] <= 0) {
-            layer["valid"] = false;
-            layer["errors"].push("Input size must be a positive integer");
+        if (inputSize <= 0) {
+            layer.valid = false;
+            layer.errors.push("Input size must be a positive integer");
         }
 
-        if (idNum == 1) {
-            // First layer
-            if (layer["layerConfig"]["inputSize"] != inputSize) {
-                layer["valid"] = false;
-                layer["errors"].push("Input size must match network input size of " + inputSize);
-            }
-        } else {
-            // Previous layer exists
-            if (layer["layerConfig"]["inputSize"] != layers["layer-" + (idNum - 1)][
-                "layerConfig"]["outputSize"]) {
-                layer["valid"] = false;
-                layer["errors"].push("Input size must match previous layer's output size of " +
-                    layers["layer-" + (idNum - 1)]["layerConfig"]["outputSize"]);
-            }
+        const prevLayer = layers[`layer-${idNum - 1}`];
+        const nextLayer = layers[`layer-${idNum + 1}`];
+
+        if (idNum == 1 && inputSize != initialInputSize) {
+            layer.valid = false;
+            layer.errors.push(`Input size must match network input size of ${initialInputSize}`);
+        } else if (prevLayer && inputSize != prevLayer.layerConfig.outputSize) {
+            layer.valid = false;
+            layer.errors.push(`Input size must match previous layer's output size of ${prevLayer.layerConfig.outputSize}`);
         }
 
         // Check outputSize
-        if (layer["layerConfig"]["outputSize"] <= 0) {
-            layer["valid"] = false;
-            layer["errors"].push("Output size must be a positive integer");
+        if (outputSize <= 0) {
+            layer.valid = false;
+            layer.errors.push("Output size must be a positive integer");
         }
 
-        if ("layer-" + (idNum + 1) in layers) {
-            // Next layer exists
-            if (layer["layerConfig"]["outputSize"] != layers["layer-" + (idNum + 1)][
-                "layerConfig"]["inputSize"]) {
-                layer["valid"] = false;
-                layer["errors"].push("Output size must match next layer's input size of " +
-                    layers["layer-" + (idNum + 1)]["layerConfig"]["inputSize"]);
-            }
-        } else {
-            // Next layer does not exist, must be the last layer
-            if (layer["layerConfig"]["outputSize"] != outputSize) {
-                layer["valid"] = false;
-                layer["errors"].push("Output size must match network output size of " + outputSize);
-            }
+        if (nextLayer && outputSize != nextLayer.layerConfig.inputSize) {
+            layer.valid = false;
+            layer.errors.push(`Output size must match next layer's input size of ${nextLayer.layerConfig.inputSize}`);
+        } else if (!nextLayer && outputSize != initialOutputSize) {
+            layer.valid = false;
+            layer.errors.push(`Output size must match network output size of ${initialOutputSize}`);
         }
 
         // Update validation status
         let validationStatus = document.getElementById(layerId).querySelector("#validationStatus");
-        const valid = layer["valid"];
-
-        validationStatus.innerHTML = valid ? "Valid" : "Invalid";
-        validationStatus.classList.toggle("bg-green-500", valid);
-        validationStatus.classList.toggle("bg-red-500", !valid);
-    }
+        validationStatus.innerHTML = layer.valid ? "Valid" : "Invalid";
+        validationStatus.classList.toggle("bg-green-500", layer.valid);
+        validationStatus.classList.toggle("bg-red-500", !layer.valid);
+    });
 }
 
 function updateLayerOrder(event) {
@@ -158,16 +142,12 @@ function updateLayerOrder(event) {
 
 function togglePopup(elementId) {
     const popup = document.getElementById(elementId);
-    if (popup.style.display === "none") {
-        // Reset the popup
-        popup.style.display = "block";
+    const isHidden = popup.style.display === "none";
 
-        // Disable the add button
-        document.getElementById("newLayerPopupAddButton").disabled = true;
-    } else {
-        popup.style.display = "none";
+    popup.style.display = isHidden ? "block" : "none";
+    document.getElementById("newLayerPopupAddButton").disabled = isHidden;
 
-        // Remove any selected buttons
+    if (!isHidden) {
         for (const button of document.getElementsByClassName("layer-button")) {
             button.classList.remove("selected");
         }
@@ -176,7 +156,7 @@ function togglePopup(elementId) {
 
 function selectLayerType(layerName, layerType) {
     // Change the colour of the selected button
-    const layerButton = document.getElementById("newLayerSelection-" + layerType);
+    const layerButton = document.getElementById(`newLayerSelection-${layerType}`);
     layerButton.classList.add("selected");
 
     // Change the colour of the other buttons
@@ -204,49 +184,44 @@ function selectLayerType(layerName, layerType) {
 }
 
 function saveLayerConfiguration(layerId) {
-
     event.preventDefault();
 
-    if (layerId == "inputLayer") {
-        inputSize = document.getElementById("inputSize").value;
-        validateLayers();
-        saveLayers();
-        return;
-    }
+    const inputSize = document.getElementById("inputSize").value;
+    const outputSize = document.getElementById("outputSize").value;
+    const activation = document.getElementById("activation").value;
 
-    if (layerId == "outputLayer") {
-        outputSize = document.getElementById("outputSize").value;
-        validateLayers();
-        saveLayers();
-        return;
-    }
-
-    if (!(layerId in layers)) {
+    if (layerId == "inputLayer" || layerId == "outputLayer") {
+        if (layerId == "inputLayer") initialInputSize = inputSize;
+        if (layerId == "outputLayer") initialOutputSize = outputSize;
+    } else if (layerId in layers) {
+        layers[layerId]["layerConfig"] = {
+            inputSize,
+            outputSize,
+            activation,
+            type: layers[layerId]["layerConfig"]["type"]
+        };
+    } else {
         console.log("Layer does not exist!");
         return;
     }
-
-    // Get Layer Configuration Values
-    layers[layerId]["layerConfig"] = {
-        "inputSize": document.getElementById("inputSize").value,
-        "outputSize": document.getElementById("outputSize").value,
-        "activation": document.getElementById("activation").value,
-        "type": layers[layerId]["layerConfig"]["type"]
-    };
 
     validateLayers();
     saveLayers();
 
     // Change Error Box
-    if (layers[layerId]["valid"]) {
-        document.getElementById("ConfigurationErrorBox").style.display = "none";
+    const errorBox = document.getElementById("ConfigurationErrorBox");
+    const errorBoxHeader = document.getElementById("ConfigurationErrorBoxHeader");
+    const errorBoxList = document.getElementById("ConfigurationErrorBoxList");
+
+    if (layers[layerId] && layers[layerId]["valid"]) {
+        errorBox.style.display = "none";
     } else {
-        document.getElementById("ConfigurationErrorBox").style.display = "block";
-        document.getElementById("ConfigurationErrorBoxHeader").innerHTML = "Invalid Layer Configuration";
-        document.getElementById("ConfigurationErrorBoxList").innerHTML = "";
+        errorBox.style.display = "block";
+        errorBoxHeader.innerHTML = "Invalid Layer Configuration";
+        errorBoxList.innerHTML = "";
 
         for (const error of layers[layerId]["errors"]) {
-            document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error +
+            errorBoxList.innerHTML += "<li>" + error +
                 "</li>";
         }
     }
@@ -280,7 +255,7 @@ function loadLayerConfiguration(layerId) {
         document.getElementById("layerConfigurationTitle").innerHTML = (isInputLayer ? "Input" : "Output") + " Layer Configuration"
 
         // Configuration Values
-        document.getElementById("inputSize").value = (isInputLayer ? inputSize : outputSize);
+        document.getElementById("inputSize").value = (isInputLayer ? initialInputSize : initialOutputSize);
 
         // Hide Error Box and Delete Layer Button
         document.getElementById("ConfigurationErrorBox").style.display = "none";
@@ -307,6 +282,9 @@ function loadLayerConfiguration(layerId) {
         for (const error of layer["errors"]) {
             document.getElementById("ConfigurationErrorBoxList").innerHTML += "<li>" + error + "</li>";
         }
+
+        // Make output size changeable if it is not the last layer
+        document.getElementById("outputSize").readOnly = false;
     }
 
     // Change Button onclick functions
@@ -350,7 +328,12 @@ function saveLayers() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 'networkId': networkId, 'layers': layers, 'inputSize': inputSize, 'outputSize': outputSize }),
+        body: JSON.stringify({ 
+            'networkId': networkId, 
+            'layers': layers, 
+            'inputSize': initialInputSize, 
+            'outputSize': initialOutputSize 
+        }),
     })
         .then((response) => response.json())
         .then((data) => {

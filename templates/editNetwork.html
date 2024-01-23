@@ -17,8 +17,8 @@
 <script>
     let layers = {};
 
-    let inputSize = 0;
-    let outputSize = 1;
+    let initialInputSize = 0;
+    let initialOutputSize = 1;
 
     var flaskData = JSON.parse('{{ data | tojson }}');
 
@@ -29,12 +29,12 @@
     }
 
     if (flaskData.inputSize) {
-        inputSize = flaskData.inputSize;
+        initialInputSize = flaskData.inputSize;
     }
 
     const networkId = flaskData.networkId;
 
-    console.log(layers, inputSize, outputSize)
+    console.log(layers, initialInputSize, initialOutputSize)
 
 </script>
 

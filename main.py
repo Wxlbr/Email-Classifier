@@ -111,11 +111,9 @@ class Classifier:
         assert self.net is not None, 'No network found.'
         assert self.trained, 'Network is not trained.'
 
-        print(self.net.info())
-
         # Check if the email has already been classified
         if self.conn.email_has_label(message_id):
-            print('Skip')
+            # print('Skip')
             return
 
         # Get the content of the first email
