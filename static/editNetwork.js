@@ -72,7 +72,7 @@ function validateLayers() {
         layer.errors = [];
 
         // Check inputSize
-        if (inputSize <= 0) {
+        if (inputSize <= 0 || !Number.isInteger(inputSize)) {
             layer.valid = false;
             layer.errors.push("Input size must be a positive integer");
         }
@@ -89,7 +89,7 @@ function validateLayers() {
         }
 
         // Check outputSize
-        if (outputSize <= 0) {
+        if (outputSize <= 0 || !Number.isInteger(outputSize)) {
             layer.valid = false;
             layer.errors.push("Output size must be a positive integer");
         }

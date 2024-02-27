@@ -84,6 +84,55 @@ function loadNetworksHelper(activeNetwork = {}, inactiveNetworks = {}) {
     });
 }
 
+function loadBlocklists() {
+    fetch("/get-blocklists", {
+        method: "GET"
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        loadBlocklistsHelper(data);
+    })
+    .catch(error => {
+        console.error("Error fetching blocklists:", error);
+    });
+}
+
+function loadBlocklistsHelper(blocklists) {
+    const blocklistContainer = document.getElementById("blocklistContainer");
+    blocklistContainer.innerHTML = generateBlocklistCardHTML(blocklists);
+}
+
+function generateBlocklistCardHTML(data) {
+    let output = '';
+
+    let blocklists = data['blocklists']
+
+    for (let key in blocklists) {
+        if (blocklists.hasOwnProperty(key)) {
+            output += `${key}: ${blocklists[key].length}<br>`;
+        }
+    }
+
+    return `<div class="card" id="blocklistsCard">
+    <div class="h-65 bg-grey-600 pad-4 rounded-top">
+        <h2 class="card-title">Blocklist Elements</h2>
+        <span id="blocklistStatus">${output}</span>
+    </div>
+    <div class="h-35 pad-4 items-center rounded-bottom">
+        <button class="button button-blue" type="submit" onclick="redirectEditBlocklists()">Edit</button>
+    </div>
+    </div>`;
+}
+
+function redirectEditBlocklists() {
+    if (socket != null) {
+        socket.disconnect();
+    }
+
+    window.location.href = "/edit-blocklists";
+}
+
 function generateInactiveNetworkCardHTML(networkId) {
     return `<div class="card" id = "${networkId}">
     <div class="h-65 bg-grey-600 pad-4 rounded-top">
@@ -146,11 +195,7 @@ function generateActiveNetworkCardHTML(networkId, status) {
             <!-- Disable (grey) whilst network is active -->
         <button class="button button-blue" type="submit" onclick="selectActiveNetwork('${networkId}')" style="display: none;"
             id="activeSelectButton">Select</button>
-        <button class="button button-blue" type="submit" onclick=""
-            id="activeViewButton">View</button>
-        <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
-            id="activeReplaceButton">Replace</button>
-        <button class="button button-${status === 'active' ? 'red' : 'green'} border ml-2" id="activateNetworkButton"
+        <button class="button button-${status === 'active' ? 'red' : 'green'} border" id="activateNetworkButton"
             onclick="toggleActiveNetwork()">
             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -160,6 +205,8 @@ function generateActiveNetworkCardHTML(networkId, status) {
             </svg>
             <p class="ml-1" id="activateNetworkButtonText">${status === 'active' ? 'Off' : 'On'}</p>
         </button>
+        <button class="button button-blue ml-4" type="submit" onclick="replaceActiveNetwork()"
+            id="activeReplaceButton">Replace</button>
     </div>
     </div>`;
 }
@@ -506,6 +553,16 @@ function selectActiveNetwork(newNetworkId) {
 }
 
 function toggleTrainPopup(networkId) {
+
+    // Get network card
+    let networkCard = document.getElementById(networkId);
+    let valid = networkCard.querySelector("#validationStatus").innerHTML == "Valid";
+
+    // If network is not valid, then cannot train
+    if (!valid) {
+        return alert("Network is invalid, please edit and validate before training");
+    }
+
     const popup = document.getElementById('trainNetworkPopup');
     if (popup.style.display === "none") {
         // Reset the popup

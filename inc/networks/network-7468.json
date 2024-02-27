@@ -1,18 +1,21 @@
 {
-    "networkId": "network-2849",
+    "networkId": "network-7468",
     "name": "Network network",
     "activeCard": false,
     "layers": {
         "layer-1": {
             "layerName": "Dense Layer",
             "layerConfig": {
-                "inputSize": "3000",
-                "outputSize": "0",
+                "inputSize": 0,
+                "outputSize": 0,
                 "activation": "sigmoid",
                 "type": "dense"
             },
             "valid": false,
             "errors": [
+                "Input size must be a positive integer",
+                "Output size must be a positive integer",
+                "Output size must match network output size of 1"
             ],
             "status": "inactive"
         }

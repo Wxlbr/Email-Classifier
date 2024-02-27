@@ -116,17 +116,31 @@ class Classifier:
             # print('Skip')
             return
 
-        # Get the content of the first email
-        content = self.conn.get_email_content(message_id)
+        # Get the sender address of the email
+        sender = self.conn.get_email_sender(message_id)
 
-        # Count word frequencies
-        content = self.conn.word_counter(content)
+        # Check if the sender is in a blocklist
+        if self.is_blocked(sender):
+            # print('Blocked')
+            predicted_class = 1
 
-        # Convert to list of values
-        content = [[content[key]] for key in content]
+        elif self.is_whitelisted(sender):
+            # print('Whitelisted')
+            predicted_class = 0
 
-        # Predict the class label of the email
-        predicted_class = round(self.net.predict(content)[0][0])
+        # Unknown sender / not in blocklist or whitelist - classify the email
+        else:
+            # Get the content of the email
+            content = self.conn.get_email_content(message_id)
+
+            # Count word frequencies
+            content = self.conn.word_counter(content)
+
+            # Convert to list of values
+            content = [[content[key]] for key in content]
+
+            # Predict the class label of the email
+            predicted_class = round(self.net.predict(content)[0][0])
 
         # Assign the label
         label = 'Safe' if predicted_class == 0 else 'Unsafe'
@@ -134,6 +148,26 @@ class Classifier:
         # Assign the label to the email
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
+
+    def is_blocked(self, sender):
+        '''
+        Check if the sender is in the blocklist
+        '''
+
+        with open('./inc/blocklists/blacklist.csv', 'r', encoding='utf-8') as f:
+            blocklist = f.read().split(',')
+
+        return sender in blocklist
+
+    def is_whitelisted(self, sender):
+        '''
+        Check if the sender is in the whitelist
+        '''
+
+        with open('./inc/blocklists/whitelist.csv', 'r', encoding='utf-8') as f:
+            whitelist = f.read().split(',')
+
+        return sender in whitelist
 
     def load_network(self, network_dictionary=None, file_path=None):
         '''

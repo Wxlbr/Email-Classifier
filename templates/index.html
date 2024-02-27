@@ -17,6 +17,7 @@
     let socket = initTrainingSocket();
 
     loadNetworks();
+    loadBlocklists();
 </script>
 
 <body style="background-color: #1f2937;">
@@ -60,14 +61,24 @@
                 Neural Networks
             </h1>
 
-            <!-- Active Network -->
-            <h2 class="subtitle">
-                Active Network
-            </h2>
+            <div class="grid grid-cols-3 grid-gap-6" id="activeFeatures">
 
-            <div>
-                <!-- Active Layer Card -->
-                <div class="grid grid-cols-3 grid-gap-6 w-full" id="activeNetworkContainer"></div>
+                <div>
+                    <h2 class="subtitle">
+                        Active Network
+                    </h2>
+                    <!-- Active Layer Card -->
+                    <div class="grid grid-cols-1 grid-gap-6 w-full" id="activeNetworkContainer"></div>
+                </div>
+
+                <div>
+                    <h2 class="subtitle">
+                        Blocklists
+                    </h2>
+                    <!-- Blocklists Card -->
+                    <div class="grid grid-cols-1 grid-gap-6 w-full" id="blocklistContainer"></div>
+                </div>
+
             </div>
 
             <!-- Saved Networks -->

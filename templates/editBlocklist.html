@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/layout.css">
+    <title>This totally works</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" sizes="16x16">
+    <script src="/static/editBlocklists.js"></script>
+</head>
+
+<body style="background-color: #1f2937;">
+    <div class="sidebar-grid full-view bg-grey-900">
+
+        <!-- Sidebar -->
+        <div class="border-right bg-grey-800">
+            <div class="flex-col gap-2">
+
+                <!-- Back Button -->
+                <div class="h-15 items-center border-bottom padx-6 button-text">
+                    <a class="items-center gap-2" onclick="redirectIndex()">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 19-7-7 7-7"></path>
+                            <path d="M19 12H5"></path>
+                        </svg>
+                        <span>Back to Network Menu</span>
+                    </a>
+                </div>
+
+                <!-- Blocklist Configuration Title -->
+                <div class="h-15 items-center border-bottom padx-6 button-text">
+                    <a class="items-center gap-2" href="#">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        <span>Blocklist Config</span>
+                    </a>
+                </div>
+
+                <!-- Blocklist Add Popup -->
+                <div id="newListItemPopup" class="popup" style="display: none;"></div>
+            </div>
+
+            <!-- Network Layer Overview -->
+            <div class="pady-2 padx-4">
+                <nav class="grid text-sm gap-2" id="listsView"></nav>
+            </div>
+        </div>
+
+        <!-- Layer Configuration Window -->
+        <div class="flex-col gap-8 pad-6 text-grey">
+
+            <!-- Layer Configuration Title -->
+            <div class="flex items-center">
+                <h1 class="subtitle" id="listConfigurationTitle">
+                    List Configuration
+                </h1>
+            </div>
+
+            <!-- Layer Configuration Options Subwindow -->
+            <div class="card bg-grey-800 border-grey">
+                <div class="pad-4" id="listConfigurationOptionsWindow" hidden>
+
+                    <!-- Interactable list Option -->
+                    <form>
+                        <div class="mb-4" id="listValues"></div>
+
+                        <a class="button button-green bg-green-500 mr-4" type="submit" onclick="togglePopup()"
+                            id="newItemPopupToggle">
+                            New
+                        </a>
+
+                    </form>
+                </div>
+
+                <!-- Layer Configuration Placeholder -->
+                <div class="justify-flex h-96" id="listConfigurationPlaceholder">
+                    <p class="text text-grey pad-4">
+                        Select a list to configure it
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        loadBlocklists();
+    </script>
+
+</html>

@@ -308,6 +308,27 @@ class Connection:
         for _, message in enumerate(messages):
             self.remove_email_labels(message['id'], ['Safe', 'Unsafe'])
 
+    def get_email_sender(self, message_id):
+        '''
+        Get the sender of an email
+        '''
+
+        self._check_connected()
+
+        # Get the message
+        message = self._service.users().messages().get(
+            userId='me', id=message_id).execute()
+
+        # Get the headers
+        headers = message['payload']['headers']
+
+        # Get the sender
+        sender = next(
+            (header['value'] for header in headers if header['name'] == 'From'), None)
+
+        # Return the sender
+        return sender
+
 
 if __name__ == "__main__":
     conn = Connection()

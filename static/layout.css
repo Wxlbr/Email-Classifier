@@ -231,6 +231,16 @@ object {
   background-color: rgb(17 24 39 / var(--tw-bg-opacity));
 }
 
+.button-grey {
+  --tw-bg-opacity: 1;
+  background-color: rgb(107 114 128 / var(--tw-bg-opacity));
+
+  &:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(75 85 99 / var(--tw-bg-opacity));
+  }
+}
+
 .button {
   display: inline-flex;
   align-items: center;

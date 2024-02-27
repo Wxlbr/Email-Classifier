@@ -19,6 +19,73 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/get-blocklists', methods=['GET'])
+def get_blocklists():
+    ls = {'whitelist': [], 'blacklist': []}
+
+    for listType in ['whitelist', 'blacklist']:
+        with open(f'./inc/blocklists/{listType}.csv', 'r', encoding='utf-8') as f:
+            ls[listType] = f.read().split(',')
+
+            # Remove empty strings
+            ls[listType] = [item for item in ls[listType] if item != '']
+
+            print(ls[listType])
+
+    return jsonify({'status': 'success', 'process': '/get-blocklists', 'blocklists': ls})
+
+
+@app.route('/edit-blocklists', methods=['GET'])
+def edit_blocklist():
+
+    ls = get_blocklists().json
+
+    return render_template('editBlocklist.html', data=ls)
+
+
+@app.route('/remove-blocklist-item', methods=['POST'])
+def remove_blocklist_item():
+
+    listType = request.get_json().get('listName')
+    item = request.get_json().get('value')
+
+    with open(f'./inc/blocklists/{listType}.csv', 'r', encoding='utf-8') as f:
+        ls = f.read().split(',')
+
+    ls = [item for item in ls if item != '']
+
+    if item in ls:
+        ls.remove(item)
+
+    with open(f'./inc/blocklists/{listType}.csv', 'w', encoding='utf-8') as f:
+        f.write(','.join(ls))
+
+    return jsonify({'status': 'success', 'process': '/remove-blocklist-item'})
+
+
+@app.route('/add-blocklist-item', methods=['POST'])
+def add_blocklist_item():
+
+    # Get list type and element to add
+    listType = request.get_json().get('listName')
+    item = request.get_json().get('value')
+
+    with open(f'./inc/blocklists/{listType}.csv', 'r', encoding='utf-8') as f:
+        ls = f.read().split(',')
+
+    ls = [item for item in ls if item != '']
+
+    if item not in ls:
+        ls.append(item)
+    elif item in ls:
+        return jsonify({'status': 'error', 'process': '/add-blocklist-item', 'message': 'Item already exists'})
+
+    with open(f'./inc/blocklists/{listType}.csv', 'w', encoding='utf-8') as f:
+        f.write(','.join(ls))
+
+    return jsonify({'status': 'success', 'process': '/add-blocklist-item'})
+
+
 @app.route('/edit-network', methods=['GET'])
 def edit_network():
 
