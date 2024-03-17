@@ -78,7 +78,10 @@ def add_blocklist_item():
     if item not in ls:
         ls.append(item)
     elif item in ls:
-        return jsonify({'status': 'error', 'process': '/add-blocklist-item', 'message': 'Item already exists'})
+        return jsonify({'status': 'error',
+                        'process': '/add-blocklist-item',
+                        'message': 'Item already exists'
+                        })
 
     with open(f'./inc/blocklists/{listType}.csv', 'w', encoding='utf-8') as f:
         f.write(','.join(ls))
@@ -330,7 +333,7 @@ def toggle_active_network():
         network['status'] = 'inactive'
 
     # Save network to file
-    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'r', encoding='utf-8') as f:
+    with open(f'./inc/networks/active/{os.listdir("./inc/networks/active/")[0]}', 'w', encoding='utf-8') as f:
         json.dump(network, f, indent=4)
 
     return jsonify({'status': 'success', 'process': '/toggle-active-network'})

@@ -120,7 +120,7 @@ function generateBlocklistCardHTML(data) {
         <span id="blocklistStatus">${output}</span>
     </div>
     <div class="h-35 pad-4 items-center rounded-bottom">
-        <button class="button button-blue" type="submit" onclick="redirectEditBlocklists()">Edit</button>
+        <button id="blocklistButton" class="button button-blue" type="submit" onclick="redirectEditBlocklists()">Edit</button>
     </div>
     </div>`;
 }
@@ -240,7 +240,25 @@ function redirectEditNetwork(networkId) {
         socket.disconnect();
     }
 
-    window.location.href = `/edit-network?networkId=${networkId}`;
+    // Remove training status
+    document.getElementById(networkId).querySelector("#trainingStatus").hidden = true;
+    document.getElementById(networkId).querySelector("#trainingAccuracy").hidden = true;
+
+    fetch("/remove-trained", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "networkId": networkId })
+    })
+    .then(response => response.json())
+    .then( console.log )
+    .then(() => { 
+        window.location.href = `/edit-network?networkId=${networkId}`;
+    })
+    .catch(error => {
+        console.error("Error removing trained:", error);
+    });
 }
 
 function validateNetworks(networksToValidate) {
@@ -346,12 +364,12 @@ function initTrainingSocket() {
 
         // Set network to trained
         let isCancelled = data.cancelled;
-        ["#trainingStatus", "#trainingAccuracy"].forEach(id => 
-            networkCard.querySelector(id).hidden = isCancelled
-        );
+        networkCard.querySelector("#trainingStatus").hidden = isCancelled;
+        networkCard.querySelector("#trainingAccuracy").hidden = isCancelled;
 
         // Set network accuracy
-        networkCard.querySelector("#trainingAccuracy").innerHTML = `${data.accuracy}%`;
+        if (!isCancelled)
+            networkCard.querySelector("#trainingAccuracy").innerHTML = `${data.accuracy}%`;
 
         // Clear training status
         clearTrainingStatus(data.networkId);
@@ -499,7 +517,7 @@ function replaceActiveNetwork() {
     let activeNetworkCard = document.querySelector("#activeNetworkContainer .card");
     let savedNetworkCards = document.querySelectorAll("#savedNetworks .card");
 
-    ["#activeViewButton", "#activeReplaceButton", "#activateNetworkButton"].forEach(id => 
+    ["#activeReplaceButton", "#activateNetworkButton"].forEach(id => 
         activeNetworkCard.querySelector(id).style.display = "none"
     );
 
@@ -521,9 +539,15 @@ function replaceActiveNetwork() {
         }
     });
 
+    // Deactivate add network card
     let addNetworkCard = document.getElementById("addNetworkCard");
     addNetworkCard.style.opacity = 0.5;
     addNetworkCard.querySelector("#addNetworkButton").disabled = true;
+
+    // Deactivate blocklist card
+    let blocklistCard = document.getElementById("blocklistsCard");
+    blocklistCard.style.opacity = 0.5;
+    blocklistCard.querySelector("#blocklistButton").disabled = true;
 }
 
 function selectActiveNetwork(newNetworkId) {
@@ -550,6 +574,11 @@ function selectActiveNetwork(newNetworkId) {
     let addNetworkCard = document.getElementById("addNetworkCard");
     addNetworkCard.style.opacity = 1;
     addNetworkCard.querySelector("#addNetworkButton").disabled = false;
+
+    // Activate blocklist card
+    let blocklistCard = document.getElementById("blocklistsCard");
+    blocklistCard.style.opacity = 1;
+    blocklistCard.querySelector("#blocklistButton").disabled = false;
 }
 
 function toggleTrainPopup(networkId) {
@@ -582,11 +611,12 @@ function trainNetworkFromPopUp(networkId) {
 
     console.log('trainNetworkFromPopUp', networkId);
 
-    const epochs = parseInt(document.getElementById('trainNetworkEpochs').value);
+    const epochString = document.getElementById('trainNetworkEpochs').value;
+    const epochs = parseInt(epochString);
 
     toggleTrainPopup(networkId);
 
-    if (epochs > 0 && epochs <= 1000) {
+    if (epochs > 0 && epochs <= 1000 && epochs == epochString) {
         trainNetwork(networkId, epochs);
     } else {
         alert("Number of epochs must be between 1 and 1000");

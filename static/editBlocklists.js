@@ -62,7 +62,6 @@ function listValueHTML(listName, value) {
         onclick="removeFromList('${listName}', '${value}')">
         ${value}
     </a>`
-    // TODO: Add CSS for button::hover to make pointer
 }
 
 function selectList(listName) {
@@ -105,8 +104,6 @@ function selectList(listName) {
 
 function removeFromList(listName, value) {
     console.log(listName, value);
-
-    // event.preventDefault();
 
     fetch('/remove-blocklist-item', {
         method: 'POST',
@@ -162,7 +159,7 @@ function togglePopup(list) {
 }
 
 function validEmail(email) {
-    const re = /\S+@\S+\.\S+/;
+    const re = /^[^\s@]+@[^\s@]+\.[A-Za-z0-9-]+$/;
     return re.test(email);
 }
 
@@ -177,6 +174,8 @@ function checkEmailInput(list) {
     if (input === "" || !validEmail(input)) {
         valid = false;
         msg.innerHTML = "Invalid Email";
+    } else {
+        msg.innerHTML = "";
     }
 
     fetch ('/get-blocklists', {

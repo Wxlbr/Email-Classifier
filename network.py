@@ -2,14 +2,14 @@ import time
 import json
 
 from loss import MSE, BinaryCrossEntropy
-from layer import Recurrent
+from layer import Recurrent, Dense
 from activation import Sigmoid, Tanh
 from calc import mean, convert_time
 
 
 class Network:
 
-    LAYER_TYPES = {'recurrent': Recurrent}
+    LAYER_TYPES = {'recurrent': Recurrent, 'dense': Dense}
     ACTIVATION_TYPES = {'sigmoid': Sigmoid, 'tanh': Tanh}
     LOSS_TYPES = {'mse': MSE, 'binary_crossentropy': BinaryCrossEntropy}
 
@@ -89,7 +89,8 @@ class Network:
                     if socketio:
                         socketio.emit('training_done', {
                             "status": "done",
-                            "networkId": netId
+                            "networkId": netId,
+                            "cancelled": True
                         }, namespace='/train')
 
                     return False, accuracy
@@ -180,16 +181,23 @@ class Network:
 
     def load(self, network_dictionary=None, file_path=None):
         self.layers.clear()
+        data = {}
 
-        if network_dictionary is not None:
-            data = network_dictionary
+        print('Loading network...')
 
-        if file_path is not None:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+        # if network_dictionary is not None:
+        #     data = network_dictionary
+
+        # if file_path is not None:
+        #     with open(file_path, 'r', encoding='utf-8') as f:
+        #         data = json.load(f)
+
+        with open('./inc/model.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
 
         for i in data:
-            if not isinstance(i, int):
+            print(i)
+            if i.isdigit() is False:
                 continue
 
             assert data[i]['type'] in self.LAYER_TYPES, "Unknown layer type"
@@ -201,6 +209,9 @@ class Network:
             )
             layer.load(data[i])
             self.layers.append(layer)
+
+            print(data[i]['type'], data[i]['input_size'],
+                  data[i]['output_size'], data[i]['activation'])
 
         print(self.layers)
 
@@ -229,3 +240,32 @@ class Network:
 
         print(
             f"Added layer: {layer['type']}, Input Size: {input_size}, Output Size: {output_size}")
+
+
+if __name__ == "__main__":
+
+    # Test run through for an AND gate
+
+    # Create a network
+    net = Network()
+
+    # Add layers
+    net.add_layer({'type': 'recurrent', 'inputSize': '2',
+                   'outputSize': '1', 'activation': 'sigmoid'})
+
+    # Define Data
+    x_train = [[[0], [0]], [[0], [1]], [[1], [0]], [[1], [1]]]
+    y_train = [0, 0, 0, 1]
+
+    # Train network
+    net.train(x_train, y_train, epochs=100, learning_rate=0.1,
+              loss='binary_crossentropy', verbose=True)
+
+    # Test network
+    ls = [net.predict(x) for x in x_train]
+
+    # Round to 0 or 1
+    ls = [round(x[0]) for l in ls for x in l]
+
+    print('Predicted: ', ls)
+    print('Expected: ', y_train)

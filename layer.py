@@ -43,7 +43,7 @@ class Dense():
 
         # Apply activation function derivative
         output_gradient = self.activation.backward(
-            output_gradient, learning_rate)
+            output_gradient)
 
         # Calculate gradients
         weights_gradient = dot(output_gradient, transpose(self.input))
@@ -127,7 +127,7 @@ class Recurrent():
         output = add_matrices(weighted_input, self.bias)
 
         # Update output by adding weighted input and hidden state
-        output = add_matrices(weighted_input, self.hidden_state)
+        output = add_matrices(output, self.hidden_state)
 
         # Apply activation function
         output = self.activation.forward(output)

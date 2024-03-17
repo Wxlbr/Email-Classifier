@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import json
 
@@ -69,7 +70,7 @@ class Classifier:
 
             # print('Classifying email', i)
 
-            self.classify_email(message['id'], assign_label=False)
+            self.classify_email(message['id'], assign_label=True)
 
     def test_network(self):
         '''
@@ -119,6 +120,9 @@ class Classifier:
         # Get the sender address of the email
         sender = self.conn.get_email_sender(message_id)
 
+        # Extract the email address from the sender
+        sender = self._extract_email_address(sender)
+
         # Check if the sender is in a blocklist
         if self.is_blocked(sender):
             # print('Blocked')
@@ -149,15 +153,27 @@ class Classifier:
         if assign_label:
             self.conn.assign_email_labels(message_id, [label])
 
+    def _extract_email_address(self, sender):
+
+        # Regex to match email addresses
+        email_regex = r'<([^<>]+)>'
+
+        # Find all matches in the text
+        emails = re.findall(email_regex, sender)
+
+        print(emails)
+
+        return emails
+
     def is_blocked(self, sender):
         '''
-        Check if the sender is in the blocklist
+        Check if the sender is in the blacklist
         '''
 
         with open('./inc/blocklists/blacklist.csv', 'r', encoding='utf-8') as f:
-            blocklist = f.read().split(',')
+            blacklist = f.read().split(',')
 
-        return sender in blocklist
+        return bool(set(sender) & set(blacklist))
 
     def is_whitelisted(self, sender):
         '''
@@ -167,7 +183,7 @@ class Classifier:
         with open('./inc/blocklists/whitelist.csv', 'r', encoding='utf-8') as f:
             whitelist = f.read().split(',')
 
-        return sender in whitelist
+        return bool(set(sender) & set(whitelist))
 
     def load_network(self, network_dictionary=None, file_path=None):
         '''
@@ -359,7 +375,8 @@ if __name__ == "__main__":
 
     classifier = Classifier()
 
-    classifier.main()
+    # classifier.main()
 
-    # classifier.train_network()
+    classifier.train_network()
+
     # classifier.test_network()

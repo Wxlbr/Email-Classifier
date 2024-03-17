@@ -1,0 +1,65 @@
+{
+    "networkId": "network-5422",
+    "name": "Network network",
+    "activeCard": false,
+    "layers": {
+        "layer-1": {
+            "errors": [
+                "Input size must match network input size of 3000",
+                "Output size must match next layer's input size of 500"
+            ],
+            "layerConfig": {
+                "inputSize": "10",
+                "outputSize": "5",
+                "activation": "sigmoid",
+                "type": "recurrent"
+            },
+            "layerName": "Recurrent Layer",
+            "status": "inactive",
+            "valid": false
+        },
+        "layer-2": {
+            "errors": [
+                "Input size must match previous layer's output size of 5"
+            ],
+            "layerConfig": {
+                "inputSize": "500",
+                "outputSize": "50",
+                "activation": "sigmoid",
+                "type": "recurrent"
+            },
+            "layerName": "Recurrent Layer",
+            "status": "inactive",
+            "valid": false
+        },
+        "layer-3": {
+            "errors": [],
+            "layerConfig": {
+                "activation": "sigmoid",
+                "inputSize": "50",
+                "outputSize": "5",
+                "type": "dense"
+            },
+            "layerName": "Dense Layer",
+            "status": "inactive",
+            "valid": true
+        },
+        "layer-4": {
+            "errors": [],
+            "layerConfig": {
+                "activation": "tanh",
+                "inputSize": "5",
+                "outputSize": "1",
+                "type": "recurrent"
+            },
+            "layerName": "Recurrent Layer",
+            "status": "inactive",
+            "valid": true
+        }
+    },
+    "inputSize": "3000",
+    "outputSize": 1,
+    "valid": false,
+    "status": "inactive",
+    "network": {}
+}

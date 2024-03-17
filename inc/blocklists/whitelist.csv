@@ -1,1 +1,7 @@
-a@gmail.com
+user@mail.example.com,
+user.email@example-domain.co.uk,
+invalidemail@gmail.com,
+username@example.com,
+user-name@example-domain.com,
+user@mail.sub.example.com,
+existinguser@example.com,

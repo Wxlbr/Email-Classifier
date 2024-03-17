@@ -72,7 +72,7 @@ function validateLayers() {
         layer.errors = [];
 
         // Check inputSize
-        if (inputSize <= 0 || !Number.isInteger(inputSize)) {
+        if (parseInt(inputSize) <= 0 || !Number.isInteger(parseInt(inputSize))) {
             layer.valid = false;
             layer.errors.push("Input size must be a positive integer");
         }
@@ -89,7 +89,7 @@ function validateLayers() {
         }
 
         // Check outputSize
-        if (outputSize <= 0 || !Number.isInteger(outputSize)) {
+        if (parseInt(outputSize) <= 0 || !Number.isInteger(parseInt(outputSize))) {
             layer.valid = false;
             layer.errors.push("Output size must be a positive integer");
         }
@@ -255,7 +255,8 @@ function loadLayerConfiguration(layerId) {
         document.getElementById("layerConfigurationTitle").innerHTML = (isInputLayer ? "Input" : "Output") + " Layer Configuration"
 
         // Configuration Values
-        document.getElementById("inputSize").value = (isInputLayer ? initialInputSize : initialOutputSize);
+        document.getElementById("inputSize").value = initialInputSize;
+        document.getElementById("outputSize").value = initialOutputSize;
 
         // Hide Error Box and Delete Layer Button
         document.getElementById("ConfigurationErrorBox").style.display = "none";
